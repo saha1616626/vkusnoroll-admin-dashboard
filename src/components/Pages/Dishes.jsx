@@ -9,20 +9,34 @@ import addIcon from './../../assets/icons/add.png'
 
 const Dishes = () => {
 
+    // Состяние кнопки обновления данных на странице
+    const [isRotating, setIsRotating] = useState(false);
+
+    // Кнопка обновления данных на странице
+    const rebootData = () => {
+        // Вращение кнопки после нажатия
+        setIsRotating(true);
+        setTimeout(() => {
+            setIsRotating(false);
+        }, 500); // Сбрасываем состояние кнопки после окончания анимации через 500 мс
+    };
+
     return (
         <main className="page">
 
             {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
             <div className="control-components">
-                <button>
+                <button className={`button-reboot ${isRotating ? 'rotate' : ''}`}
+            onClick={rebootData}>
                     <img src={updateIcon} alt="Update" className="icon" />
+                    <span className="tooltip">Обновить страницу</span>
                 </button>
 
                 <div className="page-name">
                     Блюда
                 </div>
 
-                <button className="control-button">
+                <button className="button-add">
                     <img src={addIcon} alt="Update" className="icon-button" />
                     Блюдо
                 </button>

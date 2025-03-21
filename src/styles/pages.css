@@ -20,6 +20,8 @@
 
 /* Иконка в кнопке */
 .icon-button {
+    margin-left: -7px;
+    margin-right: 13px;
     width: 20px;
     height: 20px;
 }
@@ -29,12 +31,80 @@
     font-size: 24px;
     font-weight: bold;
     font-style: italic;
-    margin-left: 2em;
-    margin-right: 2em;
+    margin-left: 3em;
+    margin-right: 3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Кнопки */
-.control-button {
+/* Кнопка обновления данных на странице */
+.button-reboot {
+    background-color: transparent;
+    border: none;
+    display: flex;             /* Для центрации иконки */
+    align-items: center;       /* Вертикальное выравнивание по центру */
+    justify-content: center;    /* Горизонтальное выравнивание по центру */
+
+    cursor: pointer;           /* Курсор при наведении */
+    transition: transform 0.2s ease; /* Плавность трансформации */
+}
+.button-reboot:focus {
+    outline: none; /* Убирает обводку при фокусе */
+}
+.button-reboot.rotate {
+    animation: spin 0.5s forwards; /* Применяет анимацию при нажатии */
+}
+@keyframes spin {
+    from {
+        transform: rotate(0deg); /* Начало вращения */
+    }
+    to {
+        transform: rotate(360deg); /* Конечное вращение */
+    }
+}
+.button-reboot:hover .tooltip,
+.button-reboot:focus .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Кнопка добавления (блюда, категории и тд) */
+.button-add {
+    background-color: #ADADAD;
+    color: #FFFFFF;
     font-weight: bold;
+    border: 1px solid black;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    padding: 7px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s; /*Плавный переход при наведении*/
+}
+.button-add:hover {
+    background-color: #999999;
+}
+
+/* Кнопка фильтрации */
+
+
+/* Подсказка при наведении */
+.tooltip {
+    visibility: hidden;        /* Скрываем подсказку по умолчанию */
+    width: 120px;             /* Ширина подсказки */
+    background-color: #555;   /* Цвет фона подсказки */
+    color: #fff;              /* Цвет текста подсказки */
+    text-align: center;       /* Центрируем текст */
+    border-radius: 6px;      /* Скругляем углы подсказки */
+    padding: 5px;            /* Отступы для текста */
     
+    /* Позиционирование подсказки */
+    position: absolute;       /* Абсолютное позиционирование относительно кнопки */
+    bottom: 125%;             /* Расстояние от нижней части кнопки */
+    left: 50%;                /* Центрируем по горизонтали */
+    margin-left: -60px;      /* Сдвигаем для центрирования */
+    z-index: 1;               /* Устанавливаем слой поверх других элементов */
+    opacity: 0;               /* Отключаем видимость по умолчанию */
+    transition: opacity 0.3s; /* Плавный переход при показе/скрытии */
 }
