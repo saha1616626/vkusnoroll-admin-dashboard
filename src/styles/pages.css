@@ -1,0 +1,40 @@
+/* Общие стили для страниц */
+
+/* Главный контейнер страницы */
+.page {
+    
+}
+
+/* Управляющие компоненты (Обновить страницу, название, кнопки и тд) */
+.control-components {
+    margin: 3em 3em;
+    display: flex;
+    flex: 1;
+}
+
+/* Обычная иконка */
+.icon {
+    width: 30px;
+    height: 30px;
+}
+
+/* Иконка в кнопке */
+.icon-button {
+    width: 20px;
+    height: 20px;
+}
+
+/* Название страницы */
+.page-name {
+    font-size: 24px;
+    font-weight: bold;
+    font-style: italic;
+    margin-left: 2em;
+    margin-right: 2em;
+}
+
+/* Кнопки */
+.control-button {
+    font-weight: bold;
+    
+}

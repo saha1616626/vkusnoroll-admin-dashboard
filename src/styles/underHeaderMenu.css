@@ -1,0 +1,20 @@
+/* Стили для меню под шапкой */
+
+.menu {
+ border-bottom: 0.3px solid; 
+ border-color: aliceblue;
+ background-color: #D0D0D0;
+}
+
+/* Кнопки навигационного меню */
+.nav-under-button {
+    font-weight: bold;
+    padding: 10px 20px;
+    flex: 0; /* Каждая кнопка будет занимать одинаковую ширину */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer; /* Курсор меняется на указатель при наведении */
+    outline: none;
+    transition: color 0.3s; /* Анимация при изменении цвета */
+    font-size: 14px;
+}

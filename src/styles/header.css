@@ -1,0 +1,48 @@
+/* Стили для шапки */
+
+* {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Основной контейнер шапки */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #C1CFC4;
+    color: white;
+}
+
+/* Логотип */
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    
+    color: #FFFFFF;
+    margin-left: 10px;
+}
+
+/* Кнопки навигационного меню */
+.nav-button {
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    transition: color 0.3s;
+    font-size: 14px;
+}
+
+
+/* Кнопки иконки */
+.icons {
+    display: flex;
+    gap: 10px;
+    margin-right: 10px;
+}
+
+.icons img {
+    width: 40px;
+}
