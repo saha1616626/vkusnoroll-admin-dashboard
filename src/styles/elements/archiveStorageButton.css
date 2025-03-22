@@ -8,6 +8,7 @@
     background-color: #535353; /* Цвет при активном состоянии */
 }
 
+/* Стиль для иконки в кнопке при просмотре архива */
 .icon-archive {
     border: 1px solid white;
     background: white;

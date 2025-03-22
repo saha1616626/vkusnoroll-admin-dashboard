@@ -41,16 +41,16 @@ const DropdownButtonChange = () => {
     }, []);
 
     return (
-        <div className="dropdown" ref={dropdownRef}>
-            <button className="button-control dropdown-button" onClick={toggleDropdown}>
+        <div className="dropdown-change" ref={dropdownRef}>
+            <button className="button-control" onClick={toggleDropdown}>
                 Изменить
             </button>
             {isOpen && (
-                <div className="dropdown-menu">
-                    <div className="dropdown-option" onClick={() => handleOptionClick('Удалить')}>Удалить</div>
-                    <div className="dropdown-option" onClick={() => handleOptionClick('Архивировать')}>Архивировать</div>
-                    <div className="dropdown-option" onClick={() => handleOptionClick('Достать')} title="Достать из архива">Достать
-                         <img src={archiveIcon} alt="Archive" className="icon-dropdown-button-archive"/>
+                <div className="dropdown-menu-change">
+                    <div className="dropdown-option-change" onClick={() => handleOptionClick('Удалить')}>Удалить</div>
+                    <div className="dropdown-option-change" onClick={() => handleOptionClick('Архивировать')}>Архивировать</div>
+                    <div className="dropdown-option-change" onClick={() => handleOptionClick('Достать')} title="Достать из архива">Достать
+                         <img src={archiveIcon} alt="Archive" className="dropdown-button-icon"/>
                     </div>
                 </div>
             )}

@@ -1,31 +1,33 @@
 /* Выпадающее меню */
-.dropdown {
+.dropdown-change {
     position: relative;
     display: inline-block;
 }
 
 /* Выпадающий список */
-.dropdown-menu {
+.dropdown-menu-change {
     position: absolute;
-    background-color: #E5E4E4;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Тень для выпадающего списка */
-    z-index: 1;
-    border: 0.1px solid rgb(194, 206, 218);
+    background-color: white; /* Цвет заднего фона */
+    border: 1px solid #ccc; /* Цвет рамки */
+    border-radius: 5px; /* С округленными углами */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Тень для меню */
+    z-index: 1; /* Размещение поверх других элементов */
+    margin-top: 5px;
 }
 
 /* Элемент выпадающего списка */
-.dropdown-option {
+.dropdown-option-change {
     display: flex;
-    align-items: center;  /* Вертикальное выравнивание по центру */
-    padding: 10px 20px;
+    align-items: center;
+    padding: 10px 20px; /* Отступы у опций */
     cursor: pointer;
 }
-.dropdown-option:hover {
+.dropdown-option-change:hover {
     background-color: #f1f1f1;
 }
 
 /* Иконка разархивации в кнопке выпадающего меню */
-.icon-dropdown-button-archive {
+.dropdown-button-icon {
     margin-left: 26px;
     margin-top: 0px;
     width: 21px;

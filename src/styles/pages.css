@@ -9,9 +9,8 @@
 .control-components {
     margin: 3em 3em;
     display: flex;
-    /* justify-content: space-between; */
+    justify-content: space-between;
     align-items: center;
-    
 }
 
 /* Название страницы */
@@ -55,4 +54,3 @@
     object-fit: contain; /* Пропорция формы */
     
 }
-
