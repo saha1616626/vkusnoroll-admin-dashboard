@@ -1,24 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 // Импорт стилей
 import "./../../styles/pages.css";
 
 // Импорт иконок
-import updateIcon from './../../assets/icons/update.png';
 import addIcon from './../../assets/icons/add.png'
+
+// Импорт компонентов
+import RefreshButton from "../Elements/RefreshButton"; // Кнопка обновления данных на странице
+import DropdownButtonChange from './../Elements/DropdownButtonChange'; // Кнопка "Изменить"
+import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 
 const Dishes = () => {
 
-    // Состяние кнопки обновления данных на странице
-    const [isRotating, setIsRotating] = useState(false);
+    // Обновление страницы
+    const refreshData = () => {
+        // TODO логика обновления страницы
 
-    // Кнопка обновления данных на странице
-    const rebootData = () => {
-        // Вращение кнопки после нажатия
-        setIsRotating(true);
-        setTimeout(() => {
-            setIsRotating(false);
-        }, 500); // Сбрасываем состояние кнопки после окончания анимации через 500 мс
+    }
+
+    // Поиск
+    const handleSearch = (item) => {
+        // TODO логика поиска
+
     };
 
     return (
@@ -26,20 +30,31 @@ const Dishes = () => {
 
             {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
             <div className="control-components">
-                <button className={`button-reboot ${isRotating ? 'rotate' : ''}`}
-            onClick={rebootData}>
-                    <img src={updateIcon} alt="Update" className="icon" />
-                    <span className="tooltip">Обновить страницу</span>
-                </button>
 
+                {/* Обновить страницу */}
+                <RefreshButton onRefresh={refreshData} title="Обновить страницу"/>
+
+                {/* Заголовок страницы */}
                 <div className="page-name">
                     Блюда
                 </div>
 
-                <button className="button-add">
-                    <img src={addIcon} alt="Update" className="icon-button" />
+                {/* Кнопка добавить */}
+                <button className="button-control add">
+                    <img src={addIcon} alt="Update" className="icon-button-add" />
                     Блюдо
                 </button>
+
+                {/* Кнопка фильтра */}
+                <button className="button-control filter">
+                    Фильтрация
+                </button>
+
+                {/* Кнопка изменить с выпадающим списком */}
+                <DropdownButtonChange />
+
+                {/* Поиск */}
+                <SearchInput placeholder="Поиск блюда" onSearch={handleSearch} />
 
             </div>
 

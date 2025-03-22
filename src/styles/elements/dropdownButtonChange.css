@@ -1,0 +1,34 @@
+/* Выпадающее меню */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Выпадающий список */
+.dropdown-menu {
+    position: absolute;
+    background-color: #E5E4E4;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Тень для выпадающего списка */
+    z-index: 1;
+    border: 0.1px solid rgb(194, 206, 218);
+}
+
+/* Элемент выпадающего списка */
+.dropdown-option {
+    display: flex;
+    align-items: center;  /* Вертикальное выравнивание по центру */
+    padding: 10px 20px;
+    cursor: pointer;
+}
+.dropdown-option:hover {
+    background-color: #f1f1f1;
+}
+
+/* Иконка разархивации в кнопке выпадающего меню */
+.icon-dropdown-button-archive {
+    margin-left: 26px;
+    margin-top: 0px;
+    width: 21px;
+    height: 21px;
+    object-fit: contain; /* Пропорция формы */
+}
