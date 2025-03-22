@@ -47,11 +47,12 @@
 }
 
 /* Иконка в кнопке добавить */
-.icon-button-add {
+.icon-button {
     margin-left: -10px;
     margin-right: 13px;
     width: 21px;
     height: 21px;
     object-fit: contain; /* Пропорция формы */
+    
 }
 

@@ -10,6 +10,7 @@ import addIcon from './../../assets/icons/add.png'
 import RefreshButton from "../Elements/RefreshButton"; // Кнопка обновления данных на странице
 import DropdownButtonChange from './../Elements/DropdownButtonChange'; // Кнопка "Изменить"
 import SearchInput from "./../Elements/SearchInput"; // Поле поиска
+import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Просмотр архива
 
 const Dishes = () => {
 
@@ -20,10 +21,15 @@ const Dishes = () => {
     }
 
     // Поиск
-    const handleSearch = (item) => {
+    const handleSearch = (term) => {
         // TODO логика поиска
 
     };
+
+    // Архивный список
+    const handleToggleArchive = (isArchived) => {
+        // TODO логика вывода архивного списка в зависимости от статуса 
+    }
 
     return (
         <main className="page">
@@ -41,7 +47,7 @@ const Dishes = () => {
 
                 {/* Кнопка добавить */}
                 <button className="button-control add">
-                    <img src={addIcon} alt="Update" className="icon-button-add" />
+                    <img src={addIcon} alt="Update" className="icon-button" />
                     Блюдо
                 </button>
 
@@ -55,6 +61,9 @@ const Dishes = () => {
 
                 {/* Поиск */}
                 <SearchInput placeholder="Поиск блюда" onSearch={handleSearch} />
+
+                {/* Архив */}
+                <ArchiveStorageButton onToggleArchive={handleToggleArchive} title="Архив"/>
 
             </div>
 

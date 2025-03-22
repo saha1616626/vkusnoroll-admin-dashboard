@@ -1,0 +1,15 @@
+/* Кнопка архива */
+
+.archive-button {
+    height: 33.2px; /* Установка фиксированной высоты кнопки */
+}
+
+.archive-button.active {
+    background-color: #535353; /* Цвет при активном состоянии */
+}
+
+.icon-archive {
+    border: 1px solid white;
+    background: white;
+    border-radius: 5px;
+}
