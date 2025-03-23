@@ -9,6 +9,7 @@ import addIcon from './../../assets/icons/add.png'
 
 // Импорт компонентов
 import RefreshButton from "../Elements/RefreshButton"; // Кнопка обновления данных на странице
+import FilterButton from "../Elements/FilterButton"; // Фильтр
 import DropdownButtonChange from './../Elements/DropdownButtonChange'; // Кнопка "Изменить"
 import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Просмотр архива
@@ -21,6 +22,26 @@ const Dishes = () => {
         // TODO логика обновления страницы
 
     }
+
+    // Состав фильтра
+    const filters = [
+        { type: 'text', name: 'name', label: 'Название блюда', placeholder: 'Введите название' },
+        { type: 'date-range', name: 'date', label: 'Период' },
+        { 
+            type: 'select', 
+            name: 'category', 
+            label: 'Категория', 
+            options: ['Суши', 'Ролы', 'Пицца']
+        },
+        { 
+            type: 'select', 
+            name: 'dish', 
+            label: 'Блюдо', 
+            options: ['Категория 1', 'Категория 2', 'Категория 3'] 
+        },
+        { type: 'text', name: 'price', label: 'Максимальная цена', placeholder: '' },
+        { type: 'text', name: 'weight', label: 'Вес', placeholder: '' },
+    ];
 
     // Поиск
     const handleSearch = (term) => {
@@ -60,9 +81,7 @@ const Dishes = () => {
                     </button>
 
                     {/* Кнопка фильтра */}
-                    <button className="button-control filter">
-                        Фильтрация
-                    </button>
+                    <FilterButton filters={filters}/>
 
                     {/* Кнопка изменить с выпадающим списком */}
                     <DropdownButtonChange />

@@ -1,6 +1,7 @@
 /* Кнопка архива */
 
 .archive-button {
+    transition: background-color 0.3s;
     height: 33.2px; /* Установка фиксированной высоты кнопки */
 }
 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 // Импорт стилей
 import "./../../styles/elements/dropdownColumnSelection.css";
-
+ 
 // Импорт иконок
 import resetIcon from './../../assets/icons/reset.png'
 
