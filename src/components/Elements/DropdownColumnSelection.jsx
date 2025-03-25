@@ -5,17 +5,23 @@ import PropTypes from 'prop-types';
 import "./../../styles/elements/dropdownColumnSelection.css";
  
 // Импорт иконок
-import resetIcon from './../../assets/icons/reset.png'
+import resetIcon from './../../assets/icons/reset.png';
 
-const DropdownColumnSelection = ({ options, title, defaultSelected }) => {
-
+const DropdownColumnSelection = ({ options, title, defaultSelected, setSelectedColumns }) => {
     const [isOpen, setIsOpen] = useState(false); // Состояние для управления открытием/закрытием списка
     const [selectedOptions, setSelectedOptions] = useState(() => {
         // Загрузка выбранных столбцов из localStorage при инициализации состояния
         const savedOptions = localStorage.getItem('selectedOptions');
-        return savedOptions ? JSON.parse(savedOptions) : defaultSelected;
+        return savedOptions ? JSON.parse(savedOptions) : defaultSelected || [];
     }); // Сохранение выбранных опций
     const dropdownRef = useRef(null); // Ссылка на элемент выпадающего списка
+
+    // Устанавливаем выбранные столбцы в родительском компоненте
+    useEffect(() => {
+        if (setSelectedColumns) {
+            setSelectedColumns(selectedOptions);
+        }
+    }, [selectedOptions, setSelectedColumns]);
 
     // Хук для обработки кликов вне компонента
     useEffect(() => {
@@ -74,7 +80,8 @@ const DropdownColumnSelection = ({ options, title, defaultSelected }) => {
 
                     {options.map(option => (
                         <label key={option} className="dropdown-option-columns">
-                            <input
+
+<input
                                 type="checkbox"
                                 checked={selectedOptions.includes(option)}
                                 onChange={() => handleCheckboxChange(option)}
@@ -87,17 +94,13 @@ const DropdownColumnSelection = ({ options, title, defaultSelected }) => {
             )}
         </div>
     );
-
 };
 
 DropdownColumnSelection.propTypes = {
     options: PropTypes.arrayOf(PropTypes.string).isRequired, // Массив опций для чекбоксов
     title: PropTypes.string, // Заголовок для кнопки
     defaultSelected: PropTypes.arrayOf(PropTypes.string), // Массив опций по умолчанию
-};
-
-DropdownColumnSelection.defaultProps = {
-    defaultSelected: [], // Значения по умолчанию
+    setSelectedColumns: PropTypes.func.isRequired, // Функция для установки выбранных столбцов
 };
 
 export default DropdownColumnSelection;

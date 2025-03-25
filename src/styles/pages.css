@@ -2,12 +2,11 @@
 
 /* Главный контейнер страницы */
 .page {
-    
+    margin: 3em 3em;
 }
 
 /* Управляющие компоненты (Обновить страницу, название, кнопки и тд) */
 .control-components {
-    margin: 3em 3em;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -54,3 +53,4 @@
     object-fit: contain; /* Пропорция формы */
     
 }
+

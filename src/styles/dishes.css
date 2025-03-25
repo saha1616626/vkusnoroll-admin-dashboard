@@ -13,3 +13,16 @@
     align-items: center; /* Вертикальное выравнивание кнопок */
     gap: 20px;
 }
+
+/* Меню фильтра */
+.page-filter {
+    display: flex;
+    position: relative;
+}
+
+/* Таблица */
+.table-page {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+}
