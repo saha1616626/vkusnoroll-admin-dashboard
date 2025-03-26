@@ -1,5 +1,45 @@
 /* Кастомная таблица */
 
+/* Контейнер таблицы */
+.custom-table-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+/* Таблица */
 .custom-table {
-    
+    /* Таблица занимает 100% пространства контейнера */
+    width: 100%;  
+    border-collapse: collapse;
+}
+
+
+/* Выравние по центру чекбокса для первой ячейки заголовка и для всех строк первого столбца */
+.custom-table th:first-child input[type="checkbox"],
+.custom-table td:first-child input[type="checkbox"] {
+  margin: 0 auto;
+  display: block;
+}
+
+/* Заголовок и тело столбцов */
+.custom-table th, .custom-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    position: relative;
+}
+
+/* Ярлык изменения ширины столбца */
+.custom-table-column-resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    background: #ccc;
+    cursor: col-resize;
+    z-index: 0;
+}
+.custom-table-column-resizer:hover {
+    background: #888;
 }

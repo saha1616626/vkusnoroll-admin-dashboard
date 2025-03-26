@@ -103,19 +103,19 @@ const Dishes = () => {
     };
 
     // Очистка полей фильтра
-    const handleFilterReset = () => {      
+    const handleFilterReset = () => {
         setFilterState({
             isOpen: true, // Оставляем меню открытым
             isActive: true,
             formData: {}
         });
-    
+
         // Чистим localStorage для фильтров
-        localStorage.setItem('filterButtonStateOnDishesPage', 
-            JSON.stringify({ 
-                open: true, 
-                active: true, 
-                data: {} 
+        localStorage.setItem('filterButtonStateOnDishesPage',
+            JSON.stringify({
+                open: true,
+                active: true,
+                data: {}
             })
         );
     };
@@ -185,8 +185,10 @@ const Dishes = () => {
     const [selectedColumns, setSelectedColumns] = useState(defaultColumns);
 
     const data = [
-        { 'Название': 'Data 1.1', 'Column 2': 'Data 1.2', 'Column 3': 'Data 1.3' },
-        { 'Column 1': 'Data 2.1', 'Column 2': 'Data 2.2', 'Column 3': 'Data 2.3' },
+        { 'Название': 'Data 1.1', 'Дата': 'Data 1.2', 'Статус': 'Data 1.3', 'Наименование': 'Data 1.4', 'Наименование большое': 'Data 1.5' },
+        { 'Название': 'Data 1.1', 'Дата': 'Data 1.2', 'Статус': 'Data 1.3', 'Наименование': 'Data 1.4', 'Наименование большое': 'Data 1.5' },
+        { 'Название': 'Data 1.1', 'Дата': 'Data 1.2', 'Статус': 'Data 1.3', 'Наименование': 'Data 1.4', 'Наименование большое': 'Data 1.5' },
+        { 'Название': 'Data 1.1', 'Дата': 'Data 1.2', 'Статус': 'Data 1.3', 'Наименование': 'Data 1.4', 'Наименование большое': 'Data 1.5' },
         // Добавьте дополнительные строки данных по мере необходимости
     ];
 
@@ -247,6 +249,7 @@ const Dishes = () => {
 
             </div>
 
+            {/* Меню фильтра */}
             <div className="page-filter">
                 <FilterMenu
                     isOpen={filterState.isOpen}
@@ -260,7 +263,12 @@ const Dishes = () => {
 
             <div className="table-page">
                 {/* Таблица */}
-                <CustomTable columns={selectedColumns} data={data} />
+                <CustomTable 
+                    columns={selectedColumns} 
+                    data={data}
+                    onSelectionChange={(selected) => console.log(selected)}
+                    tableId="Admin-Dishes"
+                    />
             </div>
 
 
