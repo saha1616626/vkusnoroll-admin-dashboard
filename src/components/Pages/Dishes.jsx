@@ -126,15 +126,15 @@ const Dishes = () => {
         { type: 'date-range', name: 'date', label: 'Период' },
         {
             type: 'select',
-            name: 'category',
-            label: 'Категория',
-            options: ['Суши', 'Ролы', 'Пицца']
+            name: 'pay',
+            label: 'Оплата',
+            options: ['Карта', 'Наличные']
         },
         {
             type: 'select',
             name: 'dish',
             label: 'Блюдо',
-            options: ['Категория 1', 'Категория 2', 'Категория 3']
+            options: ['Суп', 'Чай', 'Картофель']
         },
         { type: 'text', name: 'price', label: 'Максимальная цена', placeholder: '' },
         { type: 'text', name: 'weight', label: 'Вес', placeholder: '' },
@@ -142,7 +142,8 @@ const Dishes = () => {
             type: 'multi-select',
             name: 'categoryes',
             label: 'Категория',
-            options: ['Суши', 'Ролы', 'Пицца', 'Напитки', 'Десерты']
+            options: ['Суши', 'Ролы', 'Пицца', 'Напитки', 'Десерты'],
+            placeholder: 'Выберите категорию(и)'
         }
     ];
 

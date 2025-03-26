@@ -1,5 +1,6 @@
 /* Поле для выбора нескольких значений */
 
+/* Контейнер выпадающего меню */
 .multi-select {
     display: flex;
     flex-direction: column;
@@ -7,22 +8,38 @@
     /* position: relative; */
 }
 
+/* Контейнер выпадающего списка */
+.multi-select-element-container {
+
+    background-color: white; /* Цвет заднего фона */
+    border: 1px solid #ccc; /* Цвет рамки */
+    border-radius: 5px; /* С округленными углами */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Тень для меню */
+    z-index: 1; /* Размещение поверх других элементов */
+    margin-top: 5px;
+    max-height: 200px;
+    overflow-y: auto; /* Скролл */
+    width: 197.46px;
+}
+
+/* Выпадающее меню - список выбранных объектов */
 .selected-values {
     display: flex;
     flex-wrap: wrap;
-    width: 197.6px;
     align-items: center;
     cursor: pointer;
+    margin: 10px 8px;
+    gap: 5px;
 }
 
+/* Элементы выпадающего меню - выбранные объекты */
 .selected-item {
     background: #e0e0e0;
     border-radius: 4px;
     padding: 2px 8px;
-    margin: 2px;
 }
 
-/* Крестик для удаления выбранного объекта */
+/* Кнопка для удаления выбранного объекта */
 .remove-item {
     margin-left: 5px;
     font-size: 15px; /* Размер крестика */
@@ -32,38 +49,23 @@
     cursor: pointer;
 }
 
-.multi-select-input {
-    border: none;
-    outline: none;
-    flex-grow: 1;
+/* Разделительная линия */
+.multi-select-divider {
+    margin: 10px 8px; /* Отступы сверху и снизу */ 
 }
 
-.dropdown {
+/* Выпадающее меню - список невыбранных объектов */
+.dropdown-multi-select {
     position: relative;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 100%;
-    max-height: 150px; /* Ограничиваем высоту для прокрутки */
-    overflow-y: auto; /* Прокливаем при переполнении */
-    z-index: 100;
+    border-end-start-radius: 5px;
+    border-end-end-radius: 5px;
 }
 
-.dropdown-item {
+/* Элементы выпадающего меню - невыбранные объекты */
+.multi-dropdown-item {
     padding: 8px;
     cursor: pointer;
 }
-
-.dropdown-item:hover {
+.multi-dropdown-item:hover {
     background-color: #f0f0f0; /* Цвет при наведении */
-}
-
-.dropdown-multi-select {
-    position: relative;
-    background-color: #f0f0f0;
-    border-bottom: 1px solid black;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
-    border-end-start-radius: 5px;
-    border-end-end-radius: 5px;
 }

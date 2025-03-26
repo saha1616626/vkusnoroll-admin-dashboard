@@ -89,7 +89,7 @@ const FilterMenu = ({
                             <input
                                 id={filter.name}
                                 type="text"
-                                placeholder={filter.placeholder || 'Выберите или введите значение'}
+                                placeholder={filter.placeholder || 'Выберите значение'}
                                 name={filter.name}
                                 value={formData[filter.name] || ''}
                                 onChange={(e) => handleChange(e)}
@@ -109,6 +109,7 @@ const FilterMenu = ({
 
                         {filter.type === 'multi-select' && (
                             <MultiSelect
+                                placeholder={filter.placeholder || ''}
                                 options={filter.options}
                                 selectedValues={formData[filter.name] || []}
                                 onChange={(values) => handleMultiSelectChange(values, filter.name)}
