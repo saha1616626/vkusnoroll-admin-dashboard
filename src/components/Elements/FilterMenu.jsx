@@ -29,8 +29,9 @@ const FilterMenu = ({
         }
     };
 
+    // Функция обработки изменения значения в поле MultiSelect
     const handleMultiSelectChange = (selectedValues, name) => {
-        onFormUpdate(name, selectedValues);
+        onFormUpdate(name, selectedValues); // Передаем и обновляем выбранные данные
     };
 
     const handleLocalSearch = (e) => {

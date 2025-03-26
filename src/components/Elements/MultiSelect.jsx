@@ -1,6 +1,6 @@
 // Поле для выбора нескольких значений
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // Импорт стилей
 import './../../styles/elements/multiSelect.css'
@@ -13,10 +13,17 @@ const MultiSelect = ({ placeholder, options, selectedValues, onChange }) => {
     const wrapperRef = useRef(null);
     const inputRef = useRef(null);
 
+    // Форматирование отображаемого значения в placeholder поля
+    const formatDisplayValue = useCallback(() => { // useCallback для мемоизации функции
+        if (selectedValues.length === 0) return ''; // Если нет выбранных элементов
+        const joined = selectedValues.join(', ');
+        return joined.length > 28 ? joined.slice(0, 25) + '...' : joined;
+    }, [selectedValues]);
+
     // Обновление displayValue (значения в placeholder) при изменении selectedValues
-    useEffect(() => {
+    useEffect(() => { // useEffect отслеживает изменения зависимостей
         setDisplayValue(formatDisplayValue());
-    }, [selectedValues]); // Следим за изменением selectedValues (выбранные значения)
+    }, [formatDisplayValue]); // Следим за изменением selectedValues (выбранные значения)
 
     // Обработчик клика вне компонента
     useEffect(() => {
@@ -28,13 +35,6 @@ const MultiSelect = ({ placeholder, options, selectedValues, onChange }) => {
         document.addEventListener('mousedown', handleClickOutside); // Запрет на немедленное закрытие при клике на элементы списка
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Форматирование отображаемого значения в placeholder поля
-    const formatDisplayValue = () => {
-        if (selectedValues.length === 0) return ''; // Если нет выбранных элементов
-        const joined = selectedValues.join(', ');
-        return joined.length > 30 ? joined.slice(0, 27) + '...' : joined;
-    };
 
     /* 
   ===========================
