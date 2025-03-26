@@ -128,7 +128,8 @@ const Dishes = () => {
             type: 'select',
             name: 'pay',
             label: 'Оплата',
-            options: ['Карта', 'Наличные']
+            options: ['Карта', 'Наличные'],
+            placeholder: 'Выберите способ'
         },
         {
             type: 'select',

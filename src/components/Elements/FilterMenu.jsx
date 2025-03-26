@@ -3,6 +3,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import FilterMultiSelect from './FilterMultiSelect';
+import FilterSelect from './FilterSelect';
 
 // Импорт стилей
 import './../../styles/elements/filterMenu.css'
@@ -87,25 +88,17 @@ const FilterMenu = ({
                         )}
 
                         {filter.type === 'select' && (
-                            <input
-                                id={filter.name}
-                                type="text"
+                            <FilterSelect
                                 placeholder={filter.placeholder || 'Выберите значение'}
-                                name={filter.name}
-                                value={formData[filter.name] || ''}
-                                onChange={(e) => handleChange(e)}
-                                onBlur={(e) => handleBlur(e, filter.options)} // Передаем массив опций
-                                className="filter-input"
-                                list={`${filter.name}-options`}
+                                options={filter.options}
+                                selectedValue={formData[filter.name] || ''}
+                                onChange={(value) => handleChange({
+                                    target: {
+                                        name: filter.name,
+                                        value: value
+                                    }
+                                })}
                             />
-                        )}
-
-                        {filter.type === 'select' && (
-                            <datalist id={`${filter.name}-options`}>
-                                {filter.options.map((option, idx) => (
-                                    <option key={idx} value={option} />
-                                ))}
-                            </datalist>
                         )}
 
                         {filter.type === 'multi-select' && (
@@ -135,19 +128,19 @@ const FilterMenu = ({
 
 FilterMenu.propTypes = {
     isOpen: PropTypes.bool.isRequired,
-  filters: PropTypes.arrayOf(
-    PropTypes.shape({
-      type: PropTypes.oneOf(['text', 'date-range', 'select', 'multi-select']).isRequired,
-      name: PropTypes.string.isRequired,
-      label: PropTypes.string.isRequired,
-      placeholder: PropTypes.string,
-      options: PropTypes.arrayOf(PropTypes.string)
-    })
-  ).isRequired,
-  formData: PropTypes.object.isRequired,
-  onFormUpdate: PropTypes.func.isRequired,
-  onSearch: PropTypes.func.isRequired,
-  onReset: PropTypes.func.isRequired
+    filters: PropTypes.arrayOf(
+        PropTypes.shape({
+            type: PropTypes.oneOf(['text', 'date-range', 'select', 'multi-select']).isRequired,
+            name: PropTypes.string.isRequired,
+            label: PropTypes.string.isRequired,
+            placeholder: PropTypes.string,
+            options: PropTypes.arrayOf(PropTypes.string)
+        })
+    ).isRequired,
+    formData: PropTypes.object.isRequired,
+    onFormUpdate: PropTypes.func.isRequired,
+    onSearch: PropTypes.func.isRequired,
+    onReset: PropTypes.func.isRequired
 };
 
 export default FilterMenu;

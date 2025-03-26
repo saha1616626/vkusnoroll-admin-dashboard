@@ -1,4 +1,4 @@
-// Поле для выбора нескольких значений
+// Поле для выбора нескольких значений из списка
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -51,7 +51,7 @@ const FilterMultiSelect = ({ placeholder, options, selectedValues, onChange }) =
         if (!selectedValues.includes(option)) {
             onChange([...selectedValues, option]);
         }
-        inputRef.current.focus();
+        inputRef.current.focus(); // После выбора элемента фокус остается на списке, список не закрывается
     };
 
     // Автоматическая фильтрация списка при вводе без учета регистра
