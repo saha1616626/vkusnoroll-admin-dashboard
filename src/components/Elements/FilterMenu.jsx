@@ -2,7 +2,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import MultiSelect from './../Elements/MultiSelect';
+import FilterMultiSelect from './FilterMultiSelect';
 
 // Импорт стилей
 import './../../styles/elements/filterMenu.css'
@@ -109,7 +109,7 @@ const FilterMenu = ({
                         )}
 
                         {filter.type === 'multi-select' && (
-                            <MultiSelect
+                            <FilterMultiSelect
                                 placeholder={filter.placeholder || ''}
                                 options={filter.options}
                                 selectedValues={formData[filter.name] || []}

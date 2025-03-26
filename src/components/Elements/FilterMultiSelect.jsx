@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // Импорт стилей
-import './../../styles/elements/multiSelect.css'
+import './../../styles/elements/filterMultiSelect.css'
 
-const MultiSelect = ({ placeholder, options, selectedValues, onChange }) => {
+const FilterMultiSelect = ({ placeholder, options, selectedValues, onChange }) => {
     const [inputValue, setInputValue] = useState('');
     const [isOpen, setIsOpen] = useState(false); // Управляет видимостью выпадающего списка
     const [displayValue, setDisplayValue] = useState('');
@@ -119,4 +119,4 @@ const MultiSelect = ({ placeholder, options, selectedValues, onChange }) => {
     );
 };
 
-export default MultiSelect;
+export default FilterMultiSelect;
