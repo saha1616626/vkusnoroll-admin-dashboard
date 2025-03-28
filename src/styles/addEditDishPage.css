@@ -5,3 +5,18 @@
     display: flex;
     gap: 20px;
 }
+
+/* Главный контейнер содержимого */
+.addEditDishPage-data {
+    display: flex;
+    gap: 40px;
+    margin-top: 20px;
+}
+
+/* Контейнер левой и правой части содержимого страницы */
+.addEditDishPage-left-column, 
+.addEditDishPage-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}

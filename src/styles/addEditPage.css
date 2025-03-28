@@ -11,3 +11,95 @@
 .save:hover {
     background-color: #3e9b1d;
 }
+
+/* Контейнер чекбокса для архивации */
+.archiving-object-container {
+    display: flex;
+    margin-right: 20px;
+}
+
+/* Чекбокс */
+.archiving-object-checkbox {
+    margin-right: 18px;
+    width: 15px;
+}
+
+/* Текст для чекбокса */
+.archiving-object-text {
+    font-style: italic;
+    align-content: center;
+    user-select: none; /* Запрет на выделение */
+}
+
+/* Название раздела */
+.section-title {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 8px;
+}
+
+/* Контейнер поля для ввода данных (1 компонент) */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+/* Заголовок для поля ввода */
+.input-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+/* Поле для ввода */
+.input-field {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Контейнер поля для ввода данных (несколько компонентов) */
+.form-row {
+    display: flex;
+    gap: 15px;
+    justify-content: space-between;
+}
+
+/* Контейнер поля для чекбокса с отображением поля */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Контейнер для чекбокса */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* Заголовок для чекбокса */
+.checkbox-caption {
+    font-size: 14px;
+    color: #444;
+}
+
+/* Кнопка для изображения */
+.upload-button {
+    background: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+.upload-button:hover {
+    background: #45a049;
+}

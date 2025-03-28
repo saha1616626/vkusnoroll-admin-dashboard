@@ -45,7 +45,7 @@ const Dishes = () => {
             }
         }
         setInitialLoad(false);
-    }, []);
+    }, [location.pathname]);
 
     // Обработчик изменения маршрута
     useEffect(() => {
