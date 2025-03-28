@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // useLocation — хук React Router, который отслеживает изменения URL. Работает только внутри компонентов, обёрнутых в <Router>
 
 // Импорт стилей
 import "./../../styles/pages.css"; // Общие стили
@@ -29,19 +30,79 @@ const Dishes = () => {
     const [showAddEditPage, setShowAddEditPage] = useState(false); // Состояние страницы работы с блюдом
     const [pageData, setPageData] = useState({}); // Передаваемые данные в компонент или на оборот
 
-    // Обработчик запуска страницы для работы с блюдом
+    const location = useLocation(); // Отслеживание текущего маршрута
+    const [initialLoad, setInitialLoad] = useState(true); // Состояние загрузки страницы
+
+    // Восстановление состояния страницы AddEditDishPage из localStorage при загрузке
+    useEffect(() => {
+        // Восстановление состояния при загрузке
+        const savedState = localStorage.getItem('addEditDishPageState');
+        if (savedState) {
+            const { isOpen, pathname, title } = JSON.parse(savedState);
+            if (pathname === location.pathname) { // Если при загрузки странцы маршрут не изменился
+                setShowAddEditPage(isOpen); // Изменяем состояние страницы AddEditDishPage
+                setPageData(prev => ({ ...prev, title })); // Передаем данные в AddEditDishPage в зависимости от состояния
+            }
+        }
+        setInitialLoad(false);
+    }, []);
+
+    // Обработчик изменения маршрута
+    useEffect(() => {
+        if (!initialLoad) {
+            const savedState = localStorage.getItem('addEditDishPageState');
+            if (savedState) {
+                const { pathname } = JSON.parse(savedState);
+                if (pathname !== location.pathname) {
+                    // Закрываем страницу при изменении маршрута
+                    setShowAddEditPage(false);
+                    localStorage.removeItem('addEditDishPageState');
+                }
+            }
+        }
+
+    }, [location.pathname, initialLoad])
+
+    // Обработчик запуска страницы для добавления блюда
     const handleAddClick = () => {
         setShowAddEditPage(true);
+        // Сохранение состояния страницы при запуске
+        localStorage.setItem('addEditDishPageState', JSON.stringify({
+            isOpen: true,
+            pathname: location.pathname,
+            title: 'Добавить блюдо'
+        }));
+    };
+
+    // Обработчик запуска страницы для редактирования блюда
+    const handleEditClick = (dish) => {
+        setShowAddEditPage(true);
+        // Сохранение состояния страницы при запуске
+        localStorage.setItem('addEditDishPageState', JSON.stringify({
+            isOpen: true,
+            pathname: location.pathname,
+            title: 'Блюдо'
+        }));
+        setPageData({ ...dish, title: 'Блюдо' });
     }
 
-    // Обработчик сохранения/закрытия страницы
-    const handlePageClose = (saved = false) => {
-        setShowAddEditPage(true);
-        if (!saved) { // Если пользователь нажал сохранить, то мы сохраняем результат
-            setPageData({});
-            // TODO дополнительная логика сохранения
-        }
+    // Обработчик закрытия страницы
+    const handlePageClose = () => {
+        setShowAddEditPage(false);
+        // Очистка состояния перед закрытием
+        localStorage.removeItem('addEditDishPageState');
+        // TODO дополнительная логика сохранения. Сохранение перед закрытием
     };
+
+    // Обновление localStorage при обновлении данных
+    useEffect(() => {
+        if (showAddEditPage) { // Страница открыта
+            localStorage.setItem('addEditDishPageState', JSON.stringify({
+                isOpen: true,
+                title: pageData.title
+            }));
+        }
+    }, [showAddEditPage, pageData.title]);
 
     /* 
     ===========================
@@ -242,77 +303,80 @@ const Dishes = () => {
                 />
             )}
 
-            {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
-            <div className="control-components">
+            {!showAddEditPage && ( // Скрываем при наложении страницы для редактирования или добавления блюда
+                <>
 
-                {/* Обновить страницу */}
-                <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
+                    {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
+                    <div className="control-components">
 
-                {/* Заголовок страницы */}
-                <div className="page-name">
-                    Блюда
-                </div>
+                        {/* Обновить страницу */}
+                        <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
-                <div className="add-filter-change-group">
-                    {/* Кнопка добавить */}
-                    <button className="button-control add" onClick={handleAddClick}>
-                        <img src={addIcon} alt="Update" className="icon-button" />
-                        Блюдо
-                    </button>
+                        {/* Заголовок страницы */}
+                        <div className="page-name">
+                            Блюда
+                        </div>
 
-                    {/* Кнопка фильтра */}
-                    <FilterButton
-                        isActive={filterState.isActive}
-                        toggleFilter={toggleFilter}
-                    />
+                        <div className="add-filter-change-group">
+                            {/* Кнопка добавить */}
+                            <button className="button-control add" onClick={handleAddClick}>
+                                <img src={addIcon} alt="Update" className="icon-button" />
+                                Блюдо
+                            </button>
 
-                    {/* Кнопка изменить с выпадающим списком */}
-                    <DropdownButtonChange />
-                </div>
+                            {/* Кнопка фильтра */}
+                            <FilterButton
+                                isActive={filterState.isActive}
+                                toggleFilter={toggleFilter}
+                            />
 
-                {/* Поиск */}
-                <SearchInput placeholder="Поиск блюда" onSearch={handleSearch} />
+                            {/* Кнопка изменить с выпадающим списком */}
+                            <DropdownButtonChange />
+                        </div>
 
-                <div className="archive-settings-group">
-                    {/* Архив */}
-                    <ArchiveStorageButton onToggleArchive={handleToggleArchive} title="Архив" />
+                        {/* Поиск */}
+                        <SearchInput placeholder="Поиск блюда" onSearch={handleSearch} />
 
-                    {/* Настройка колонок */}
-                    <DropdownColumnSelection
-                        options={columnOptions}
-                        title="Колонки"
-                        defaultSelected={defaultColumns}
-                        setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
-                    />
-                </div>
+                        <div className="archive-settings-group">
+                            {/* Архив */}
+                            <ArchiveStorageButton onToggleArchive={handleToggleArchive} title="Архив" />
 
-            </div>
+                            {/* Настройка колонок */}
+                            <DropdownColumnSelection
+                                options={columnOptions}
+                                title="Колонки"
+                                defaultSelected={defaultColumns}
+                                setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
+                            />
+                        </div>
 
-            {/* Меню фильтра */}
-            <div className="page-filter">
-            {!showAddEditPage && ( // Скрываем фильтр, при запуске страницы для редактирования или добавления блюда
-                <FilterMenu
-                    isOpen={filterState.isOpen}
-                    filters={filters}
-                    formData={filterState.formData}
-                    onFormUpdate={handleFilterFormUpdate}
-                    onSearch={handleFilterSearch}
-                    onReset={handleFilterReset}
-                />
+                    </div>
+
+                    {/* Меню фильтра */}
+                    <div className="page-filter">
+
+                        <FilterMenu
+                            isOpen={filterState.isOpen}
+                            filters={filters}
+                            formData={filterState.formData}
+                            onFormUpdate={handleFilterFormUpdate}
+                            onSearch={handleFilterSearch}
+                            onReset={handleFilterReset}
+                        />
+                    </div>
+
+                    {/* Таблица */}
+                    <div className="table-page">
+                        <CustomTable
+                            columns={selectedColumns}
+                            data={data}
+                            onSelectionChange={(selected) => console.log(selected)}
+                            tableId="Admin-Dishes"
+                        />
+                    </div>
+
+                </>
             )}
-            </div>
-
-{/* Таблица */}
-            <div className="table-page">  
-                {!showAddEditPage && ( // Скрываем таблицу, при запуске страницы для редактирования или добавления блюда
-                    <CustomTable
-                        columns={selectedColumns}
-                        data={data}
-                        onSelectionChange={(selected) => console.log(selected)}
-                        tableId="Admin-Dishes"
-                    />
-                )}
-            </div>
 
         </main>
     );
