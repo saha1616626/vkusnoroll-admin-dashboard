@@ -16,8 +16,38 @@ import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Просмотр архива
 import DropdownColumnSelection from "../Elements/DropdownColumnSelection"; // Выбор колонок для отображения таблицы
 import CustomTable from "../Elements/CustomTable"; // Таблица
+import AddEditDishPage from './AddEditDishPage'; // Управление блюдом. Добавление или редактирование
 
 const Dishes = () => {
+
+    /* 
+    ===========================
+     Добавление и редактирование блюда
+    ===========================
+    */
+
+    const [showAddEditPage, setShowAddEditPage] = useState(false); // Состояние страницы работы с блюдом
+    const [pageData, setPageData] = useState({}); // Передаваемые данные в компонент или на оборот
+
+    // Обработчик запуска страницы для работы с блюдом
+    const handleAddClick = () => {
+        setShowAddEditPage(true);
+    }
+
+    // Обработчик сохранения/закрытия страницы
+    const handlePageClose = (saved = false) => {
+        setShowAddEditPage(true);
+        if (!saved) { // Если пользователь нажал сохранить, то мы сохраняем результат
+            setPageData({});
+            // TODO дополнительная логика сохранения
+        }
+    };
+
+    /* 
+    ===========================
+     Обновление страницы
+    ===========================
+    */
 
     // Обновление страницы
     const refreshData = () => {
@@ -203,6 +233,15 @@ const Dishes = () => {
     return (
         <main className="page">
 
+            {/* Страница для добавления или редактирования блюда */}
+            {showAddEditPage && (
+                <AddEditDishPage
+                    onClose={handlePageClose}
+                    pageData={pageData}
+                    setPageData={setPageData}
+                />
+            )}
+
             {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
             <div className="control-components">
 
@@ -216,7 +255,7 @@ const Dishes = () => {
 
                 <div className="add-filter-change-group">
                     {/* Кнопка добавить */}
-                    <button className="button-control add">
+                    <button className="button-control add" onClick={handleAddClick}>
                         <img src={addIcon} alt="Update" className="icon-button" />
                         Блюдо
                     </button>
@@ -251,6 +290,7 @@ const Dishes = () => {
 
             {/* Меню фильтра */}
             <div className="page-filter">
+            {!showAddEditPage && ( // Скрываем фильтр, при запуске страницы для редактирования или добавления блюда
                 <FilterMenu
                     isOpen={filterState.isOpen}
                     filters={filters}
@@ -259,18 +299,20 @@ const Dishes = () => {
                     onSearch={handleFilterSearch}
                     onReset={handleFilterReset}
                 />
+            )}
             </div>
 
-            <div className="table-page">
-                {/* Таблица */}
-                <CustomTable 
-                    columns={selectedColumns} 
-                    data={data}
-                    onSelectionChange={(selected) => console.log(selected)}
-                    tableId="Admin-Dishes"
+{/* Таблица */}
+            <div className="table-page">  
+                {!showAddEditPage && ( // Скрываем таблицу, при запуске страницы для редактирования или добавления блюда
+                    <CustomTable
+                        columns={selectedColumns}
+                        data={data}
+                        onSelectionChange={(selected) => console.log(selected)}
+                        tableId="Admin-Dishes"
                     />
+                )}
             </div>
-
 
         </main>
     );

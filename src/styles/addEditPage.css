@@ -1,0 +1,10 @@
+/* Для всех страниц добавления или редактирования данных */
+
+.addEditPage-container {
+    position: absolute;
+    background-color: white;
+    width: 100%;
+    /* height: 100%; */
+    z-index: 10000;
+    margin: -3em -3em; /* Убираем отступы главного контейнера */
+}
