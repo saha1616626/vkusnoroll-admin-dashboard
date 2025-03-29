@@ -65,6 +65,19 @@ const FilterMenu = ({
                             />
                         )}
 
+                        {filter.type === 'number' && (
+                            <input
+                                id={filter.name}
+                                type="number"
+                                placeholder={filter.placeholder || ''} // '' - для корректного сброса значений кнопкой "очистка"
+                                name={filter.name}
+                                value={formData[filter.name] || ''}
+                                onChange={(e) => handleChange(e)}
+                                onBlur={(e) => handleBlur(e, [])} // Пустой массив для обычного числового поля
+                                className="filter-input"
+                            />
+                        )}
+
                         {filter.type === 'date-range' && (
                             <div className="filter-input-date-container">
                                 <input
@@ -130,7 +143,7 @@ FilterMenu.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     filters: PropTypes.arrayOf(
         PropTypes.shape({
-            type: PropTypes.oneOf(['text', 'date-range', 'select', 'multi-select']).isRequired,
+            type: PropTypes.oneOf(['text', 'number', 'date-range', 'select', 'multi-select']).isRequired,
             name: PropTypes.string.isRequired,
             label: PropTypes.string.isRequired,
             placeholder: PropTypes.string,

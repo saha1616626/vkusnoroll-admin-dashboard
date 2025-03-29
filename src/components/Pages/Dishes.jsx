@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom'; // useLocation — хук React Router, который отслеживает изменения URL. Работает только внутри компонентов, обёрнутых в <Router>
+import { useDebounce } from '../Hooks/useDebounce';
 
 // Импорт стилей
 import "./../../styles/pages.css"; // Общие стили
@@ -18,6 +19,7 @@ import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Прос
 import DropdownColumnSelection from "../Elements/DropdownColumnSelection"; // Выбор колонок для отображения таблицы
 import CustomTable from "../Elements/CustomTable"; // Таблица
 import AddEditDishPage from './AddEditDishPage'; // Управление блюдом. Добавление или редактирование
+import Loader from '../Elements/Loader'; // Анимация загрузки данных
 
 const Dishes = () => {
 
@@ -113,7 +115,7 @@ const Dishes = () => {
     // Обновление страницы
     const refreshData = () => {
         // TODO логика обновления страницы
-
+        refreshFetchData();
     }
 
     /* 
@@ -163,7 +165,6 @@ const Dishes = () => {
     };
 
     // Фиксация изменений при обновлении полей фильтра
-    // В компоненте Dishes измените handleFilterFormUpdate:
     const handleFilterFormUpdate = (name, value) => {
         setFilterState(prev => {
             const newFormData = {
@@ -190,7 +191,13 @@ const Dishes = () => {
 
     // Поиск по заданным параметрам фильтра
     const handleFilterSearch = (formData) => {
-        // Логика поиска
+        const filtered = tableData.filter(item => {
+            return Object.entries(formData).every(([key, value]) => {
+                // Логика фильтрации для каждого поля
+                return item[key].includes(value);
+            });
+        });
+        setTableData(filtered);
     };
 
     // Очистка полей фильтра
@@ -213,30 +220,16 @@ const Dishes = () => {
 
     // Состав фильтра
     const filters = [
-        { type: 'text', name: 'name', label: 'Название блюда', placeholder: 'Введите название' },
-        { type: 'date-range', name: 'date', label: 'Период' },
-        {
-            type: 'select',
-            name: 'pay',
-            label: 'Оплата',
-            options: ['Карта', 'Наличные'],
-            placeholder: 'Выберите способ'
-        },
-        {
-            type: 'select',
-            name: 'dish',
-            label: 'Блюдо',
-            options: ['Суп', 'Чай', 'Картофель']
-        },
-        { type: 'text', name: 'price', label: 'Максимальная цена', placeholder: '' },
-        { type: 'text', name: 'weight', label: 'Вес', placeholder: '' },
         {
             type: 'multi-select',
             name: 'categoryes',
             label: 'Категория',
             options: ['Суши', 'Ролы', 'Пицца', 'Напитки', 'Десерты'],
             placeholder: 'Выберите категорию(и)'
-        }
+        },
+        { type: 'number', name: 'weight', label: 'Вес (г)', placeholder: '' },
+        { type: 'number', name: 'volume', label: 'Объём (л)', placeholder: '' },
+        { type: 'number', name: 'quantityInSet', label: 'Кол-во в наборе (шт)', placeholder: '' }
     ];
 
     /* 
@@ -267,28 +260,86 @@ const Dishes = () => {
       Таблица
       ===========================
     */
+    // Значения колонок по умолчанию
+
+    const [tableData, setTableData] = useState([]); // Данные таблицы
+    const [isLoading, setIsLoading] = useState(true); // Отображение анимации загрузки при загрузке данных
+
+    const defaultColumns = ['Название', 'Описание', 'Категория', 'Цена', 'Калории', 'Жиры', 'Белки', 'Углеводы', 'Вес', 'Объём', 'Кол-во в наборе', 'В архиве'];
+    const [selectedColumns, setSelectedColumns] = useState(defaultColumns); // Отображаемые столбцы таблицы
 
     // Массив колонок для отображения
-    const columnOptions = ['Название', 'Дата', 'Статус', 'Наименование', 'Наименование большое'];
-    // Значения колонок по умолчанию
-    const defaultColumns = ['Название']; // Значения по умолчанию
+    const columnOptions = ['Название', 'Описание', 'Категория', 'Цена', 'Калории', 'Жиры', 'Белки', 'Углеводы', 'Вес', 'Объём', 'Кол-во в наборе', 'В архиве'];
 
-    const [selectedColumns, setSelectedColumns] = useState(defaultColumns);
 
-    const data = [
-        { 'Название': 'Data 1.1', 'Дата': 'Data 1.2', 'Статус': 'Data 1.3', 'Наименование': 'Data 1.4', 'Наименование большое': 'Data 1.5' },
-        { 'Название': 'Data 1.1', 'Дата': 'Data 1.2', 'Статус': 'Data 1.3', 'Наименование': 'Data 1.4', 'Наименование большое': 'Data 1.5' },
-        { 'Название': 'Data 1.1', 'Дата': 'Data 1.2', 'Статус': 'Data 1.3', 'Наименование': 'Data 1.4', 'Наименование большое': 'Data 1.5' },
-        { 'Название': 'Data 1.1', 'Дата': 'Data 1.2', 'Статус': 'Data 1.3', 'Наименование': 'Data 1.4', 'Наименование большое': 'Data 1.5' },
-        // Добавьте дополнительные строки данных по мере необходимости
-    ];
-
+    // Загружаем выбранные столбцы из localStorage
     useEffect(() => {
-        // Загружаем выбранные столбцы из localStorage
         const savedOptions = localStorage.getItem('selectedOptions');
         if (savedOptions) {
             setSelectedColumns(JSON.parse(savedOptions));
         }
+    }, []);
+
+    // Получение данных для вывода в таблицу
+    const fetchData = async () => {
+        setIsLoading(true); // Данные загружаются из БД, анимация загрузки данных включена
+        try {
+            const response = await fetch('http://localhost:5000/api/dishes');
+            if (!response.ok) throw new Error('Network error');
+
+            const apiData = await response.json(); // Получаем массив строк
+            // Преобразование данных для таблицы
+            const transformedData = apiData.map(dish => ({
+                'Название': dish.name,
+                'Описание': dish.description,
+                'Категория': dish.category,
+                'Цена': `${dish.price} ₽`, // Добавляем форматирование
+                'Калории': dish.calories || '—', // Заглушка для пустых значений
+                'Жиры': dish.fats || '—',
+                'Белки': dish.squirrels || '—',
+                'Углеводы': dish.carbohydrates || '—',
+                'Вес': dish.weight ? `${dish.weight} г` : '—',
+                'Объём': dish.volume ? `${dish.volume} л` : '—',
+                'Кол-во в наборе': dish.quantity ? `${dish.quantity} шт` : '—',
+                'В архиве': dish.inArchive ? '✓' : '✗'
+            }));
+
+            setTableData(transformedData); // Передаем данные в таблицу
+        } catch (error) {
+            console.error('Error fetching dishes:', error);
+            // Можно добавить обработку ошибок в UI
+        } finally {
+            setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
+        }
+    };
+
+    // Вывод данных из БД в таблицу
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    // Обновление данных в таблице
+    const refreshFetchData = () => {
+        fetchData();
+    }
+
+    // Выбранные строки в таблице
+    const handleSelectionChange = (selected) => {
+        // Логика обработки выбранных элементов
+        console.log('Selected items:', selected);
+    };
+
+    /* 
+     ===========================
+     Дополнительно
+     ===========================
+   */
+
+    // Очистка localStorage при размонтировании
+    useEffect(() => {
+        return () => {
+            localStorage.removeItem('addEditDishPageState');
+        };
     }, []);
 
     return (
@@ -367,12 +418,12 @@ const Dishes = () => {
 
                     {/* Таблица */}
                     <div className="table-page">
-                        <CustomTable
+                        {isLoading ? <Loader /> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
                             columns={selectedColumns}
-                            data={data}
-                            onSelectionChange={(selected) => console.log(selected)}
+                            data={tableData}
+                            onSelectionChange={handleSelectionChange}
                             tableId="Admin-Dishes"
-                        />
+                        />}
                     </div>
 
                 </>

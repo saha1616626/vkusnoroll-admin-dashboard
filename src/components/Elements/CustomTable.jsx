@@ -140,7 +140,10 @@ const CustomTable = ({
                             {columns.map((column) => (
                                 <td
                                     key={column}
-                                    style={{ width: column === 'select' ? '40px' : columnWidths[column] }}
+                                    style={{
+                                        width: column === 'select' ? '40px' : columnWidths[column],
+                                        textAlign: column === 'В архиве' ? "center" : "left"
+                                    }}
                                 >
                                     {column === 'select' ? (
                                         <input
@@ -149,7 +152,11 @@ const CustomTable = ({
                                             onChange={() => handleRowSelect(rowIndex)}
                                         />
                                     ) : (
-                                        row[column]
+                                        <div className="custom-table-cell-content" 
+                                        // Показывает полный текст при наведении
+                                        title={String(row[column])}> 
+                                            {row[column]}
+                                        </div>
                                     )}
                                 </td>
                             ))}

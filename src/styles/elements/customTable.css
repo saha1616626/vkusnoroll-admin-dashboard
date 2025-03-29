@@ -10,20 +10,20 @@
 /* Таблица */
 .custom-table {
     /* Таблица занимает 100% пространства контейнера */
-    width: 100%;  
+    width: 100%;
     border-collapse: collapse;
 }
-
 
 /* Выравние по центру чекбокса для первой ячейки заголовка и для всех строк первого столбца */
 .custom-table th:first-child input[type="checkbox"],
 .custom-table td:first-child input[type="checkbox"] {
-  margin: 0 auto;
-  display: block;
+    margin: 0 auto;
+    display: block;
 }
 
 /* Заголовок и тело столбцов */
-.custom-table th, .custom-table td {
+.custom-table th,
+.custom-table td {
     border: 1px solid #ddd;
     padding: 8px;
     position: relative;
@@ -40,6 +40,33 @@
     cursor: col-resize;
     z-index: 0;
 }
+
 .custom-table-column-resizer:hover {
     background: #888;
 }
+
+/* Обертка для содержимого ячейки */
+/* Настройка строки */
+.custom-table-cell-content {
+    max-height: 60px; /* Максимальная высота контейнера */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* Количество строк до обрезки */
+    -webkit-box-orient: vertical;
+    line-height: 1.2; /* Межстрочный интервал */
+}
+/* Для кроссбраузерности */
+@supports not (-webkit-line-clamp: 3) {
+    .custom-table-cell-content {
+      position: relative;
+      padding-right: 1.2em;
+    }
+    .custom-table-cell-content::after {
+      content: '...';
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      background: white;
+      padding-left: 2px;
+    }
+  }
