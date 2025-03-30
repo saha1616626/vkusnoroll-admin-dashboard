@@ -10,38 +10,39 @@ import "./../../styles/pages.css"; // Общие стили
 // Импорт иконок
 import archiveIcon from './../../assets/icons/archive.png';
 
-const ArchiveStorageButton = ({ onToggleArchive, title }) => {
+const ArchiveStorageButton = ({
+    onToggleArchive,
+    pageId // Уникальный идентификатор страницы
+}) => {
 
-    // Состяние кнопки
-    const [isArchived, setIsArchived] = useState(false);
+    const [isArchived, setIsArchived] = useState(false); // Состяние кнопки
 
     // Загрузка состояния кнопки из localStorage при монтировании компонента
     useEffect(() => {
-        const archivedState = localStorage.getItem('isArchived');
-        if (archivedState !== null) {
-            setIsArchived(JSON.parse(archivedState));
-        }
-    }, []);
+        const savedState = localStorage.getItem(`archiveState_${pageId}`);
+        const initialState = savedState === "true";
 
-    // Функция для переключения состояния кнопки
+        setIsArchived(initialState); // Обновелние внутреннего состояния 
+        onToggleArchive?.(initialState); // Сообщаем состояние родителю
+    }, [pageId, onToggleArchive]);
+
+    // Переключение и сохранение состояния
     const toggleArchive = () => {
-        const newArchivedState = !isArchived; // Переключение состояния
-        setIsArchived(newArchivedState); // Обновление состояния
-
-        if (onToggleArchive) {
-            onToggleArchive(newArchivedState); // Вызов функции для обработки архива
-        }
-
-        localStorage.setItem('isArchived', JSON.stringify(newArchivedState)); // Сохранение нового состояния в localStorage
+        const newState = !isArchived; // Переключение состояния
+        setIsArchived(newState); // Обновление состояния
+        localStorage.setItem(`archiveState_${pageId}`, newState); // Сохранение нового состояния в localStorage
+        onToggleArchive?.(newState);
     };
 
     return (
         <button
             className={`button-control archive-button ${isArchived ? 'active' : ''}`}
             onClick={toggleArchive}
-            title={isArchived ? "Закрыть архив" : "Открыть архив"}
         >
-            <img src={archiveIcon} alt="Archive" className={ isArchived ? "icon-button icon-archive" : "icon-button"}/>
+            <img
+                src={archiveIcon}
+                alt="Archive"
+                className={isArchived ? "icon-button icon-archive" : "icon-button"} />
             {isArchived ? "Закрыть архив" : "Архив"} {/* Изменяем текст кнопки при нажатии */}
         </button>
     );
@@ -49,8 +50,12 @@ const ArchiveStorageButton = ({ onToggleArchive, title }) => {
 };
 
 ArchiveStorageButton.propTypes = {
-    onToggleArchive: PropTypes.func.isRequired, // Функция обработки архива
+    onToggleArchive: PropTypes.func, // Функция обработки архива
     title: PropTypes.string, // Заголовок для кнопки
+    pageId: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number
+    ]).isRequired
 };
 
 export default ArchiveStorageButton;

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom'; // useLocation — хук React Router, который отслеживает изменения URL. Работает только внутри компонентов, обёрнутых в <Router>
-import { useDebounce } from '../Hooks/useDebounce';
+// import { useDebounce } from '../Hooks/useDebounce';
 
 // Импорт стилей
 import "./../../styles/pages.css"; // Общие стили
@@ -77,16 +77,16 @@ const Dishes = () => {
     };
 
     // Обработчик запуска страницы для редактирования блюда
-    const handleEditClick = (dish) => {
-        setShowAddEditPage(true);
-        // Сохранение состояния страницы при запуске
-        localStorage.setItem('addEditDishPageState', JSON.stringify({
-            isOpen: true,
-            pathname: location.pathname,
-            title: 'Блюдо'
-        }));
-        setPageData({ ...dish, title: 'Блюдо' });
-    }
+    // const handleEditClick = (dish) => {
+    //     setShowAddEditPage(true);
+    //     // Сохранение состояния страницы при запуске
+    //     localStorage.setItem('addEditDishPageState', JSON.stringify({
+    //         isOpen: true,
+    //         pathname: location.pathname,
+    //         title: 'Блюдо'
+    //     }));
+    //     setPageData({ ...dish, title: 'Блюдо' });
+    // }
 
     // Обработчик закрытия страницы
     const handlePageClose = () => {
@@ -115,7 +115,7 @@ const Dishes = () => {
     // Обновление страницы
     const refreshData = () => {
         // TODO логика обновления страницы
-        refreshFetchData();
+
     }
 
     /* 
@@ -246,31 +246,63 @@ const Dishes = () => {
 
     /* 
       ===========================
-      Архив
+      Таблица,архив
       ===========================
     */
-
-    // Архивный список
-    const handleToggleArchive = (isArchived) => {
-        // TODO логика вывода архивного списка в зависимости от статуса 
-    }
-
-    /* 
-      ===========================
-      Таблица
-      ===========================
-    */
-    // Значения колонок по умолчанию
+    const defaultColumns = ['Название', 'Описание', 'Категория', 'Цена', 'Калории', 'Жиры', 'Белки', 'Углеводы', 'Вес', 'Объём', 'Кол-во в наборе', 'В архиве']; // Колонки для отображения по умолчанию
+    const columnOptions = ['Название', 'Описание', 'Категория', 'Цена', 'Калории', 'Жиры', 'Белки', 'Углеводы', 'Вес', 'Объём', 'Кол-во в наборе', 'В архиве'];  // Массив всех возможных колонок для отображения
 
     const [tableData, setTableData] = useState([]); // Данные таблицы
     const [isLoading, setIsLoading] = useState(true); // Отображение анимации загрузки при загрузке данных
-
-    const defaultColumns = ['Название', 'Описание', 'Категория', 'Цена', 'Калории', 'Жиры', 'Белки', 'Углеводы', 'Вес', 'Объём', 'Кол-во в наборе', 'В архиве'];
+    const [isArchiveOpen, setIsArchiveOpen] = useState(false); // Состояние архива (открыто/закрыто)
     const [selectedColumns, setSelectedColumns] = useState(defaultColumns); // Отображаемые столбцы таблицы
 
-    // Массив колонок для отображения
-    const columnOptions = ['Название', 'Описание', 'Категория', 'Цена', 'Калории', 'Жиры', 'Белки', 'Углеводы', 'Вес', 'Объём', 'Кол-во в наборе', 'В архиве'];
+    // Универсальная функция загрузки данных из БД
+    const fetchData = useCallback(async (archivedStatus) => {
+        setIsLoading(true); // Данные загружаются из БД, анимация загрузки данных включена
+        try {
+            const response = await fetch('http://localhost:5000/api/dishes');
+            if (!response.ok) throw new Error('Network error');
 
+            const apiData = await response.json(); // Получаем массив строк
+            // Фильтруем блюда исходя из состония архива
+            const filteredData = apiData.filter(dish =>
+                archivedStatus ? dish.isArchived : !dish.isArchived);
+
+            setTableData(transformDishData(filteredData)); // Передаем данные в таблицу
+        } catch (error) {
+            console.error('Error fetching dishes:', error);
+        } finally {
+            setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
+        }
+    }, []);
+
+    // Обработчик изменения состояния архива
+    const handleArchiveToggle = useCallback((newState) => {
+        setIsArchiveOpen(newState); // Изменяем состояние архива
+        fetchData(newState); // Изменяем отобржаемые данные
+    }, [fetchData]);
+
+    // Загрузка данных при монтировании и изменении состояния архива
+    useEffect(() => {
+        fetchData(isArchiveOpen);
+    }, [fetchData, isArchiveOpen]);
+
+    // Трансформация данных для представления в таблице
+    const transformDishData = (data) => data.map(dish => ({
+        'Название': dish.name,
+        'Описание': dish.description,
+        'Категория': dish.category,
+        'Цена': `${dish.price} ₽`,
+        'Калории': dish.calories || '—',
+        'Жиры': dish.fats || '—',
+        'Белки': dish.squirrels || '—',
+        'Углеводы': dish.carbohydrates || '—',
+        'Вес': dish.weight ? `${dish.weight} г` : '—',
+        'Объём': dish.volume ? `${dish.volume} л` : '—',
+        'Кол-во в наборе': dish.quantity ? `${dish.quantity} шт` : '—',
+        'В архиве': dish.isArchived ? '✓' : '✗'
+    }));
 
     // Загружаем выбранные столбцы из localStorage
     useEffect(() => {
@@ -280,48 +312,8 @@ const Dishes = () => {
         }
     }, []);
 
-    // Получение данных для вывода в таблицу
-    const fetchData = async () => {
-        setIsLoading(true); // Данные загружаются из БД, анимация загрузки данных включена
-        try {
-            const response = await fetch('http://localhost:5000/api/dishes');
-            if (!response.ok) throw new Error('Network error');
 
-            const apiData = await response.json(); // Получаем массив строк
-            // Преобразование данных для таблицы
-            const transformedData = apiData.map(dish => ({
-                'Название': dish.name,
-                'Описание': dish.description,
-                'Категория': dish.category,
-                'Цена': `${dish.price} ₽`, // Добавляем форматирование
-                'Калории': dish.calories || '—', // Заглушка для пустых значений
-                'Жиры': dish.fats || '—',
-                'Белки': dish.squirrels || '—',
-                'Углеводы': dish.carbohydrates || '—',
-                'Вес': dish.weight ? `${dish.weight} г` : '—',
-                'Объём': dish.volume ? `${dish.volume} л` : '—',
-                'Кол-во в наборе': dish.quantity ? `${dish.quantity} шт` : '—',
-                'В архиве': dish.inArchive ? '✓' : '✗'
-            }));
 
-            setTableData(transformedData); // Передаем данные в таблицу
-        } catch (error) {
-            console.error('Error fetching dishes:', error);
-            // Можно добавить обработку ошибок в UI
-        } finally {
-            setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
-        }
-    };
-
-    // Вывод данных из БД в таблицу
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    // Обновление данных в таблице
-    const refreshFetchData = () => {
-        fetchData();
-    }
 
     // Выбранные строки в таблице
     const handleSelectionChange = (selected) => {
@@ -390,7 +382,10 @@ const Dishes = () => {
 
                         <div className="archive-settings-group">
                             {/* Архив */}
-                            <ArchiveStorageButton onToggleArchive={handleToggleArchive} title="Архив" />
+                            <ArchiveStorageButton
+                                onToggleArchive={handleArchiveToggle}
+                                pageId="admin-dishes-archive"
+                            />
 
                             {/* Настройка колонок */}
                             <DropdownColumnSelection
