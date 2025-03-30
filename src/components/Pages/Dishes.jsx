@@ -22,6 +22,7 @@ import AddEditDishPage from './AddEditDishPage'; // Управление блю�
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
 
 const Dishes = () => {
+    const pageId = 'dish-page'; // Уникальный идентификатор страницы
 
     /* 
     ===========================
@@ -123,13 +124,15 @@ const Dishes = () => {
       Фильтр
       ===========================
     */
-
+    // const [filters, setFilters] = useState([]); // Функции фильтра
     // Управление состоянием фильтра
     const [filterState, setFilterState] = useState({
         isOpen: false, // Меню
         isActive: false, // Кнопка
         formData: {} // Поля фильтрации
     });
+
+
 
     // Сохранение состояний страницы в localStorage
     useEffect(() => {
@@ -312,9 +315,6 @@ const Dishes = () => {
         }
     }, []);
 
-
-
-
     // Выбранные строки в таблице
     const handleSelectionChange = (selected) => {
         // Логика обработки выбранных элементов
@@ -384,7 +384,7 @@ const Dishes = () => {
                             {/* Архив */}
                             <ArchiveStorageButton
                                 onToggleArchive={handleArchiveToggle}
-                                pageId="admin-dishes-archive"
+                                pageId={pageId}
                             />
 
                             {/* Настройка колонок */}
@@ -417,7 +417,7 @@ const Dishes = () => {
                             columns={selectedColumns}
                             data={tableData}
                             onSelectionChange={handleSelectionChange}
-                            tableId="Admin-Dishes"
+                            tableId={pageId}
                         />}
                     </div>
 
