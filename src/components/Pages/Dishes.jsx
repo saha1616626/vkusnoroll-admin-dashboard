@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom'; // useLocation — хук React Router, который отслеживает изменения URL. Работает только внутри компонентов, обёрнутых в <Router>
 // import { useDebounce } from '../Hooks/useDebounce';
 
-// Импорт стилей
+// Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
 import "./../../styles/dishes.css"; // Стили только для данной страницы
 
@@ -124,13 +124,14 @@ const Dishes = () => {
       Фильтр
       ===========================
     */
+
     const [filters, setFilters] = useState([]); // Функции фильтра
-    // Управление состоянием фильтра
-    const [filterState, setFilterState] = useState({
+    const [filterState, setFilterState] = useState({ // Управление состоянием фильтра (неактивный фильтр)
         isOpen: false, // Меню
-        isActive: false, // Кнопка
+        isActive: false, // Кнопка 
         formData: {} // Поля фильтрации
     });
+    const [activeFilters, setActiveFilters] = useState({}); // Активный фильтр (применен в работу) 
 
     // Получение списка категорий
     const fetchCategories = async () => {
@@ -189,11 +190,16 @@ const Dishes = () => {
 
     // Обновление данных формы фильтров
     const handleFilterFormUpdate = (name, value) => {
-        const newFormData = { ...filterState.formData, [name]: value };
         setFilterState(prev => ({
             ...prev,
-            formData: newFormData
-        }));
+            formData: { ...prev.formData, [name]: value }
+          }));
+
+        // const newFormData = { ...filterState.formData, [name]: value };
+        // setFilterState(prev => ({
+        //     ...prev,
+        //     formData: newFormData
+        // }));
         // Сохранение значений полей фильтра в localStorage сразу после изменения поля
         // saveFilterState({ ...filterState, formData: newFormData });
     };
@@ -220,41 +226,42 @@ const Dishes = () => {
     }
 
     // Фильтрация данных
-    const applyFilters = useCallback((data) => {
+    const applyFilters = useCallback((data, filters) => {
         let result = data;
 
         // Фильтрация по параметрам меню (Категория)
-        if (filterState.formData.categories) {
+        if (filters.categories) {
             result = result.filter(dish =>
-                filterState.formData.categories.includes(dish.category)
+                filters.categories.includes(dish.category)
             );
         }
 
         // Фильтрация по параметрам меню (Вес)
-        if (filterState.formData.weight) {
-            const weight = parseFloat(filterState.formData.weight);
+        if (filters.weight) {
+            const weight = parseFloat(filters.weight);
             result = result.filter(dish => dish.weight === weight);
         }
 
         // Фильтрация по параметрам меню (Объем)
-        if (filterState.formData.volume) {
-            const volume = parseFloat(filterState.formData.volume);
+        if (filters.volume) {
+            const volume = parseFloat(filters.volume);
             result = result.filter(dish => dish.volume === volume);
         }
 
         // Фильтрация по параметрам меню (Кол-во штук в наборе)
-        if (filterState.formData.quantityInSet) {
-            const quantity = parseFloat(filterState.formData.quantityInSet);
+        if (filters.quantityInSet) {
+            const quantity = parseFloat(filters.quantityInSet);
             result = result.filter(dish => dish.quantity === quantity);
         }
 
         return result;
-    }, [filterState.formData]); // Все используемые данные в фильтрах
+    }, []); // Все используемые данные в фильтрах
 
     // Поиск по заданным параметрам фильтра
-    const handleFilterSearch = (formData) => {
+    const handleFilterSearch = () => {
 
         // Сохраняем значения полей фильтра после нажатия "Поиск"
+        setActiveFilters(filterState.formData);
         saveFilterState({ ...filterState, formData: filterState.formData });
 
         // Сброс поля поиска
@@ -262,43 +269,27 @@ const Dishes = () => {
             setSearchQuery(''); // Обнолвение значения поля поиска
             searchInputRef.current.clearAndUpdate(); // Очистка поля и обновление таблицы
         }
-
-        let result = rawData;
-
-        // Фильтрация по архиву
-        result = result.filter(dish =>
-            isArchiveOpen ? dish.isArchived : !dish.isArchived
-        );
-
-        setTableData(transformDishData(applyFilters(result)));
     };
 
     // Очистка полей фильтра
     const handleFilterReset = () => {
-        setFilterState(prev => {
-            const newState = {
-                ...prev,
-                isOpen: true, // Оставляем меню открытым
-                isActive: true,
-                formData: {}
-            };
+        setFilterState(prev => ({
+            ...prev,
+            formData: {}
+        }));
 
-            // Сброс поля поиска
-            if (searchInputRef.current) {
-                setSearchQuery(''); // Обнолвение значения поля поиска
-                searchInputRef.current.clearAndUpdate(); // Очистка поля и обновление таблицы
-            }
-
-            // Сброс через 50ms чтобы дать время обновиться состоянию
-            setTimeout(() => {
-                const result = rawData
-                    .filter(dish => isArchiveOpen ? dish.isArchived : !dish.isArchived); // Фильтрация по архиву
-                setTableData(transformDishData(result));
-            }, 50);
-
-            saveFilterState(newState); // Сохраняем состояние фильтра в localStorage
-            return newState;
+        setActiveFilters({});
+        saveFilterState({
+            isOpen: true,
+            isActive: true,
+            formData: {}
         });
+
+        // Сброс поля поиска
+        if (searchInputRef.current) {
+            setSearchQuery(''); // Обнолвение значения поля поиска
+            searchInputRef.current.clearAndUpdate(); // Очистка поля и обновление таблицы
+        }
     };
 
     /* 
@@ -356,8 +347,8 @@ const Dishes = () => {
                     : true
             );
 
-        setTableData(transformDishData(applyFilters(result)));
-    }, [rawData, isArchiveOpen, searchQuery, applyFilters]);
+        setTableData(transformDishData(applyFilters(result, activeFilters)));
+    }, [rawData, isArchiveOpen, searchQuery, activeFilters, applyFilters]);
 
     // Обработчик поиска
     const handleSearch = (term) => {
@@ -506,7 +497,7 @@ const Dishes = () => {
                             data={tableData}
                             onSelectionChange={handleSelectionChange}
                             tableId={pageId}
-                        />}
+                        />} 
                     </div>
 
                 </>
@@ -516,4 +507,4 @@ const Dishes = () => {
     );
 };
 
-export default Dishes; // Делаем компонент доступным для импорта в других файлах
+export default Dishes; // Делаем компонент доступным для импорта в других файлах 
