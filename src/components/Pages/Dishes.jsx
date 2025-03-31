@@ -184,7 +184,10 @@ const Dishes = () => {
     const loadSavedFilterState = () => {
         const savedState = localStorage.getItem(`filterState_${pageId}`);
         if (savedState) {
-            setFilterState(JSON.parse(savedState));
+            const parsedState = JSON.parse(savedState);
+            setFilterState(parsedState);
+            // Восстанавливаем активные фильтры
+            setActiveFilters(parsedState.formData);
         }
     }
 
@@ -193,15 +196,9 @@ const Dishes = () => {
         setFilterState(prev => ({
             ...prev,
             formData: { ...prev.formData, [name]: value }
-          }));
+        }));
 
-        // const newFormData = { ...filterState.formData, [name]: value };
-        // setFilterState(prev => ({
-        //     ...prev,
-        //     formData: newFormData
-        // }));
-        // Сохранение значений полей фильтра в localStorage сразу после изменения поля
-        // saveFilterState({ ...filterState, formData: newFormData });
+        // Здесь можно организовать сохранение значений полей фильтра в localStorage сразу после изменения поля
     };
 
     // Сохранение состояния фильтров
@@ -229,27 +226,27 @@ const Dishes = () => {
     const applyFilters = useCallback((data, filters) => {
         let result = data;
 
-        // Фильтрация по параметрам меню (Категория)
-        if (filters.categories) {
+       // Фильтрация по категориям (только если есть выбранные категории)
+        if (filters.categories && filters.categories.length > 0) {
             result = result.filter(dish =>
                 filters.categories.includes(dish.category)
             );
         }
 
-        // Фильтрация по параметрам меню (Вес)
-        if (filters.weight) {
+        // Фильтрация по весу (проверяем, что значение не пустое и валидное)
+        if (filters.weight && filters.weight.trim() !== "" && !isNaN(filters.weight)) {
             const weight = parseFloat(filters.weight);
             result = result.filter(dish => dish.weight === weight);
         }
 
-        // Фильтрация по параметрам меню (Объем)
-        if (filters.volume) {
+        // Фильтрация объему (проверяем, что значение не пустое и валидное)
+        if (filters.volume && filters.volume.trim() !== "" && !isNaN(filters.volume)) {
             const volume = parseFloat(filters.volume);
             result = result.filter(dish => dish.volume === volume);
         }
 
-        // Фильтрация по параметрам меню (Кол-во штук в наборе)
-        if (filters.quantityInSet) {
+        // Фильтрация по кол-ву штук в наборе (проверяем, что значение не пустое и валидное)
+        if (filters.quantityInSet && filters.quantityInSet.trim() !== "" && !isNaN(filters.quantityInSet)) {
             const quantity = parseFloat(filters.quantityInSet);
             result = result.filter(dish => dish.quantity === quantity);
         }
@@ -267,7 +264,7 @@ const Dishes = () => {
         // Сброс поля поиска
         if (searchInputRef.current) {
             setSearchQuery(''); // Обнолвение значения поля поиска
-            searchInputRef.current.clearAndUpdate(); // Очистка поля и обновление таблицы
+            searchInputRef.current.clear(); // Очистка поля и обновление таблицы
         }
     };
 
@@ -288,7 +285,7 @@ const Dishes = () => {
         // Сброс поля поиска
         if (searchInputRef.current) {
             setSearchQuery(''); // Обнолвение значения поля поиска
-            searchInputRef.current.clearAndUpdate(); // Очистка поля и обновление таблицы
+            searchInputRef.current.clear(); // Очистка поля поиска
         }
     };
 
@@ -339,19 +336,33 @@ const Dishes = () => {
 
     // Эффект для фильтраци
     useEffect(() => {
-        const result = rawData
-            .filter(dish => isArchiveOpen ? dish.isArchived : !dish.isArchived) // Фильтрация по архиву
-            .filter(dish =>
-                searchQuery
-                    ? dish.name.toLowerCase().includes(searchQuery.toLowerCase()) // Поиск по названию
-                    : true
-            );
+        const applyFiltersAndSearch = () => {
+            let result = rawData
+                .filter(dish => isArchiveOpen ? dish.isArchived : !dish.isArchived)
+                .filter(dish =>
+                    searchQuery
+                        ? dish.name.toLowerCase().includes(searchQuery.toLowerCase())
+                        : true
+                );
 
-        setTableData(transformDishData(applyFilters(result, activeFilters)));
+            // Применяем фильтры, только если они есть
+            if (Object.keys(activeFilters).length > 0) {
+                result = applyFilters(result, activeFilters);
+            }
+
+            return transformDishData(result);
+        };
+
+        setTableData(applyFiltersAndSearch());
     }, [rawData, isArchiveOpen, searchQuery, activeFilters, applyFilters]);
 
     // Обработчик поиска
     const handleSearch = (term) => {
+
+        // Сохраняем значения полей фильтра после нажатия "Enter"
+        setActiveFilters(filterState.formData);
+        saveFilterState({ ...filterState, formData: filterState.formData });
+
         setSearchQuery(term.trim());
     };
 
@@ -497,7 +508,7 @@ const Dishes = () => {
                             data={tableData}
                             onSelectionChange={handleSelectionChange}
                             tableId={pageId}
-                        />} 
+                        />}
                     </div>
 
                 </>
