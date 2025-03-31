@@ -33,11 +33,12 @@
 
 /* Название раздела */
 .section-title {
-    font-size: 18px;
-    color: #333;
-    margin-bottom: 15px;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 8px;
+    font-size: 1.2rem;
+    font-style: italic;
+    color: #2c3e50;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #7ca87d;
 }
 
 /* Контейнер поля для ввода данных (1 компонент) */
@@ -57,10 +58,16 @@
 
 /* Поле для ввода */
 .input-field {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 10px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
     font-size: 14px;
+    transition: all 0.3s;
+}
+.input-field:focus {
+    border-color: #7ca87d;
+    box-shadow: 0 0 0 3px rgba(76,175,80,0.2);
+    outline: none;
 }
 
 /* Контейнер поля для ввода данных (несколько компонентов) */
@@ -68,6 +75,7 @@
     display: flex;
     gap: 15px;
     justify-content: space-between;
+    transition: all 0.3s;
 }
 
 /* Контейнер поля для чекбокса с отображением поля */
@@ -83,23 +91,16 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+.checkbox-label:hover {
+    background: #f5f5f5;
 }
 
 /* Заголовок для чекбокса */
 .checkbox-caption {
     font-size: 14px;
     color: #444;
-}
-
-/* Кнопка для изображения */
-.upload-button {
-    background: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-.upload-button:hover {
-    background: #45a049;
 }

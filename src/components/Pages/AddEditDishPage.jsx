@@ -6,6 +6,9 @@ import React, { useEffect, useState } from "react";
 import "./../../styles/addEditPage.css";  // Для всех страниц добавления или редактирования данных
 import "./../../styles/addEditDishPage.css"; // Основной для данной страницы
 
+// Импорт иконок
+import crossIcon from './../../assets/icons/cross.png' // Крестик
+
 const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
 
     /* 
@@ -67,6 +70,11 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
         }
     };
 
+    // Убрать изображение
+    const handleImageRemove = () => {
+        setSelectedImage(null);
+    };
+
     return (
         <main className="addEditPage-container">
 
@@ -100,14 +108,14 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                         <input
                             type="text"
                             className="input-field"
-                            style={{ width: '50em', height: '30px' }}
+                            style={{ width: 'auto', height: '30px' }}
                         />
                     </div>
 
                     {/* Слева поля, а справа изображение */}
-                    <div className="form-row" style={{ width: '45.5em', justifyContent: 'space-between' }}>
+                    <div className="form-row" style={{ width: 'auto', justifyContent: 'space-between' }}>
 
-                        <div style={{ width: '25em' }}>
+                        <div style={{ width: 'auto' }}>
                             <div className="form-group">
                                 <label className="input-label">Описание</label>
                                 <textarea
@@ -128,7 +136,7 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                 </div>
                                 <div className="form-group" >
                                     <label className="input-label">Категория*</label>
-                                    <select className="input-field" style={{ width: '20em', height: '47.92px' }}>
+                                    <select className="input-field" style={{ width: '20em', height: '53.2px' }}>
                                         <option value="">Выберите категорию</option>
                                         <option>Суши</option>
                                         <option>Роллы</option>
@@ -138,38 +146,38 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                             </div>
                         </div>
 
-                        {selectedImage && (
-                            <img
-                                src={selectedImage}
-                                alt="Preview"
-                                style={{
-                                    width: '200px',
-                                    height: '200px',
-                                    marginTop: '15px',
-                                    objectFit: 'cover'
-                                }}
+                        <div className="image-upload-container">
+                            <input
+                                type="file"
+                                id="imageUpload"
+                                hidden
+                                onChange={handleImageUpload}
+                                accept="image/*"
                             />
-                        )}
+                            <label
+                                htmlFor="imageUpload"
+                                className="button-control upload-button"
+                            >
+                                Загрузить изображение
+                            </label>
 
-                    </div>
+                            {selectedImage && (
+                                <div className="image-preview-wrapper">
+                                    <img
+                                        src={selectedImage}
+                                        alt="Preview"
+                                        className="image-preview"
+                                    />
+                                    <button
+                                        className="remove-image-btn"
+                                        onClick={handleImageRemove}>
+                                        <img src={crossIcon} alt="Remove" />
+                                    </button>
+                                </div>
+                            )}
 
+                        </div>
 
-
-                    <div className="form-group" style={{ textAlign: 'center', marginTop: '20px' }}>
-                        <input
-                            type="file"
-                            id="imageUpload"
-                            hidden
-                            onChange={handleImageUpload}
-                            accept="image/*"
-                        />
-                        <label
-                            htmlFor="imageUpload"
-                            className="button-control upload-button"
-                            style={{ width: '200px' }}
-                        >
-                            Загрузить изображение
-                        </label>
                     </div>
 
                 </div>
@@ -204,7 +212,7 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                                 <input
                                                     type="number"
                                                     className="input-field"
-                                                    style={{ width: '10em', height: '30px' }}
+                                                    style={{ width: 'auto', height: '30px' }}
                                                 />
                                             </div>
                                         ))}
@@ -214,48 +222,64 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                         )}
                     </div>
 
-                    <div className="checkbox-group" style={{ width: '100%', marginTop: '20px' }}>
-                        <div className="form-row">
+                    {/* Вес и объем */}
+                    <div className="checkbox-group" style={{ width: 'auto', marginTop: '20px' }}>
+                        <div className="form-row" style={{ gap: '15px' }}>
                             {['Вес', 'Объем'].map((label) => (
-                                <label key={label} className="checkbox-label" style={{ width: '48%' }}>
-                                    <input
-                                        type="checkbox"
-                                        onChange={(e) =>
-                                            label === 'Вес'
-                                                ? setWeightVisible(e.target.checked)
-                                                : setVolumeVisible(e.target.checked)
-                                        }
-                                    />
-                                    <span className="checkbox-caption">{label}</span>
-                                </label>
+                                <div key={label} style={{
+                                    width: '48%',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start'
+                                }}>
+                                    {/* Чекбокс */}
+                                    <label className="checkbox-label" style={{ width: '95%' }}>
+                                        <input
+                                            type="checkbox"
+                                            onChange={(e) =>
+                                                label === 'Вес'
+                                                    ? setWeightVisible(e.target.checked)
+                                                    : setVolumeVisible(e.target.checked)
+                                            }
+                                        />
+                                        <span className="checkbox-caption">{label}</span>
+                                    </label>
+
+                                    {/* Поле ввода */}
+                                    <div style={{
+                                        width: '95%',
+                                        visibility: label === 'Вес'
+                                            ? (weightVisible ? 'visible' : 'hidden')
+                                            : (volumeVisible ? 'visible' : 'hidden'),
+                                        opacity: label === 'Вес'
+                                            ? (weightVisible ? 1 : 0)
+                                            : (volumeVisible ? 1 : 0),
+                                        transition: 'opacity 0.2s',
+                                        height: weightVisible || volumeVisible ? 'auto' : 0
+                                    }}>
+                                        <div className="form-group">
+                                            <label className="input-label">
+                                                {label === 'Вес' ? 'Вес (г)*' : 'Объем (мл)*'}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                style={{
+                                                    width: '95%',
+                                                    height: '30px',
+                                                    visibility: label === 'Вес'
+                                                        ? (weightVisible ? 'visible' : 'hidden')
+                                                        : (volumeVisible ? 'visible' : 'hidden')
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             ))}
                         </div>
-
-                        <div className="form-row" style={{ width: '100%', display: 'inline-flex', visibility: weightVisible || volumeVisible ? 'visible' : 'collapse' }}>
-
-                            <div className="form-group" style={{ visibility: weightVisible ? 'visible' : 'collapse' }}>
-                                <label className="input-label">Вес (г)*</label>
-                                <input
-                                    type="number"
-                                    className="input-field"
-                                    style={{ width: '17em', height: '30px' }}
-                                />
-                            </div>
-
-                            <div className="form-group" style={{ visibility: volumeVisible ? 'visible' : 'collapse' }}>
-                                <label className="input-label">Объем (мл)*</label>
-                                <input
-                                    type="number"
-                                    className="input-field"
-                                    style={{ width: '17em', height: '30px' }}
-                                />
-                            </div>
-
-                        </div>
-
                     </div>
 
-                    <div className="checkbox-group" style={{ marginTop: '10px' }}>
+                    <div className="checkbox-group" style={{ marginTop: '20px' }}>
                         <label className="checkbox-label">
                             <input
                                 type="checkbox"
