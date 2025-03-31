@@ -23,6 +23,12 @@ const FilterMenu = ({
         onFormUpdate(name, value);
     };
 
+    // Обработка изменений в полях дат
+    const handleDateChange = (e, type) => {
+        const { name, value } = e.target;
+        onFormUpdate(`${name}_${type}`, value); // Передаем название поля (start или end) для четкого обозначения
+    }
+
     const handleBlur = (e, options) => {
         const { name, value } = e.target;
         if (options.length > 0 && !options.includes(value)) {
@@ -85,7 +91,7 @@ const FilterMenu = ({
                                     type="datetime-local"
                                     name={`${filter.name}_start`}
                                     value={formData[`${filter.name}_start`] || ''}
-                                    onChange={(e) => handleChange(e)}
+                                    onChange={(e) => handleDateChange(e, 'start')}
                                     className="filter-input-date"
                                 />
                                 -
@@ -94,7 +100,7 @@ const FilterMenu = ({
                                     type="datetime-local"
                                     name={`${filter.name}_end`}
                                     value={formData[`${filter.name}_end`] || ''}
-                                    onChange={(e) => handleChange(e)}
+                                    onChange={(e) => handleDateChange(e, 'end')}
                                     className="filter-input-date"
                                 />
                             </div>

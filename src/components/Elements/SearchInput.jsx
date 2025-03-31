@@ -1,24 +1,39 @@
 // Компонент - поле для поиска
 
-import React, { useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import PropTypes from 'prop-types';
 
 // Импорт стилей
 import "./../../styles/elements/searchInput.css";
 
-const SearchInput = ({ placeholder, onSearch }) => {
+const SearchInput = forwardRef (({ onChange, placeholder, onSearch }, ref) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const inputRef = React.useRef();
+
+    // Экспортируем методы для родителя
+    useImperativeHandle(ref, () => ({
+        clearAndUpdate: () => {
+            setSearchTerm('');
+            inputRef.current.value = '';
+            onSearch(''); // Вызов функции поиска с пустым значением
+        },
+        clear: () => {
+            setSearchTerm('');
+            inputRef.current.value = '';
+        }
+    }));
 
     const handleInputChange = (event) => {
         setSearchTerm(event.target.value);
+        // if(event.target.value.trim() === ''){ // Обновление списка таблицы, если нет значений в поле
+        //     onSearch('');
+        // }
     };
 
     // Нажатие на Enter после ввода текста
     const handleKeyDown = (event) => {
         if (event.key === 'Enter') {
-            event.preventDefault();
-            if (onSearch) {
-                onSearch(searchTerm);
-            }
+            onSearch(searchTerm);
         }
     };
     
@@ -33,6 +48,7 @@ const SearchInput = ({ placeholder, onSearch }) => {
     return (
         <div className="search-container">
             <input
+                ref={inputRef}
                 type="text"
                 className="search-input"
                 placeholder={placeholder} // Переданное значение
@@ -49,6 +65,11 @@ const SearchInput = ({ placeholder, onSearch }) => {
         </div>
     );
 
-}
+});
+
+SearchInput.propTypes = {
+    onSearch: PropTypes.func.isRequired,
+    placeholder: PropTypes.string
+};
 
 export default SearchInput;

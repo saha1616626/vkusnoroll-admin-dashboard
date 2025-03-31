@@ -124,7 +124,7 @@ const Dishes = () => {
       Фильтр
       ===========================
     */
-    // const [filters, setFilters] = useState([]); // Функции фильтра
+    const [filters, setFilters] = useState([]); // Функции фильтра
     // Управление состоянием фильтра
     const [filterState, setFilterState] = useState({
         isOpen: false, // Меню
@@ -132,26 +132,80 @@ const Dishes = () => {
         formData: {} // Поля фильтрации
     });
 
-
-
-    // Сохранение состояний страницы в localStorage
-    useEffect(() => {
-        const savedStateFilter = localStorage.getItem('filterButtonStateOnDishesPage'); // Определили место в localStorage
-        // Определяем структуру в localStorage для filterButtonStateOnDishesPage
-        if (savedStateFilter) {
-            const { open, active, data } = JSON.parse(savedStateFilter); // Меню открыто/закрыто, кнопка активная/неактивна, выбранные фильтры
-            setFilterState(prev => ({
-                ...prev,
-                isOpen: open,
-                isActive: active,
-                formData: data || {}
-            }));
+    // Получение списка категорий
+    const fetchCategories = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/categories');
+            if (!response.ok) throw new Error('Category loading error');
+            // Получаем все данные
+            const apiData = await response.json();
+            // Извлекаем определенный объект
+            const nameCategories = apiData.map(category => category.name);
+            return nameCategories;
+        } catch (error) {
+            console.error('Error:', error);
+            return [];
         }
+    };
+
+    // Загрузка категорий и инициализация фильтров
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const categories = await fetchCategories();
+                initFilters(categories);
+                loadSavedFilterState();
+            } catch (error) {
+                console.error('Category loading error:', error);
+            }
+        }
+
+        loadCategories();
     }, []);
+
+    // Инициализация фильтров с динамическими категориями
+    const initFilters = (categories) => {
+        setFilters([
+            {
+                type: 'multi-select',
+                name: 'categories',
+                label: 'Категория',
+                options: categories,
+                placeholder: 'Выберите категорию(и)'
+            },
+            { type: 'number', name: 'weight', label: 'Вес (г)', placeholder: '' },
+            { type: 'number', name: 'volume', label: 'Объём (л)', placeholder: '' },
+            { type: 'number', name: 'quantityInSet', label: 'Кол-во в наборе (шт)', placeholder: '' }
+        ]);
+    }
+
+    // Загрузка сохраненного состояния фильтров
+    const loadSavedFilterState = () => {
+        const savedState = localStorage.getItem(`filterState_${pageId}`);
+        if (savedState) {
+            setFilterState(JSON.parse(savedState));
+        }
+    }
+
+    // Обновление данных формы фильтров
+    const handleFilterFormUpdate = (name, value) => {
+        const newFormData = { ...filterState.formData, [name]: value };
+        setFilterState(prev => ({
+            ...prev,
+            formData: newFormData
+        }));
+        // Сохранение значений полей фильтра в localStorage сразу после изменения поля
+        // saveFilterState({ ...filterState, formData: newFormData });
+    };
+
+    // Сохранение состояния фильтров
+    const saveFilterState = (state) => {
+        localStorage.setItem(`filterState_${pageId}`, JSON.stringify(state));
+    };
 
     // Кнопка закрыть/открыть меню фильтра
     const toggleFilter = () => {
-        // Обновление состояния фильтра и сохранение значения в переменной
+        // Обновление состояния фильтра
         setFilterState(prev => {
             const newState = {
                 ...prev,
@@ -160,92 +214,90 @@ const Dishes = () => {
             };
 
             // Сохраняем состояние кнопки в localStorage
-            localStorage.setItem('filterButtonStateOnDishesPage', JSON.stringify({ open: newState.isOpen, active: newState.isActive, data: newState.formData }));
-
-            // Возвращаем новое состояние
+            localStorage.setItem(`filterState_${pageId}`, JSON.stringify(newState));
             return newState;
         });
-    };
+    }
 
-    // Фиксация изменений при обновлении полей фильтра
-    const handleFilterFormUpdate = (name, value) => {
-        setFilterState(prev => {
-            const newFormData = {
-                ...prev.formData,
-                [name]: value // Обновления соответствующего поля в formData новым значением value
-            };
+    // Фильтрация данных
+    const applyFilters = (data) => {
+        let result = data;
 
-            const newState = {
-                ...prev, // Оператор расширения, который копирует все свойства из предыдущего состояния prev в новый объект
-                formData: newFormData
-            };
-
-            localStorage.setItem('filterButtonStateOnDishesPage',
-                JSON.stringify({
-                    open: newState.isOpen,
-                    active: newState.isActive,
-                    data: newFormData
-                })
+        // Фильтрация по параметрам меню (Категория)
+        if (filterState.formData.categories) {
+            result = result.filter(dish =>
+                filterState.formData.categories.includes(dish.category)
             );
+        }
 
-            return newState;
-        });
+        // Фильтрация по параметрам меню (Вес)
+        if (filterState.formData.weight) {
+            const weight = parseFloat(filterState.formData.weight);
+            result = result.filter(dish => dish.weight === weight);
+        }
+
+        // Фильтрация по параметрам меню (Объем)
+        if (filterState.formData.volume) {
+            const volume = parseFloat(filterState.formData.volume);
+            result = result.filter(dish => dish.volume === volume);
+        }
+
+        // Фильтрация по параметрам меню (Кол-во штук в наборе)
+        if (filterState.formData.quantityInSet) {
+            const quantity = parseFloat(filterState.formData.quantityInSet);
+            result = result.filter(dish => dish.quantity === quantity);
+        }
+
+        return result;
     };
 
     // Поиск по заданным параметрам фильтра
     const handleFilterSearch = (formData) => {
-        const filtered = tableData.filter(item => {
-            return Object.entries(formData).every(([key, value]) => {
-                // Логика фильтрации для каждого поля
-                return item[key].includes(value);
-            });
-        });
-        setTableData(filtered);
+
+        // Сохраняем значения полей фильтра после нажатия "Поиск"
+        saveFilterState({ ...filterState, formData: filterState.formData });
+
+        // Сброс поля поиска
+        if (searchInputRef.current) {
+            setSearchQuery(''); // Обнолвение значения поля поиска
+            searchInputRef.current.clearAndUpdate(); // Очистка поля и обнолвение таблицы
+        }
+
+        let result = rawData;
+
+        // Фильтрация по архиву
+        result = result.filter(dish =>
+            isArchiveOpen ? dish.isArchived : !dish.isArchived
+        );
+        
+        setTableData(transformDishData(applyFilters(result)));
     };
 
     // Очистка полей фильтра
     const handleFilterReset = () => {
-        setFilterState({
+        const newState = {
             isOpen: true, // Оставляем меню открытым
             isActive: true,
             formData: {}
-        });
+        };
+        setFilterState(newState);
+        localStorage.setItem(`filterState_${pageId}`, JSON.stringify(newState)); // Сохраняем состояние
 
-        // Чистим localStorage для фильтров
-        localStorage.setItem('filterButtonStateOnDishesPage',
-            JSON.stringify({
-                open: true,
-                active: true,
-                data: {}
-            })
-        );
+        // Сброс поля поиска
+        if (searchInputRef.current) {
+            searchInputRef.current.clearAndUpdate(); // Очистка поля и обнолвение таблицы
+        }
     };
-
-    // Состав фильтра
-    const filters = [
-        {
-            type: 'multi-select',
-            name: 'categoryes',
-            label: 'Категория',
-            options: ['Суши', 'Ролы', 'Пицца', 'Напитки', 'Десерты'],
-            placeholder: 'Выберите категорию(и)'
-        },
-        { type: 'number', name: 'weight', label: 'Вес (г)', placeholder: '' },
-        { type: 'number', name: 'volume', label: 'Объём (л)', placeholder: '' },
-        { type: 'number', name: 'quantityInSet', label: 'Кол-во в наборе (шт)', placeholder: '' }
-    ];
 
     /* 
       ===========================
       Поиск
       ===========================
     */
-
-    // Панель поиска
-    const handleSearch = (term) => {
-        // TODO логика поиска
-
-    };
+    const [searchQuery, setSearchQuery] = useState(''); // Поисковый запрос
+    const [rawData, setRawData] = useState([]); // Исходные данные из API
+    const [processedData, setProcessedData] = useState([]); // Отфильтрованные данные
+    const searchInputRef = React.useRef(); // Очистка поля поиска
 
     /* 
       ===========================
@@ -268,17 +320,48 @@ const Dishes = () => {
             if (!response.ok) throw new Error('Network error');
 
             const apiData = await response.json(); // Получаем массив строк
+            setRawData(apiData); // Сохраняем сырые данные
+
             // Фильтруем блюда исходя из состония архива
             const filteredData = apiData.filter(dish =>
                 archivedStatus ? dish.isArchived : !dish.isArchived);
 
-            setTableData(transformDishData(filteredData)); // Передаем данные в таблицу
+            setProcessedData(transformDishData(filteredData)); // Передаем данные в таблицу
         } catch (error) {
             console.error('Error fetching dishes:', error);
         } finally {
             setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
         }
     }, []);
+
+    // Эффект для фильтраци
+    useEffect(() => {
+        const applyFiltersAndSearch = () => {
+            let result = rawData;
+
+            // Фильтрация по архиву
+            result = result.filter(dish =>
+                isArchiveOpen ? dish.isArchived : !dish.isArchived
+            );
+
+            // Поиск по названию
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                result = result.filter(dish =>
+                    dish.name.toLowerCase().includes(query)
+                );
+            }
+
+            return transformDishData(applyFilters(result));
+        };
+
+        setTableData(applyFiltersAndSearch());
+    }, [rawData, isArchiveOpen, searchQuery]);
+
+    // Обработчик поиска
+    const handleSearch = (term) => {
+        setSearchQuery(term.trim());
+    };
 
     // Обработчик изменения состояния архива
     const handleArchiveToggle = useCallback((newState) => {
@@ -378,7 +461,11 @@ const Dishes = () => {
                         </div>
 
                         {/* Поиск */}
-                        <SearchInput placeholder="Поиск блюда" onSearch={handleSearch} />
+                        <SearchInput
+                            ref={searchInputRef}
+                            placeholder="Поиск блюда"
+                            onSearch={handleSearch}
+                        />
 
                         <div className="archive-settings-group">
                             {/* Архив */}
