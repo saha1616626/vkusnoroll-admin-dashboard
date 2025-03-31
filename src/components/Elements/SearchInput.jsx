@@ -20,6 +20,9 @@ const SearchInput = forwardRef (({ onChange, placeholder, onSearch }, ref) => {
         clear: () => {
             setSearchTerm('');
             inputRef.current.value = '';
+        },
+        search: () => {
+            return searchTerm.trim();
         }
     }));
 
@@ -69,6 +72,7 @@ const SearchInput = forwardRef (({ onChange, placeholder, onSearch }, ref) => {
 
 SearchInput.propTypes = {
     onSearch: PropTypes.func.isRequired,
+    onChange: PropTypes.func,
     placeholder: PropTypes.string
 };
 

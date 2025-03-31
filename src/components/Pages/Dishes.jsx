@@ -114,9 +114,13 @@ const Dishes = () => {
     */
 
     // Обновление страницы
-    const refreshData = () => {
+    const refreshData = (term) => {
         // TODO логика обновления страницы
-
+        // Сохраняем значения полей фильтра после нажатия "Enter"
+        setActiveFilters(filterState.formData);
+        saveFilterState({ ...filterState, formData: filterState.formData });
+        const searchQuery = searchInputRef.current.search(); // Получаем текущее введенное значение из поля поиска
+        setSearchQuery(searchQuery);
     }
 
     /* 
@@ -226,7 +230,7 @@ const Dishes = () => {
     const applyFilters = useCallback((data, filters) => {
         let result = data;
 
-       // Фильтрация по категориям (только если есть выбранные категории)
+        // Фильтрация по категориям (только если есть выбранные категории)
         if (filters.categories && filters.categories.length > 0) {
             result = result.filter(dish =>
                 filters.categories.includes(dish.category)
