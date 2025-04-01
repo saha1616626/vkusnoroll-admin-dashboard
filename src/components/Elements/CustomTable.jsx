@@ -9,6 +9,7 @@ const CustomTable = ({
     columns: originalColumns,
     data,
     onSelectionChange,
+    onRowClick,
     tableId
 }) => {
     const [selectedRows, setSelectedRows] = useState(new Set()); // selectedRows - Текущее состояние выбранных строк. setSelectedRows - Позволяет изменять текущее состояние выбранных строк. Set - позволяем хранить уникальные значения (автоматически исключает дубликаты)
@@ -119,6 +120,7 @@ const CustomTable = ({
                                         type="checkbox"
                                         checked={selectedRows.size === data.length}
                                         onChange={handleSelectAll}
+                                        style={{ width: '17px', height: '17px' }}
                                     />
                                 ) : (
                                     column
@@ -136,7 +138,11 @@ const CustomTable = ({
 
                 <tbody>
                     {data.map((row, rowIndex) => (
-                        <tr key={rowIndex}>
+                        <tr
+                            key={rowIndex}
+                            onClick={() => onRowClick?.(row)}
+                            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                        >
                             {columns.map((column) => (
                                 <td
                                     key={column}
@@ -144,17 +150,23 @@ const CustomTable = ({
                                         width: column === 'select' ? '40px' : columnWidths[column],
                                         textAlign: column === 'В архиве' ? "center" : "left"
                                     }}
+                                    // Останавливаем всплытие события onRowClick для всей ячейки с чекбоксом
+                                    onClick={(e) => column === 'select' && e.stopPropagation()}
                                 >
                                     {column === 'select' ? (
                                         <input
                                             type="checkbox"
                                             checked={selectedRows.has(rowIndex)}
-                                            onChange={() => handleRowSelect(rowIndex)}
+                                            onChange={(e) => {
+                                                e.stopPropagation(); // Останавливаем всплытие события onRowClick
+                                                handleRowSelect(rowIndex);
+                                            }}
+                                            style={{ width: '17px', height: '17px' }}
                                         />
                                     ) : (
-                                        <div className="custom-table-cell-content" 
-                                        // Показывает полный текст при наведении
-                                        title={String(row[column])}> 
+                                        <div className="custom-table-cell-content"
+                                            // Показывает полный текст при наведении
+                                            title={String(row[column])}>
                                             {row[column]}
                                         </div>
                                     )}

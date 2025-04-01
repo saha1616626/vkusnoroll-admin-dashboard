@@ -77,17 +77,25 @@ const Dishes = () => {
         }));
     };
 
+    // Обработчик клика по строке в таблице
+    const handleRowClick = (rowData) => {
+        const originalDish = rawData.find(dish => dish.id === rowData.id); // Получаем исходные данные по id из выбранной строки
+        if(originalDish) {
+            handleEditClick(originalDish); // Передаем данные выбранной строки и запускаем страницу для редактирования
+        }
+    };
+
     // Обработчик запуска страницы для редактирования блюда
-    // const handleEditClick = (dish) => {
-    //     setShowAddEditPage(true);
-    //     // Сохранение состояния страницы при запуске
-    //     localStorage.setItem('addEditDishPageState', JSON.stringify({
-    //         isOpen: true,
-    //         pathname: location.pathname,
-    //         title: 'Блюдо'
-    //     }));
-    //     setPageData({ ...dish, title: 'Блюдо' });
-    // }
+    const handleEditClick = (dish) => {
+        setShowAddEditPage(true);
+        // Сохранение состояния страницы при запуске
+        localStorage.setItem('addEditDishPageState', JSON.stringify({
+            isOpen: true,
+            pathname: location.pathname,
+            title: 'Блюдо'
+        }));
+        setPageData({ ...dish, title: 'Блюдо' });
+    }
 
     // Обработчик закрытия страницы
     const handlePageClose = () => {
@@ -383,6 +391,7 @@ const Dishes = () => {
 
     // Трансформация данных для представления в таблице
     const transformDishData = (data) => data.map(dish => ({
+        id: dish.id, // Необходим для связи с исходными данными
         'Название': dish.name,
         'Описание': dish.description,
         'Категория': dish.category,
@@ -511,6 +520,7 @@ const Dishes = () => {
                             columns={selectedColumns}
                             data={tableData}
                             onSelectionChange={handleSelectionChange}
+                            onRowClick={handleRowClick}
                             tableId={pageId}
                         />}
                     </div>

@@ -29,6 +29,11 @@
     position: relative;
 }
 
+/* Выделение строки при наведении */
+.custom-table tbody tr:hover {
+    background-color: #f0f3f8;
+}
+
 /* Ярлык изменения ширины столбца */
 .custom-table-column-resizer {
     position: absolute;
@@ -51,12 +56,13 @@
     max-height: 60px; /* Максимальная высота контейнера */
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 3; /* Количество строк до обрезки */
+    -webkit-line-clamp: 1; /* Количество строк до обрезки */
     -webkit-box-orient: vertical;
     line-height: 1.2; /* Межстрочный интервал */
 }
+
 /* Для кроссбраузерности */
-@supports not (-webkit-line-clamp: 3) {
+@supports not (-webkit-line-clamp: 1) {
     .custom-table-cell-content {
       position: relative;
       padding-right: 1.2em;
