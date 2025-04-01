@@ -10,6 +10,86 @@ import "./../../styles/addEditDishPage.css"; // Основной для данн
 import crossIcon from './../../assets/icons/cross.png' // Крестик
 
 const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
+    const [categories, setCategories] = useState([]); // Список категорий
+    const [formData, setFormData] = useState({ // Инициализация полей
+        name: '',
+        description: '',
+        category: '',
+        isNutritionalValue: false,
+        calories: '',
+        fats: '',
+        squirrels: '',
+        carbohydrates: '',
+        isWeight: false,
+        weight: '',
+        isQuantitySet: false,
+        quantity: '',
+        isVolume: false,
+        volume: '',
+        price: '',
+        isArchived: false,
+        image: null
+    });
+
+    const isEditMode = !!pageData?.id; // Режим добавить или редактировать
+
+    // Инициализация данных при монтировании текущего компонента
+    useEffect(() => {
+        const loadCategories = async () => { // Получаем список категорий
+            try {
+                const response = await fetch('http://localhost:5000/api/categories');
+                const data = await response.json();
+                setCategories(data.map(c => c.name)); // Устанавливаем список категорий
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        };
+
+        loadCategories();
+
+        // Если есть данные блюда - заполняем форму
+        if (pageData?.id) {
+            setFormData({
+                name: pageData.name || '',
+                description: pageData.description || '',
+                category: pageData.category || '',
+                isNutritionalValue: pageData.isNutritionalValue || false,
+                calories: pageData.calories?.toString() || '',
+                fats: pageData.fats?.toString() || '',
+                squirrels: pageData.squirrels?.toString() || '',
+                carbohydrates: pageData.carbohydrates?.toString() || '',
+                isWeight: pageData.isWeight || false,
+                weight: pageData.weight?.toString() || '',
+                isQuantitySet: pageData.isQuantitySet || false,
+                quantity: pageData.quantity?.toString() || '',
+                isVolume: pageData.isVolume || false,
+                volume: pageData.volume?.toString() || '',
+                price: pageData.price?.toString() || '',
+                isArchived: pageData.isArchived || false,
+                image: pageData.image || null
+            });
+
+            // Устанавливаем видимость полей
+            setNutritionVisible(pageData.isNutritionalValue);
+            setWeightVisible(pageData.isWeight);
+            setQuantityVisible(pageData.isQuantitySet);
+            setVolumeVisible(pageData.isVolume);
+            setIsArchived(pageData.isArchived);
+        }
+    }, [pageData]);
+
+    // Обработчик изменения полей
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value })); // Сохраняем только измененные поля
+    };
+
+    // Обработчик изображений
+    useEffect(() => {
+        if (pageData?.image) { // Если изображение передано
+            setSelectedImage(pageData.image);
+        }
+    }, [pageData])
 
     /* 
     ===========================
@@ -35,23 +115,10 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
 
     /* 
     ===========================
-     Чек бокс для архивации
-    ===========================
-    */
-
-    const [isChecked, setIsChecked] = useState(false); // Чекбокс. Состояние работы
-
-    // Клик по чекбоксу
-    const handleCheckboxChange = () => {
-        setIsChecked(prev => !prev);
-    };
-
-
-    /* 
-    ===========================
      Поля и прочяя разметка страницы
     ===========================
     */
+    const [isArchived, setIsArchived] = useState(false); // Архив
     const [nutritionVisible, setNutritionVisible] = useState(false); // Пищевая ценность
     const [weightVisible, setWeightVisible] = useState(false); // Вес
     const [volumeVisible, setVolumeVisible] = useState(false); // Объем
@@ -65,6 +132,7 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setSelectedImage(reader.result);
+                setFormData(prev => ({ ...prev, image: reader.result })); // Фиксируем выбранное изображение
             };
             reader.readAsDataURL(file);
         }
@@ -86,7 +154,25 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                 <div className="archive-close-save-group">
                     {/* Архивировать */}
                     <label className="archiving-object-container">
-                        <input className="archiving-object-checkbox" type="checkbox" checked={isChecked} onChange={handleCheckboxChange} />
+                        <input className="archiving-object-checkbox"
+                            type="checkbox"
+                            checked={isArchived}
+                            onChange={(e) => {
+                                setIsArchived(e.target.checked); // Установили новое значение чекбокса
+                                if(!e.target.checked) { // Если чекбокс не нажат, то мы устанавливаем false
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        isArchived: false
+                                    }));
+                                }
+                                else { // Если чекбокс нажат, то мы устанавливаем true
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        isArchived: true
+                                    }));
+                                }
+                            }} 
+                            />
                         <div className="archiving-object-text">Архивировать</div>
                     </label>
 
@@ -109,6 +195,9 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                             type="text"
                             className="input-field"
                             style={{ width: 'auto', height: '30px' }}
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
                         />
                     </div>
 
@@ -121,6 +210,9 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                 <textarea
                                     className="input-field"
                                     style={{ height: '100px' }}
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
                                 />
                             </div>
 
@@ -132,15 +224,24 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                         placeholder="₽"
                                         className="input-field"
                                         style={{ width: '5em', height: '30px' }}
+                                        name="price"
+                                        value={formData.price}
+                                        onChange={handleInputChange}
                                     />
                                 </div>
                                 <div className="form-group" >
                                     <label className="input-label">Категория*</label>
-                                    <select className="input-field" style={{ width: '20em', height: '53.2px' }}>
+                                    <select
+                                        name="category"
+                                        className="input-field"
+                                        style={{ width: '20em', height: '53.2px' }}
+                                        value={formData.category}
+                                        onChange={handleInputChange}
+                                    >
                                         <option value="">Выберите категорию</option>
-                                        <option>Суши</option>
-                                        <option>Роллы</option>
-                                        <option>Пицца</option>
+                                        {categories.map(category => (
+                                            <option key={category} value={category}>{category}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -185,11 +286,32 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                 {/* Правая часть страницы */}
                 <div className="addEditDishPage-right-column" style={{ width: '40%', paddingLeft: '20px' }}>
                     <h3 className="section-title">Характеристики</h3>
+
+                    {/* Калории, жиры, белки и углеводы */}
                     <div className="checkbox-group">
                         <label className="checkbox-label">
                             <input
                                 type="checkbox"
-                                onChange={(e) => setNutritionVisible(e.target.checked)}
+                                checked={nutritionVisible}
+                                onChange={(e) => {
+                                    setNutritionVisible(e.target.checked);
+                                    if (!e.target.checked) { // Если чекбокс === false, то все поля для него очищаются
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            isNutritionalValue: false,
+                                            calories: '',
+                                            fats: '',
+                                            squirrels: '',
+                                            carbohydrates: ''
+                                        }));
+                                    }
+                                    else { // Если чекбокс нажат, то мы устанавливаем true
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            isNutritionalValue: true
+                                        }));
+                                    }
+                                }}
                             />
                             <span className="checkbox-caption">Пищевая ценность</span>
                         </label>
@@ -203,16 +325,26 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                             type="number"
                                             className="input-field"
                                             style={{ height: '30px' }}
+                                            name="calories"
+                                            value={formData.calories}
+                                            onChange={handleInputChange}
                                         />
                                     </div>
                                     <div className="form-row">
-                                        {['Жиры*', 'Белки*', 'Углеводы*'].map((label) => (
-                                            <div key={label} className="form-group">
-                                                <label className="input-label">{label}</label>
+                                        {[
+                                            { name: 'fats', label: 'Жиры*' },
+                                            { name: 'squirrels', label: 'Белки*' },
+                                            { name: 'carbohydrates', label: 'Углеводы*' }
+                                        ].map((field) => (
+                                            <div key={field.name} className="form-group">
+                                                <label className="input-label">{field.label}</label>
                                                 <input
                                                     type="number"
                                                     className="input-field"
                                                     style={{ width: 'auto', height: '30px' }}
+                                                    name={field.name}
+                                                    value={formData[field.name]}
+                                                    onChange={handleInputChange}
                                                 />
                                             </div>
                                         ))}
@@ -225,57 +357,81 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                     {/* Вес и объем */}
                     <div className="checkbox-group" style={{ width: 'auto', marginTop: '20px' }}>
                         <div className="form-row" style={{ gap: '15px' }}>
-                            {['Вес', 'Объем'].map((label) => (
-                                <div key={label} style={{
-                                    width: '48%',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'flex-start'
-                                }}>
-                                    {/* Чекбокс */}
-                                    <label className="checkbox-label" style={{ width: '95%' }}>
-                                        <input
-                                            type="checkbox"
-                                            onChange={(e) =>
-                                                label === 'Вес'
-                                                    ? setWeightVisible(e.target.checked)
-                                                    : setVolumeVisible(e.target.checked)
-                                            }
-                                        />
-                                        <span className="checkbox-caption">{label}</span>
-                                    </label>
+                            {['Вес', 'Объем'].map((label) => {
+                                const fieldName = label === 'Вес' ? 'weight' : 'volume';
 
-                                    {/* Поле ввода */}
-                                    <div style={{
-                                        width: '95%',
-                                        visibility: label === 'Вес'
-                                            ? (weightVisible ? 'visible' : 'hidden')
-                                            : (volumeVisible ? 'visible' : 'hidden'),
-                                        opacity: label === 'Вес'
-                                            ? (weightVisible ? 1 : 0)
-                                            : (volumeVisible ? 1 : 0),
-                                        transition: 'opacity 0.2s',
-                                        height: weightVisible || volumeVisible ? 'auto' : 0
+                                return (
+                                    <div key={label} style={{
+                                        width: '48%',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-start'
                                     }}>
-                                        <div className="form-group">
-                                            <label className="input-label">
-                                                {label === 'Вес' ? 'Вес (г)*' : 'Объем (мл)*'}
-                                            </label>
+                                        <label className="checkbox-label" style={{ width: '95%' }}>
                                             <input
-                                                type="number"
-                                                className="input-field"
-                                                style={{
-                                                    width: '95%',
-                                                    height: '30px',
-                                                    visibility: label === 'Вес'
-                                                        ? (weightVisible ? 'visible' : 'hidden')
-                                                        : (volumeVisible ? 'visible' : 'hidden')
+                                                type="checkbox"
+                                                checked={label === 'Вес' ? weightVisible : volumeVisible}
+                                                onChange={(e) => {
+                                                    if (label === 'Вес') {
+                                                        setWeightVisible(e.target.checked);
+                                                        if (!e.target.checked) { // Если чекбокс === false, то все поля для него очищаются
+                                                            setFormData(prev => ({ ...prev, isWeight: false, weight: '' }));
+                                                        }
+                                                        else { // Если чекбокс нажат, то мы устанавливаем true
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                isWeight: true
+                                                            }));
+                                                        }
+                                                    } else {
+                                                        setVolumeVisible(e.target.checked);
+                                                        if (!e.target.checked) { // Если чекбокс === false, то все поля для него очищаются
+                                                            setFormData(prev => ({ ...prev, isVolume: false, volume: '' }));
+                                                        }
+                                                        else { // Если чекбокс нажат, то мы устанавливаем true
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                isVolume: true
+                                                            }));
+                                                        }
+                                                    }
                                                 }}
                                             />
+                                            <span className="checkbox-caption">{label}</span>
+                                        </label>
+
+                                        <div style={{
+                                            width: '95%',
+                                            visibility: label === 'Вес'
+                                                ? (weightVisible ? 'visible' : 'hidden')
+                                                : (volumeVisible ? 'visible' : 'hidden'),
+                                            opacity: label === 'Вес'
+                                                ? (weightVisible ? 1 : 0)
+                                                : (volumeVisible ? 1 : 0),
+                                            transition: 'opacity 0.2s',
+                                            height: (label === 'Вес' ? weightVisible : volumeVisible) ? 'auto' : 0
+                                        }}>
+                                            <div className="form-group">
+                                                <label className="input-label">
+                                                    {label === 'Вес' ? 'Вес (г)*' : 'Объем (мл)*'}
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    className="input-field"
+                                                    style={{
+                                                        width: '95%',
+                                                        height: '30px'
+                                                    }}
+                                                    name={fieldName}
+                                                    value={formData[fieldName]}
+                                                    onChange={handleInputChange}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+
+                            })}
                         </div>
                     </div>
 
@@ -283,7 +439,19 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                         <label className="checkbox-label">
                             <input
                                 type="checkbox"
-                                onChange={(e) => setQuantityVisible(e.target.checked)}
+                                checked={quantityVisible}
+                                onChange={(e) => {
+                                    setQuantityVisible(e.target.checked); // Если чекбокс === false, то все поля для него очищаются
+                                    if (!e.target.checked) {
+                                        setFormData(prev => ({ ...prev, isQuantitySet: false, quantity: '' }));
+                                    }
+                                    else { // Если чекбокс нажат, то мы устанавливаем true
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            isQuantitySet: true
+                                        }));
+                                    }
+                                }}
                             />
                             <span className="checkbox-caption">Количество в наборе</span>
                         </label>
@@ -295,6 +463,9 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                     type="number"
                                     className="input-field"
                                     style={{ height: '30px' }}
+                                    name="quantity"
+                                    value={formData.quantity}
+                                    onChange={handleInputChange}
                                 />
                             </div>
                         )}

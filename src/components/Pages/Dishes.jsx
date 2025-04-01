@@ -69,6 +69,11 @@ const Dishes = () => {
     // Обработчик запуска страницы для добавления блюда
     const handleAddClick = () => {
         setShowAddEditPage(true);
+
+        setPageData({
+            title: 'Добавить блюдо'
+        });
+
         // Сохранение состояния страницы при запуске
         localStorage.setItem('addEditDishPageState', JSON.stringify({
             isOpen: true,
@@ -80,7 +85,7 @@ const Dishes = () => {
     // Обработчик клика по строке в таблице
     const handleRowClick = (rowData) => {
         const originalDish = rawData.find(dish => dish.id === rowData.id); // Получаем исходные данные по id из выбранной строки
-        if(originalDish) {
+        if (originalDish) {
             handleEditClick(originalDish); // Передаем данные выбранной строки и запускаем страницу для редактирования
         }
     };
@@ -88,13 +93,19 @@ const Dishes = () => {
     // Обработчик запуска страницы для редактирования блюда
     const handleEditClick = (dish) => {
         setShowAddEditPage(true);
+
+        setPageData({
+            ...dish,
+            title: 'Редактирование блюда',
+            id: dish.id // Добавляем ID для идентификации
+        });
+
         // Сохранение состояния страницы при запуске
         localStorage.setItem('addEditDishPageState', JSON.stringify({
             isOpen: true,
             pathname: location.pathname,
-            title: 'Блюдо'
+            title: 'Редактирование блюда'
         }));
-        setPageData({ ...dish, title: 'Блюдо' });
     }
 
     // Обработчик закрытия страницы
