@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Стили
 import "./../../styles/underHeaderMenu.css";
@@ -8,21 +9,48 @@ import Dishes from './../Pages/Dishes';
 
 
 const Menu = () => {
+    const navigate = useNavigate();
+    const location = useLocation(); // Получаем текущий маршрут
 
-    // Получение индекса кнопки из localStorage
-    const [selectedButton, setSelectedButton] = useState(() => {
-        const savedIndex = localStorage.getItem('selectedButtonUnderHeaderMenuIndex') // Получаем индекс выбранной кнопки из localStorage
+    // Определяем активную кнопку на основе текущего пути
+    const getInitialButtonIndex = () => {
+        // Получение индекса кнопки из localStorage
+        const savedIndex = localStorage.getItem('selectedButtonUnderHeaderMenuIndex');
+
+        // Если текущий путь соответствует одному из маршрутов кнопок
+        if (location.pathname.startsWith('/menu/dishes')) return 0;
+        if (location.pathname.startsWith('/menu/categories')) return 1;
+
+        // Если нет - используем сохранённое значение
         return savedIndex ? parseInt(savedIndex, 10) : 0;
-    });
+    };
 
-    // Получение индекса выбранной кнопки
+    const [selectedButton, setSelectedButton] = useState(getInitialButtonIndex);
+
+    // Автоматическая навигация при изменении кнопки
+    useEffect(() => {
+        const routes = ['/menu/dishes', '/menu/categories'];
+        const targetRoute = routes[selectedButton];
+        
+        // Навигация только если текущий путь НЕ начинается с целевого маршрута
+        if (!location.pathname.startsWith(targetRoute)) {
+            navigate(targetRoute);
+        }
+    }, [selectedButton, navigate, location.pathname]);
+
+    // Получение индекса выбранной кнопки и навигация
     const handleButtonClick = (buttonIndex) => {
-        setSelectedButton(buttonIndex); // Установка индекса Выбранной кнопки
-        localStorage.setItem('selectedButtonUnderHeaderMenuIndex', buttonIndex); // Сохранение индекса выбранной кнопки
-    }
+        const routes = ['/menu/dishes', '/menu/categories'];
+        // Обновляем состояние только если меняется выбор
+        if (buttonIndex !== selectedButton) {
+            setSelectedButton(buttonIndex);
+            localStorage.setItem('selectedButtonUnderHeaderMenuIndex', buttonIndex);
+        }
+        navigate(routes[buttonIndex]);
+    };
 
     // Названия кнопок
-    const buttonLables = ['Блюда', 'Категории блюд']
+    const buttonLabels = ['Блюда', 'Категории блюд']
 
     // Стилизация контейнера кнопок
     const buttonStyle = {
@@ -30,21 +58,10 @@ const Menu = () => {
         justifyContent: 'left'
     }
 
-    // Отображение страницы при нажатии меню под шапкой
-    const renderSelectComponent = () => {
-        switch (selectedButton) {
-            case 0:
-                return <Dishes />;
-            default:
-                return null; // Если выбранный индекс кнопки не соответствует ни одному компоненту
-        }
-    }
-
     return (
         <div>
-
             <nav style={buttonStyle} className="menu">
-                {buttonLables.map((label, index) => (
+                {buttonLabels.map((label, index) => (
                     <button className="nav-under-button"
                         key={index}
                         onClick={() => handleButtonClick(index)}
@@ -56,12 +73,6 @@ const Menu = () => {
                     </button>
                 ))}
             </nav>
-
-            {/* Отображение выбранного компонента страницы через кнопки меню под шапкой */}
-            <div>
-                {renderSelectComponent()}
-            </div>
-
         </div>
     );
 };

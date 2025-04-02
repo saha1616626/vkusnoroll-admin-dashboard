@@ -1,6 +1,8 @@
 // Управление блюдом. Добавление или редактирование
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom"; // useNavigate - позволяет программно изменять маршрут (навигацию) приложения, nакже позволяет передавать состояние и управлять историей переходов с помощью таких параметров, как replace (заменить текущий элемент в истории) и state (передавать дополнительные данные в маршрут). useLocation - позволяет получать доступ к объекту location, представляющему текущее местоположение (маршрут) приложения. При вызове useLocation объект включает такие свойства, как pathname, search и state.
+import isEqual from 'lodash/isEqual';  // Сравнивает два значения (обычно объекты или массивы) на глубокое равенство.
 
 // Импорт стилей
 import "./../../styles/addEditPage.css";  // Для всех страниц добавления или редактирования данных
@@ -9,7 +11,180 @@ import "./../../styles/addEditDishPage.css"; // Основной для данн
 // Импорт иконок
 import crossIcon from './../../assets/icons/cross.png' // Крестик
 
-const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
+import api from '../../utils/api'; // Импорт API
+
+const AddEditDishPage = ({ mode }) => {
+
+    /* 
+    ===========================
+     Управление страницей
+    ===========================
+    */
+
+    const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
+    const [initialData, setInitialData] = useState(null); // Исходные данные о Блюде, которые были получены при загрузке страницы (Если таковые имеются)
+
+    const { id } = useParams(); // Получаем ID только в режиме редактирования
+    const navigate = useNavigate(); // Для управления маршрутом приложения
+
+    // Инициализация данных при монтировании текущего компонента
+    useEffect(() => {
+
+        // Получаем список категорий
+        const loadCategories = async () => {
+            try {
+                const response = await api.getCategories();
+                const categories = response.data; // Получаем данные
+
+                // Проверяем наличие данных
+                if (!categories || !Array.isArray(categories)) {
+                    throw new Error('Invalid categories data');
+                }
+
+                setCategories(categories.map(c => c.name)); // Устанавливаем список категорий
+            } catch (error) {
+                console.error('Error:', error.response ? error.response.data : error.message);
+                navigate('/menu/dishes'); // Перенаправление при ошибке
+            }
+        };
+
+        loadCategories();
+
+        if (mode === 'edit' && id) { // Проверка режима редактирования и наличие переданного id
+            const fetchDish = async () => {
+                try {
+                    const response = await api.getDishById(id);
+                    const dish = response.data; // Получаем данные
+
+                    // Проверяем наличие данных
+                    if (!dish) {
+                        throw new Error('Invalid dish data');
+                    }
+
+                    // Заполняем поля полученными данными
+                    setFormData(formatDishData(dish)); // Текущие значения в полях
+                    setInitialData(formatDishData(dish)); // Сохранение исходных данных
+                    setIsDirty(false); // Изменений на странице, требующих сохранений, нет
+
+                    // Устанавливаем видимость полей
+                    setNutritionVisible(dish.isNutritionalValue);
+                    setWeightVisible(dish.isWeight);
+                    setQuantityVisible(dish.isQuantitySet);
+                    setVolumeVisible(dish.isVolume);
+                    setIsArchived(dish.isArchived);
+
+                } catch (error) {
+                    console.error('Error:', error.response ? error.response.data : error.message);
+                    navigate('/menu/dishes'); // Перенаправление при ошибке
+                }
+            };
+
+            fetchDish();
+        }
+
+        if (mode === 'add') {
+            // Заполняем пустыми данными
+            setFormData(formatDishData({})); // Текущие значения в полях
+            setInitialData(formatDishData({})); // Сохранение исходных данных
+        }
+
+    }, [mode, id, navigate]); // Срабатывает при маршрутизации, изменении режима и id
+
+    // Функция для форматирования данных блюда
+    const formatDishData = (dish) => {
+        return {
+            name: dish.name || '',
+            description: dish.description || '',
+            category: dish.category || '',
+            isNutritionalValue: dish.isNutritionalValue || false,
+            calories: dish.calories?.toString() || '',
+            fats: dish.fats?.toString() || '',
+            squirrels: dish.squirrels?.toString() || '',
+            carbohydrates: dish.carbohydrates?.toString() || '',
+            isWeight: dish.isWeight || false,
+            weight: dish.weight?.toString() || '',
+            isQuantitySet: dish.isQuantitySet || false,
+            quantity: dish.quantity?.toString() || '',
+            isVolume: dish.isVolume || false,
+            volume: dish.volume?.toString() || '',
+            price: dish.price?.toString() || '',
+            isArchived: dish.isArchived || false,
+            image: dish.image || null,
+        };
+    };
+
+    // Проверка изменений, требующих сохранения
+    const checkDirty = useCallback((currentData) => {
+        return !isEqual(initialData, currentData); // Проверка, изменились ли данные в полях по отношению к первоначальным. Если да, то требуется сохранение изменения
+    }, [initialData]);
+
+    // Обработчик изменений в полях
+    const handleInputChange = (e) => {
+        const newData = { ...formData, [e.target.name]: e.target.value }; // Изменяем определенные поля
+        setFormData(newData);
+        setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
+
+        // TODO нужно не забыть про чекбоксы, так как они изменяют свое и чужное состояние (Нужно создать отдельную функию, которая будет обрабатывать setFormData, так как именное оно изменяется)
+    };
+
+    // Блокируем закрытие страницы, если есть несохраненные данные
+    useEffect(() => {
+        const handleBeforeUnload = (e) => { // Пользователь пытается покинуть страницу
+            if (isDirty) { // Есть несохраненные изменения
+                e.preventDefault(); // Предотвращает уход с текущей страницы
+                e.returnValue = ''; // Всплывающее окно, которое предупреждает пользователя
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload); // Обработчик handleBeforeUnload добавляется к объекту window всякий раз, когда пользователь пытается покинуть страницу
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload); // Функция очистки, которая удаляет обработчик события, когда компонент размонтируется или когда isDirty изменяется
+    }, [isDirty]); // Обработчик события будет добавляться каждый раз, когда isDirty изменяется
+
+    // Обработчик закрытия
+    const handleClose = (forceClose = false) => { // Функция принимает аргумент forceClose, по умолчанию равный false. Аргумент позволяет при необходимости принудительно закрыть окно или перейти на другую страницу, минуя любые проверки
+        if (!forceClose && isDirty) { // Если есть несохраненные изменения
+            if (!window.confirm('Есть несохранённые изменения. Закрыть?')) return; // Диалоговое окно с подтверждением. При отказе закрыть страницу возвращается return
+        }
+        navigate(-1); // Возврат пользователя на предыдущую страницу в истории навигации
+    };
+
+    // Обработчик сохранения
+    const handleSave = () => {
+        // TODO логика сохранения
+        setIsDirty(false); // Несохраненных изменений нет
+        setInitialData(formData); // Обновляем начальные данные полей на странице, чтобы проверка наличия сохранения данных начиналась от них
+    }
+
+    // Блокируем обновление страницы, если есть несохраненные данные
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (isDirty) {
+                const confirmationMessage = 'Есть несохранённые изменения. Уйти?';
+                event.returnValue = confirmationMessage; // Для старых браузеров
+                return confirmationMessage; // Для современных браузеров
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isDirty]);
+
+    /* 
+    ===========================
+     Поля и прочяя разметка страницы
+    ===========================
+    */
+
+    const [isArchived, setIsArchived] = useState(false); // Архив
+    const [nutritionVisible, setNutritionVisible] = useState(false); // Пищевая ценность
+    const [weightVisible, setWeightVisible] = useState(false); // Вес
+    const [volumeVisible, setVolumeVisible] = useState(false); // Объем
+    const [quantityVisible, setQuantityVisible] = useState(false); // Кол-во в наборе
+    const [selectedImage, setSelectedImage] = useState(null); // Выбранное изображение
+
     const [categories, setCategories] = useState([]); // Список категорий
     const [formData, setFormData] = useState({ // Инициализация полей
         name: '',
@@ -31,108 +206,25 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
         image: null
     });
 
-    const isEditMode = !!pageData?.id; // Режим добавить или редактировать
 
-    // Инициализация данных при монтировании текущего компонента
+    // Обработчик установки изображения на отображние при загрузке страницы
     useEffect(() => {
-        const loadCategories = async () => { // Получаем список категорий
-            try {
-                const response = await fetch('http://localhost:5000/api/categories');
-                const data = await response.json();
-                setCategories(data.map(c => c.name)); // Устанавливаем список категорий
-            } catch (error) {
-                console.error('Error loading categories:', error);
-            }
-        };
-
-        loadCategories();
-
-        // Если есть данные блюда - заполняем форму
-        if (pageData?.id) {
-            setFormData({
-                name: pageData.name || '',
-                description: pageData.description || '',
-                category: pageData.category || '',
-                isNutritionalValue: pageData.isNutritionalValue || false,
-                calories: pageData.calories?.toString() || '',
-                fats: pageData.fats?.toString() || '',
-                squirrels: pageData.squirrels?.toString() || '',
-                carbohydrates: pageData.carbohydrates?.toString() || '',
-                isWeight: pageData.isWeight || false,
-                weight: pageData.weight?.toString() || '',
-                isQuantitySet: pageData.isQuantitySet || false,
-                quantity: pageData.quantity?.toString() || '',
-                isVolume: pageData.isVolume || false,
-                volume: pageData.volume?.toString() || '',
-                price: pageData.price?.toString() || '',
-                isArchived: pageData.isArchived || false,
-                image: pageData.image || null
-            });
-
-            // Устанавливаем видимость полей
-            setNutritionVisible(pageData.isNutritionalValue);
-            setWeightVisible(pageData.isWeight);
-            setQuantityVisible(pageData.isQuantitySet);
-            setVolumeVisible(pageData.isVolume);
-            setIsArchived(pageData.isArchived);
+        if (formData?.image) { // Если изображение передано
+            setSelectedImage(formData.image);
         }
-    }, [pageData]);
+    }, [formData])
 
-    // Обработчик изменения полей
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value })); // Сохраняем только измененные поля
-    };
-
-    // Обработчик изображений
-    useEffect(() => {
-        if (pageData?.image) { // Если изображение передано
-            setSelectedImage(pageData.image);
-        }
-    }, [pageData])
-
-    /* 
-    ===========================
-     Управление страницей
-    ===========================
-    */
-
-    // Блокируем закрытие страницы при ее обновлении
-    useEffect(() => {
-        const handleBeforeUnload = (e) => {
-            e.preventDefault();
-            e.returnValue = '';
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, []);
-
-    // Закрываем страницу
-    const handleClose = () => {
-        onClose();
-    };
-
-    /* 
-    ===========================
-     Поля и прочяя разметка страницы
-    ===========================
-    */
-    const [isArchived, setIsArchived] = useState(false); // Архив
-    const [nutritionVisible, setNutritionVisible] = useState(false); // Пищевая ценность
-    const [weightVisible, setWeightVisible] = useState(false); // Вес
-    const [volumeVisible, setVolumeVisible] = useState(false); // Объем
-    const [quantityVisible, setQuantityVisible] = useState(false); // Кол-во в наборе
-    const [selectedImage, setSelectedImage] = useState(null); // Выбранное изображение
-
-    // Обработчик загрузки изображения
+    // Обработчик загрузки изображения из файлов
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setSelectedImage(reader.result);
-                setFormData(prev => ({ ...prev, image: reader.result })); // Фиксируем выбранное изображение
+
+                const newData = { ...formData, image: reader.result }; // Обновляем изображение
+                setFormData(newData); // Фиксируем изменения
+                setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
             };
             reader.readAsDataURL(file);
         }
@@ -141,6 +233,10 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
     // Убрать изображение
     const handleImageRemove = () => {
         setSelectedImage(null);
+
+        const newData = { ...formData, image: null }; // Обновляем изображение
+        setFormData(newData); // Фиксируем изменения
+        setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
     };
 
     return (
@@ -149,7 +245,7 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
             <div className="control-components">
 
                 {/* Заголовок страницы */}
-                <div className="page-name">{pageData?.title || 'Добавить блюдо'}</div>
+                <div className="page-name">{id ? 'Редактирование блюда' : 'Добавить блюдо'}</div>
 
                 <div className="archive-close-save-group">
                     {/* Архивировать */}
@@ -159,25 +255,24 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                             checked={isArchived}
                             onChange={(e) => {
                                 setIsArchived(e.target.checked); // Установили новое значение чекбокса
-                                if(!e.target.checked) { // Если чекбокс не нажат, то мы устанавливаем false
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        isArchived: false
-                                    }));
+                                if (!e.target.checked) { // Если чекбокс не нажат, то мы устанавливаем false
+                                    // Фиксируем изменения
+                                    const newData = { ...formData, isArchived: false };
+                                    setFormData(newData);
+                                    setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                 }
                                 else { // Если чекбокс нажат, то мы устанавливаем true
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        isArchived: true
-                                    }));
+                                    const newData = { ...formData, isArchived: true };
+                                    setFormData(newData);
+                                    setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                 }
-                            }} 
-                            />
+                            }}
+                        />
                         <div className="archiving-object-text">Архивировать</div>
                     </label>
 
-                    <button className="button-control close" onClick={handleClose}>Закрыть</button>
-                    <button className="button-control save" type="submit">Сохранить</button>
+                    <button className="button-control close" onClick={() => handleClose()}>Закрыть</button>
+                    <button className="button-control save" type="submit" onClick={handleSave}>Сохранить</button>
                 </div>
             </div>
 
@@ -192,6 +287,7 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                     <div className="form-group">
                         <label className="input-label">Наименование блюда*</label>
                         <input
+                            maxLength={60}
                             type="text"
                             className="input-field"
                             style={{ width: 'auto', height: '30px' }}
@@ -208,6 +304,7 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                             <div className="form-group">
                                 <label className="input-label">Описание</label>
                                 <textarea
+                                    maxLength={300}
                                     className="input-field"
                                     style={{ height: '100px' }}
                                     name="description"
@@ -227,6 +324,7 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                         name="price"
                                         value={formData.price}
                                         onChange={handleInputChange}
+                                        min={0} step={1}
                                     />
                                 </div>
                                 <div className="form-group" >
@@ -296,20 +394,15 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                 onChange={(e) => {
                                     setNutritionVisible(e.target.checked);
                                     if (!e.target.checked) { // Если чекбокс === false, то все поля для него очищаются
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            isNutritionalValue: false,
-                                            calories: '',
-                                            fats: '',
-                                            squirrels: '',
-                                            carbohydrates: ''
-                                        }));
+                                        // Фиксируем изменения
+                                        const newData = { ...formData, isNutritionalValue: false, calories: '', fats: '', squirrels: '', carbohydrates: '' };
+                                        setFormData(newData);
+                                        setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                     }
                                     else { // Если чекбокс нажат, то мы устанавливаем true
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            isNutritionalValue: true
-                                        }));
+                                        const newData = { ...formData, isNutritionalValue: true };
+                                        setFormData(newData);
+                                        setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                     }
                                 }}
                             />
@@ -375,24 +468,28 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                                     if (label === 'Вес') {
                                                         setWeightVisible(e.target.checked);
                                                         if (!e.target.checked) { // Если чекбокс === false, то все поля для него очищаются
-                                                            setFormData(prev => ({ ...prev, isWeight: false, weight: '' }));
+                                                            // Фиксируем изменения
+                                                            const newData = { ...formData, isWeight: false, weight: '' };
+                                                            setFormData(newData);
+                                                            setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                                         }
                                                         else { // Если чекбокс нажат, то мы устанавливаем true
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                isWeight: true
-                                                            }));
+                                                            const newData = { ...formData, isWeight: true };
+                                                            setFormData(newData);
+                                                            setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                                         }
                                                     } else {
                                                         setVolumeVisible(e.target.checked);
                                                         if (!e.target.checked) { // Если чекбокс === false, то все поля для него очищаются
-                                                            setFormData(prev => ({ ...prev, isVolume: false, volume: '' }));
+                                                            // Фиксируем изменения
+                                                            const newData = { ...formData, isVolume: false, volume: '' };
+                                                            setFormData(newData);
+                                                            setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                                         }
                                                         else { // Если чекбокс нажат, то мы устанавливаем true
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                isVolume: true
-                                                            }));
+                                                            const newData = { ...formData, isVolume: true };
+                                                            setFormData(newData);
+                                                            setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                                         }
                                                     }
                                                 }}
@@ -443,13 +540,15 @@ const AddEditDishPage = ({ onClose, pageData, setPageData }) => {
                                 onChange={(e) => {
                                     setQuantityVisible(e.target.checked); // Если чекбокс === false, то все поля для него очищаются
                                     if (!e.target.checked) {
-                                        setFormData(prev => ({ ...prev, isQuantitySet: false, quantity: '' }));
+                                        // Фиксируем изменения
+                                        const newData = { ...formData, isQuantitySet: false, quantity: '' };
+                                        setFormData(newData);
+                                        setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                     }
                                     else { // Если чекбокс нажат, то мы устанавливаем true
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            isQuantitySet: true
-                                        }));
+                                        const newData = { ...formData, isQuantitySet: true };
+                                        setFormData(newData);
+                                        setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
                                     }
                                 }}
                             />

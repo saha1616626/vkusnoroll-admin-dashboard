@@ -1,82 +1,67 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import "./../../styles/header.css";
 
 // Импорт иконок
 import userIcon from './../../assets/icons/user.png';
 import settingsIcon from './../../assets/icons/settings.png';
 
-// Дополнительные компоненты
-import Menu from './../UnderHeader/Menu';
-
 const Header = () => {
+    const navigate = useNavigate();
 
     const [selectedButton, setSelectedButton] = useState(() => {
-        const savedIndex = localStorage.getItem('selectedButtonHeaderIndex'); // Получаем индекс выбранной кнопки из localStorage
+        const savedIndex = localStorage.getItem('selectedButtonHeaderIndex');
         return savedIndex ? parseInt(savedIndex, 10) : 0;
     });
 
     const handleButtonClick = (buttonIndex) => {
-        setSelectedButton(buttonIndex); // Установка индекса Выбранной кнопки
-        localStorage.setItem('selectedButtonHeaderIndex', buttonIndex); // Сохранение индекса выбранной кнопки
-    }
+        setSelectedButton(buttonIndex);
+        localStorage.setItem('selectedButtonHeaderIndex', buttonIndex);
 
-    // Названия кнопок
-    const buttonLables = ['Меню', 'Новости', 'Отчет по продажам'];
-
-    // Стилизация контейнера кнопок
-    const buttonStyle = {
-        display: 'flex',
-        gap: '10px',
-        justifyContent: 'center',
-        margin: '0',
-        padding: '0'
-    }
-
-    // Отображение меню или страницы при выборе кнопки в навигационном меню
-    const renderSelectComponent = () => {
-        switch (selectedButton) {
+        // Здесь добавим навигацию в зависимости от выбранной кнопки
+        switch (buttonIndex) {
             case 0:
-                return <Menu />;
+                navigate('/menu');
+                break;
+            case 1:
+                navigate('/news'); // Указать путь для Новости (если нужен)
+                break;
+            case 2:
+                navigate('/sales-report'); // Указать путь для Отчета по продажам (если нужен)
+                break;
             default:
-                return null; // Если выбранный индекс кнопки не соответствует ни одному компоненту
+                break;
         }
-    }
+    };
+
+    const buttonLabels = ['Меню', 'Новости', 'Отчет по продажам'];
 
     return (
         <div>
-
             <header className="header">
-                {/* Логотип */}
-                <div className="logo">
-                    ВкусноРолл.Админ
-                </div>
+                <div className="logo">ВкусноРолл.Админ</div>
 
-                <nav style={buttonStyle}>
-                    {buttonLables.map((label, index) => (
-                        <button className="nav-button"
+                <nav style={{ display: 'flex', gap: '10px', justifyContent: 'center', margin: '0', padding: '0' }}>
+                    {buttonLabels.map((label, index) => (
+                        <button 
+                            className="nav-button"
                             key={index}
                             onClick={() => handleButtonClick(index)}
                             style={{
                                 backgroundColor: selectedButton === index ? 'gray' : 'transparent',
                                 color: selectedButton === index ? 'white' : 'black'
-                            }}>
+                            }}
+                        >
                             {label}
                         </button>
                     ))}
                 </nav>
 
-                {/* Кнопки иконки */}
                 <div className="icons">
                     <img src={userIcon} alt="User" />
                     <img src={settingsIcon} alt="Settings" />
                 </div>
             </header>
-
-            {/* Отображение выбранного компонента через кнопки в шапке */}
-            <div>
-                {renderSelectComponent()}
-            </div>
-
         </div>
     );
 };
