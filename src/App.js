@@ -5,7 +5,7 @@ import {
   Route
 } from 'react-router-dom';
 
-import Header from './components/Header/Header'; // Глпавное меню
+import Header from './components/Header/Header'; // Главное меню
 import MainLayout from './components/UnderHeader/MainLayout'; // Подменю
 import Dishes from './components/Pages/Dishes'; // Список блюд
 import AddEditDishPage from './components/Pages/AddEditDishPage'; // Управление блюдом. Добавление или редактирование

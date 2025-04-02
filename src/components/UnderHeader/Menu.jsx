@@ -4,10 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // Стили
 import "./../../styles/underHeaderMenu.css";
 
-// Компоненты страниц
-import Dishes from './../Pages/Dishes';
-
-
 const Menu = () => {
     const navigate = useNavigate();
     const location = useLocation(); // Получаем текущий маршрут
