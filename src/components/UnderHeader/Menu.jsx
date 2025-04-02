@@ -17,7 +17,7 @@ const Menu = () => {
         // Получение индекса кнопки из localStorage
         const savedIndex = localStorage.getItem('selectedButtonUnderHeaderMenuIndex');
 
-        // Если текущий путь соответствует одному из маршрутов кнопок
+        // Если текущий путь соответствует одному из маршрутов кнопок, то запускаем подходящий маршрут
         if (location.pathname.startsWith('/menu/dishes')) return 0;
         if (location.pathname.startsWith('/menu/categories')) return 1;
 
@@ -29,8 +29,8 @@ const Menu = () => {
 
     // Автоматическая навигация при изменении кнопки
     useEffect(() => {
-        const routes = ['/menu/dishes', '/menu/categories'];
-        const targetRoute = routes[selectedButton];
+        const routes = ['/menu/dishes', '/menu/categories']; // Все маршруты
+        const targetRoute = routes[selectedButton]; // Индекс кнопки соответствует 1 маршруту
         
         // Навигация только если текущий путь НЕ начинается с целевого маршрута
         if (!location.pathname.startsWith(targetRoute)) {

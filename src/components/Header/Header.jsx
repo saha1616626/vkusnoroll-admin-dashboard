@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from 'react-router-dom';
 import "./../../styles/header.css";
 
 // Импорт иконок
@@ -8,32 +8,47 @@ import settingsIcon from './../../assets/icons/settings.png';
 
 const Header = () => {
     const navigate = useNavigate();
+    const location = useLocation(); // Получаем текущий маршрут
 
-    const [selectedButton, setSelectedButton] = useState(() => {
+    // Определяем активную кнопку на основе текущего пути
+    const getInitialButtonIndex = () => {
+        // Получение индекса кнопки из localStorage
         const savedIndex = localStorage.getItem('selectedButtonHeaderIndex');
+
+        // Если текущий путь соответствует одному из маршрутов кнопок, то запускаем подходящий маршрут
+        if (location.pathname.startsWith('/menu')) return 0;
+        if (location.pathname.startsWith('/news')) return 1;
+        if (location.pathname.startsWith('/sales-report')) return 2;
+
+        // Если нет - используем сохранённое значение
         return savedIndex ? parseInt(savedIndex, 10) : 0;
-    });
-
-    const handleButtonClick = (buttonIndex) => {
-        setSelectedButton(buttonIndex);
-        localStorage.setItem('selectedButtonHeaderIndex', buttonIndex);
-
-        // Здесь добавим навигацию в зависимости от выбранной кнопки
-        switch (buttonIndex) {
-            case 0:
-                navigate('/menu');
-                break;
-            case 1:
-                navigate('/news'); // Указать путь для Новости (если нужен)
-                break;
-            case 2:
-                navigate('/sales-report'); // Указать путь для Отчета по продажам (если нужен)
-                break;
-            default:
-                break;
-        }
     };
 
+    const [selectedButton, setSelectedButton] = useState(getInitialButtonIndex);
+
+    // Автоматическая навигация при изменении кнопки
+    useEffect(() => {
+        const routes = ['/menu', '/news', '/sales-report']; // Все маршруты
+        const targetRoute = routes[selectedButton]; // Индекс кнопки соответствует 1 маршруту
+
+        // Навигация только если текущий путь НЕ начинается с целевого маршрута
+        if (!location.pathname.startsWith(targetRoute)) {
+            navigate(targetRoute);
+        }
+    }, [selectedButton, navigate, location.pathname]);
+
+    // Получение индекса выбранной кнопки и навигация
+    const handleButtonClick = (buttonIndex) => {
+        const routes = ['/menu', '/news', '/sales-report'];
+        // Обновляем состояние только если меняется выбор
+        if (buttonIndex !== selectedButton) {
+            setSelectedButton(buttonIndex);
+            localStorage.setItem('selectedButtonHeaderIndex', buttonIndex);
+        }
+        navigate(routes[buttonIndex]);
+    };
+
+    // Названия кнопок
     const buttonLabels = ['Меню', 'Новости', 'Отчет по продажам'];
 
     return (
@@ -43,7 +58,7 @@ const Header = () => {
 
                 <nav style={{ display: 'flex', gap: '10px', justifyContent: 'center', margin: '0', padding: '0' }}>
                     {buttonLabels.map((label, index) => (
-                        <button 
+                        <button
                             className="nav-button"
                             key={index}
                             onClick={() => handleButtonClick(index)}
