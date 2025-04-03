@@ -237,6 +237,9 @@ const Dishes = () => {
             setSearchQuery(''); // Обнолвение значения поля поиска
             searchInputRef.current.clear(); // Очистка поля поиска
         }
+
+        // Очистка выбранных строк
+        
     };
 
     /* 
@@ -448,7 +451,7 @@ const Dishes = () => {
 
                 {/* Таблица */}
                 <div className="table-page">
-                    {isLoading ? <Loader /> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
+                    {isLoading ? <Loader isWorking={isLoading}/> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
                         columns={selectedColumns}
                         data={tableData}
                         onSelectionChange={handleSelectionChange}
