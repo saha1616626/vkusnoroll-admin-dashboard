@@ -19,14 +19,14 @@
     transition: transform 0.2s ease; /* Плавность трансформации */
 }
 .loading.rotate { /* Активация вращения */
-    animation: spin 0.5s forwards; /* Применяет анимацию при нажатии */
+    animation: loading-spin 20s linear infinite; /* Одинаковая скорость и бесконечная анимация */
 }
-@keyframes spin {
+@keyframes loading-spin {
     from {
         transform: rotate(0deg); /* Начало вращения */
     }
     to {
-        transform: rotate(360deg); /* Конечное вращение */
+        transform: rotate(7200deg); /* Конечное вращение */
     }
 }
 

@@ -23,6 +23,7 @@ import api from '../../utils/api';
 
 const Dishes = () => {
     const pageId = 'dish-page'; // Уникальный идентификатор страницы
+    const timeOut = 500; // Задержка перед отключением анимации загрузки данных
 
     /* 
     ===========================
@@ -57,12 +58,22 @@ const Dishes = () => {
 
     // Обновление страницы
     const refreshData = (term) => {
-        // TODO логика обновления страницы
-        // Сохраняем значения полей фильтра после нажатия "Enter"
-        setActiveFilters(filterState.formData);
-        saveFilterState({ ...filterState, formData: filterState.formData });
-        const searchQuery = searchInputRef.current.search(); // Получаем текущее введенное значение из поля поиска
-        setSearchQuery(searchQuery);
+        setIsLoading(true); // Включаем анимацию загрузки данных
+        try {
+            // Сохраняем значения полей фильтра после нажатия "Enter"
+            setActiveFilters(filterState.formData);
+            saveFilterState({ ...filterState, formData: filterState.formData });
+            const searchQuery = searchInputRef.current.search(); // Получаем текущее введенное значение из поля поиска
+            setSearchQuery(searchQuery);
+        } catch (error) {
+
+        }
+        finally {
+            // Отключаем анимацию загрузки данных
+            setTimeout(() => {
+                setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
+            }, timeOut);
+        }
     }
 
     /* 
@@ -206,40 +217,63 @@ const Dishes = () => {
 
     // Поиск по заданным параметрам фильтра
     const handleFilterSearch = () => {
+        setIsLoading(true); // Включаем анимацию загрузки данных
+        try {
+            // Сохраняем значения полей фильтра после нажатия "Поиск"
+            setActiveFilters(filterState.formData);
+            saveFilterState({ ...filterState, formData: filterState.formData });
 
-        // Сохраняем значения полей фильтра после нажатия "Поиск"
-        setActiveFilters(filterState.formData);
-        saveFilterState({ ...filterState, formData: filterState.formData });
+            // Сброс поля поиска
+            if (searchInputRef.current) {
+                setSearchQuery(''); // Обнолвение значения поля поиска
+                searchInputRef.current.clear(); // Очистка поля и обновление таблицы
+            }
+        } catch (error) {
 
-        // Сброс поля поиска
-        if (searchInputRef.current) {
-            setSearchQuery(''); // Обнолвение значения поля поиска
-            searchInputRef.current.clear(); // Очистка поля и обновление таблицы
         }
+        finally {
+            // Отключаем анимацию загрузки данных
+            setTimeout(() => {
+                setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
+            }, timeOut);
+        }
+
     };
 
     // Очистка полей фильтра
     const handleFilterReset = () => {
-        setFilterState(prev => ({
-            ...prev,
-            formData: {}
-        }));
+        setIsLoading(true); // Включаем анимацию загрузки данных
+        try {
+            setFilterState(prev => ({
+                ...prev,
+                formData: {}
+            }));
 
-        setActiveFilters({});
-        saveFilterState({
-            isOpen: true,
-            isActive: true,
-            formData: {}
-        });
+            setActiveFilters({});
+            saveFilterState({
+                isOpen: true,
+                isActive: true,
+                formData: {}
+            });
 
-        // Сброс поля поиска
-        if (searchInputRef.current) {
-            setSearchQuery(''); // Обнолвение значения поля поиска
-            searchInputRef.current.clear(); // Очистка поля поиска
+            // Сброс поля поиска
+            if (searchInputRef.current) {
+                setSearchQuery(''); // Обнолвение значения поля поиска
+                searchInputRef.current.clear(); // Очистка поля поиска
+            }
+
+            // Очистка выбранных строк
+
         }
+        catch (error) {
 
-        // Очистка выбранных строк
-        
+        }
+        finally {
+            // Отключаем анимацию загрузки данных
+            setTimeout(() => {
+                setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
+            }, timeOut);
+        }
     };
 
     /* 
@@ -266,7 +300,7 @@ const Dishes = () => {
 
     // Универсальная функция загрузки данных из БД
     const fetchData = useCallback(async (archivedStatus) => {
-        setIsLoading(true); // Данные загружаются из БД, анимация загрузки данных включена
+        setIsLoading(true); // Включаем анимацию загрузки данных
         try {
             const response = await api.getDishes();
             const dishes = response.data; // Получаем данные
@@ -287,7 +321,10 @@ const Dishes = () => {
             // Обработка ошибок axios
             console.error('Error:', error.response ? error.response.data : error.message);
         } finally {
-            setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
+            // Отключаем анимацию загрузки данных
+            setTimeout(() => {
+                setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
+            }, timeOut);
         }
     }, []);
 
@@ -315,12 +352,22 @@ const Dishes = () => {
 
     // Обработчик поиска
     const handleSearch = (term) => {
+        setIsLoading(true); // Включаем анимацию загрузки данных
+        try {
+            // Сохраняем значения полей фильтра после нажатия "Enter"
+            setActiveFilters(filterState.formData);
+            saveFilterState({ ...filterState, formData: filterState.formData });
 
-        // Сохраняем значения полей фильтра после нажатия "Enter"
-        setActiveFilters(filterState.formData);
-        saveFilterState({ ...filterState, formData: filterState.formData });
+            setSearchQuery(term.trim());
+        } catch (error) {
 
-        setSearchQuery(term.trim());
+        }
+        finally {
+            // Отключаем анимацию загрузки данных
+            setTimeout(() => {
+                setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
+            }, timeOut);
+        }
     };
 
     // Обработчик изменения состояния архива
@@ -451,7 +498,7 @@ const Dishes = () => {
 
                 {/* Таблица */}
                 <div className="table-page">
-                    {isLoading ? <Loader isWorking={isLoading}/> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
+                    {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
                         columns={selectedColumns}
                         data={tableData}
                         onSelectionChange={handleSelectionChange}
