@@ -205,7 +205,7 @@ const AddEditDishPage = ({ mode }) => {
                 volume: formData.volume ? Number(formData.volume) : null,
                 price: Number(formData.price),
                 isArchived: Boolean(formData.isArchived),
-                image: formData.image || null
+                image: formData.image.split(',')[1] || null
             };
 
             if (mode === 'add') {
@@ -294,9 +294,10 @@ const AddEditDishPage = ({ mode }) => {
 
             const reader = new FileReader();
             reader.onloadend = () => {
+
                 setSelectedImage(reader.result);
 
-                const newData = { ...formData, image: reader.result }; // Обновляем изображение
+                const newData = { ...formData, image: reader.result  }; // Обновляем изображение. Сохраняем только чистый base64
                 setFormData(newData); // Фиксируем изменения
                 setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
             };
@@ -418,6 +419,7 @@ const AddEditDishPage = ({ mode }) => {
                                         ))}
                                     </select>
                                 </div>
+
                             </div>
                         </div>
 
