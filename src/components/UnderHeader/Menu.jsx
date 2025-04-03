@@ -27,7 +27,7 @@ const Menu = () => {
     useEffect(() => {
         const routes = ['/menu/dishes', '/menu/categories']; // Все маршруты
         const targetRoute = routes[selectedButton]; // Индекс кнопки соответствует 1 маршруту
-        
+
         // Навигация только если текущий путь НЕ начинается с целевого маршрута
         if (!location.pathname.startsWith(targetRoute)) {
             navigate(targetRoute);
@@ -37,6 +37,13 @@ const Menu = () => {
     // Получение индекса выбранной кнопки и навигация
     const handleButtonClick = (buttonIndex) => {
         const routes = ['/menu/dishes', '/menu/categories'];
+
+        // Проверка на несохраненные изменения
+        if (localStorage.getItem('isDirty') === 'true') {
+            if (!window.confirm('Есть несохранённые изменения. Уйти?')) return;
+            localStorage.setItem('isDirty', 'false'); // Сбрасываем флаг
+        }
+
         // Обновляем состояние только если меняется выбор
         if (buttonIndex !== selectedButton) {
             setSelectedButton(buttonIndex);

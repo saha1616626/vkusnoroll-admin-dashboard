@@ -40,6 +40,13 @@ const Header = () => {
     // Получение индекса выбранной кнопки и навигация
     const handleButtonClick = (buttonIndex) => {
         const routes = ['/menu', '/news', '/sales-report'];
+
+        // Проверка на несохраненные изменения
+        if (localStorage.getItem('isDirty') === 'true') {
+            if (!window.confirm('Есть несохранённые изменения. Уйти?')) return;
+            localStorage.setItem('isDirty', 'false'); // Сбрасываем флаг
+        }
+
         // Обновляем состояние только если меняется выбор
         if (buttonIndex !== selectedButton) {
             setSelectedButton(buttonIndex);

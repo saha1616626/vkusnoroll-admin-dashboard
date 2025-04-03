@@ -27,24 +27,56 @@ const AddEditDishPage = ({ mode }) => {
     const { id } = useParams(); // Получаем ID только в режиме редактирования
     const navigate = useNavigate(); // Для управления маршрутом приложения
 
+    // Обработчик для кнопки "Назад" браузера
+    useEffect(() => {
+        const handleBackButton = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                if (window.confirm('Есть несохранённые изменения. Уйти?')) {
+                    setIsDirty(false);
+                    navigate('/menu/dishes', { replace: true });
+                }
+            }
+        };
+
+        window.history.pushState(null, null, window.location.pathname);
+        window.addEventListener('popstate', handleBackButton);
+
+        return () => {
+            window.removeEventListener('popstate', handleBackButton);
+        };
+    }, [isDirty, navigate]);
+
+    // Сохраняем состояние о наличии несохраненных данных на странице
+    useEffect(() => {
+        localStorage.setItem('isDirty', isDirty.toString());
+    }, [isDirty]);
+
+    // Очистка состояния о наличии несохраненных данных при размонтировании
+    useEffect(() => {
+        return () => {
+            localStorage.removeItem('isDirty');
+        };
+    }, []);
+
     // Инициализация данных при монтировании текущего компонента
     useEffect(() => {
 
         // Получаем список категорий
         const loadCategories = async () => {
             try {
-                const response = await api.getCategories();
-                const categories = response.data; // Получаем данные
+                const categoriesResponse = await api.getCategories();
+                const loadedCategories = categoriesResponse.data; // Получаем данные
 
                 // Проверяем наличие данных
-                if (!categories || !Array.isArray(categories)) {
+                if (!loadedCategories || !Array.isArray(loadedCategories)) {
                     throw new Error('Invalid categories data');
                 }
 
-                setCategories(categories.map(c => c.name)); // Устанавливаем список категорий
+                setCategories(loadedCategories);  // Устанавливаем список категорий
             } catch (error) {
                 console.error('Error:', error.response ? error.response.data : error.message);
-                navigate('/menu/dishes'); // Перенаправление при ошибке
+                navigate('/menu/dishes', { replace: true }); // Перенаправление при ошибке
             }
         };
 
@@ -62,8 +94,9 @@ const AddEditDishPage = ({ mode }) => {
                     }
 
                     // Заполняем поля полученными данными
-                    setFormData(formatDishData(dish)); // Текущие значения в полях
-                    setInitialData(formatDishData(dish)); // Сохранение исходных данных
+                    const formattedData = formatDishData(dish);
+                    setFormData(formattedData); // Текущие значения в полях
+                    setInitialData(formattedData); // Сохранение исходных данных
                     setIsDirty(false); // Изменений на странице, требующих сохранений, нет
 
                     // Устанавливаем видимость полей
@@ -75,7 +108,7 @@ const AddEditDishPage = ({ mode }) => {
 
                 } catch (error) {
                     console.error('Error:', error.response ? error.response.data : error.message);
-                    navigate('/menu/dishes'); // Перенаправление при ошибке
+                    navigate('/menu/dishes', { replace: true }); // Перенаправление при ошибке
                 }
             };
 
@@ -95,20 +128,20 @@ const AddEditDishPage = ({ mode }) => {
         return {
             name: dish.name || '',
             description: dish.description || '',
-            category: dish.category || '',
-            isNutritionalValue: dish.isNutritionalValue || false,
+            categoryId: dish.categoryId ? Number(dish.categoryId) : '',
+            isNutritionalValue: !!dish.isNutritionalValue,
             calories: dish.calories?.toString() || '',
             fats: dish.fats?.toString() || '',
             squirrels: dish.squirrels?.toString() || '',
             carbohydrates: dish.carbohydrates?.toString() || '',
-            isWeight: dish.isWeight || false,
+            isWeight: !!dish.isWeight,
             weight: dish.weight?.toString() || '',
-            isQuantitySet: dish.isQuantitySet || false,
+            isQuantitySet: !!dish.isQuantitySet,
             quantity: dish.quantity?.toString() || '',
-            isVolume: dish.isVolume || false,
+            isVolume: !!dish.isVolume,
             volume: dish.volume?.toString() || '',
             price: dish.price?.toString() || '',
-            isArchived: dish.isArchived || false,
+            isArchived: !!dish.isArchived,
             image: dish.image || null,
         };
     };
@@ -123,8 +156,6 @@ const AddEditDishPage = ({ mode }) => {
         const newData = { ...formData, [e.target.name]: e.target.value }; // Изменяем определенные поля
         setFormData(newData);
         setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
-
-        // TODO нужно не забыть про чекбоксы, так как они изменяют свое и чужное состояние (Нужно создать отдельную функию, которая будет обрабатывать setFormData, так как именное оно изменяется)
     };
 
     // Блокируем закрытие страницы, если есть несохраненные данные
@@ -145,14 +176,53 @@ const AddEditDishPage = ({ mode }) => {
         if (!forceClose && isDirty) { // Если есть несохраненные изменения
             if (!window.confirm('Есть несохранённые изменения. Закрыть?')) return; // Диалоговое окно с подтверждением. При отказе закрыть страницу возвращается return
         }
-        navigate(-1); // Возврат пользователя на предыдущую страницу в истории навигации
+        navigate('/menu/dishes', { replace: true }); // Возврат пользователя на страницу dishes с удалением предыдущего маршрута
     };
 
     // Обработчик сохранения
-    const handleSave = () => {
-        // TODO логика сохранения
-        setIsDirty(false); // Несохраненных изменений нет
-        setInitialData(formData); // Обновляем начальные данные полей на странице, чтобы проверка наличия сохранения данных начиналась от них
+    const handleSave = async () => {
+        try {
+            if (!formData.name || !formData.price || !formData.categoryId) {
+                alert('Заполните обязательные поля (помечены *)');
+                return;
+            }
+
+            // Преобразуем данные перед отправкой
+            const payload = {
+                name: formData.name,
+                description: formData.description || null,
+                categoryId: Number(formData.categoryId),
+                isNutritionalValue: Boolean(formData.isNutritionalValue),
+                calories: formData.calories ? Number(formData.calories) : null,
+                fats: formData.fats ? Number(formData.fats) : null,
+                squirrels: formData.squirrels ? Number(formData.squirrels) : null,
+                carbohydrates: formData.carbohydrates ? Number(formData.carbohydrates) : null,
+                isWeight: Boolean(formData.isWeight),
+                weight: formData.weight ? Number(formData.weight) : null,
+                isQuantitySet: Boolean(formData.isQuantitySet),
+                quantity: formData.quantity ? Number(formData.quantity) : null,
+                isVolume: Boolean(formData.isVolume),
+                volume: formData.volume ? Number(formData.volume) : null,
+                price: Number(formData.price),
+                isArchived: Boolean(formData.isArchived),
+                image: formData.image || null
+            };
+
+            if (mode === 'add') {
+                await api.createDish(payload);
+            } else {
+                await api.updateDish(id, payload);
+            }
+
+            // Обработка успешной операции
+            setIsDirty(false); // Несохраненных изменений нет
+            setInitialData(formData); // Обновляем начальные данные полей на странице, чтобы проверка наличия сохранения данных начиналась от них
+            navigate('/menu/dishes');
+        } catch (error) {
+            console.error('Ошибка сохранения:', error);
+            alert('Произошла ошибка при сохранении: ' +
+                (error.response?.data?.message || error.message));
+        }
     }
 
     // Блокируем обновление страницы, если есть несохраненные данные
@@ -174,7 +244,7 @@ const AddEditDishPage = ({ mode }) => {
 
     /* 
     ===========================
-     Поля и прочяя разметка страницы
+     Поля и прочая разметка страницы
     ===========================
     */
 
@@ -189,7 +259,7 @@ const AddEditDishPage = ({ mode }) => {
     const [formData, setFormData] = useState({ // Инициализация полей
         name: '',
         description: '',
-        category: '',
+        categoryId: '',
         isNutritionalValue: false,
         calories: '',
         fats: '',
@@ -206,7 +276,6 @@ const AddEditDishPage = ({ mode }) => {
         image: null
     });
 
-
     // Обработчик установки изображения на отображние при загрузке страницы
     useEffect(() => {
         if (formData?.image) { // Если изображение передано
@@ -218,6 +287,11 @@ const AddEditDishPage = ({ mode }) => {
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Файл слишком большой');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 setSelectedImage(reader.result);
@@ -330,15 +404,17 @@ const AddEditDishPage = ({ mode }) => {
                                 <div className="form-group" >
                                     <label className="input-label">Категория*</label>
                                     <select
-                                        name="category"
+                                        name="categoryId"
                                         className="input-field"
                                         style={{ width: '20em', height: '53.2px' }}
-                                        value={formData.category}
+                                        value={formData.categoryId || ''}
                                         onChange={handleInputChange}
                                     >
                                         <option value="">Выберите категорию</option>
                                         {categories.map(category => (
-                                            <option key={category} value={category}>{category}</option>
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
