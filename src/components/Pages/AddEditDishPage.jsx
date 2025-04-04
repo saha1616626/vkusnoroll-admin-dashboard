@@ -182,7 +182,7 @@ const AddEditDishPage = ({ mode }) => {
     // Обработчик сохранения
     const handleSave = async () => {
         try {
-            if (!formData.name || !formData.price || !formData.categoryId) {
+            if (!formData.name || !formData.price || !formData.categoryId || formData.image === null) {
                 alert('Заполните обязательные поля (помечены *)');
                 return;
             }

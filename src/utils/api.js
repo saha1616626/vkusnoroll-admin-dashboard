@@ -15,6 +15,8 @@ const apiMethods = {
     getDishById: (id) => api.get(`/dishes/${id}`),
     createDish: (data) => api.post('/dishes', data),
     updateDish: (id, data) => api.put(`/dishes/${id}`, data),
+    deleteDishes: (ids) => api.delete('/dishes', { data: { ids } }), // Удаление блюд
+    archiveDishes: (ids, archive) => api.put('/dishes', { ids, archive }), // Архивация и разархивация блюд
 
     // Категории
     getCategories: () => api.get('/categories')

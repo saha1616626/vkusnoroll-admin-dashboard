@@ -261,9 +261,6 @@ const Dishes = () => {
                 setSearchQuery(''); // Обнолвение значения поля поиска
                 searchInputRef.current.clear(); // Очистка поля поиска
             }
-
-            // Очистка выбранных строк
-
         }
         catch (error) {
 
@@ -298,6 +295,8 @@ const Dishes = () => {
     const [isArchiveOpen, setIsArchiveOpen] = useState(false); // Состояние архива (открыто/закрыто)
     const [selectedColumns, setSelectedColumns] = useState(defaultColumns); // Отображаемые столбцы таблицы
 
+    const [selectedDishIds, setSelectedDishIds] = useState([]); // Массив выбранных строк с блюдами в БД
+
     // Универсальная функция загрузки данных из БД
     const fetchData = useCallback(async (archivedStatus) => {
         setIsLoading(true); // Включаем анимацию загрузки данных
@@ -310,7 +309,7 @@ const Dishes = () => {
                 throw new Error('Invalid dishes data');
             }
 
-            setRawData(dishes); // Сохраняем сырые данные
+            setRawData(dishes.sort((a, b) => b.id - a.id)); // Сохраняем сырые данные + сортировка по убыванию Id
 
             // Фильтруем блюда исходя из состония архива
             const filteredData = dishes.filter(dish =>
@@ -406,10 +405,38 @@ const Dishes = () => {
         }
     }, []);
 
-    // Выбранные строки в таблице
-    const handleSelectionChange = (selected) => {
-        // Логика обработки выбранных элементов
-        console.log('Selected items:', selected);
+    // Обработчик выбора строк в таблице
+    const handleSelectionChange = (selectedIndices) => {
+        const selectedIds = selectedIndices
+            .map(index => tableData[index]?.id)
+            .filter(id => id !== undefined);
+        setSelectedDishIds(selectedIds);
+    };
+
+    // Удаление выбранных объектов строк
+    const handleDeleteSelected = async () => {
+        if (selectedDishIds.length === 0) return; // Проверка выбранных строк
+        try {
+            await api.deleteDishes(selectedDishIds); // Удаляем выбранные объекты
+            await fetchData(isArchiveOpen); // Обновляем список таблицы
+            setSelectedDishIds([]); // Сбрасываем выборку строк
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('Ошибка удаления');
+        }
+    };
+
+    // Архивировать или разархивировать выбранные объекты строк
+    const handleArchiveSelected = async (archive = true) => {
+        if (selectedDishIds.length === 0) return;
+        try {
+            await api.archiveDishes(selectedDishIds, archive);
+            await fetchData(isArchiveOpen);
+            setSelectedDishIds([]);
+        } catch (error) {
+            console.error('Archive error:', error);
+            alert(archive ? 'Ошибка архивации' : 'Ошибка разархивации');
+        }
     };
 
     /* 
@@ -455,7 +482,12 @@ const Dishes = () => {
                         />
 
                         {/* Кнопка изменить с выпадающим списком */}
-                        <DropdownButtonChange />
+                        <DropdownButtonChange
+                            IsArchived={isArchiveOpen}
+                            onDelete={handleDeleteSelected}
+                            onArchive={() => handleArchiveSelected(true)}
+                            onUnarchive={() => handleArchiveSelected(false)}
+                        />
                     </div>
 
                     {/* Поиск */}
