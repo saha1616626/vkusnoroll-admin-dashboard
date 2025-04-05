@@ -189,8 +189,8 @@ const AddEditDishPage = ({ mode }) => {
 
             // Преобразуем данные перед отправкой
             const payload = {
-                name: formData.name,
-                description: formData.description || null,
+                name: formData.name.trim(),
+                description: formData.description.trim() || null,
                 categoryId: Number(formData.categoryId),
                 isNutritionalValue: Boolean(formData.isNutritionalValue),
                 calories: formData.calories ? Number(formData.calories) : null,

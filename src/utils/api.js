@@ -19,7 +19,12 @@ const apiMethods = {
     archiveDishes: (ids, archive) => api.put('/dishes', { ids, archive }), // Архивация и разархивация блюд
 
     // Категории
-    getCategories: () => api.get('/categories')
+    getCategories: () => api.get('/categories'),
+    getСategoryById: (id) => api.get(`/categories/${id}`),
+    createСategory: (data) => api.post('/categories', data),
+    updateСategory: (id, data) => api.put(`/categories/${id}`, data),
+    deleteCategories: (ids) => api.delete('/categories', { data: { ids } }), // Удаление категорий
+    archiveCategories: (ids, archive) => api.put('/categories', { ids, archive }), // Архивация и разархивация категорий
 };
 
 // Экспортируем объект по умолчанию
