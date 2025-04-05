@@ -41,22 +41,31 @@ const AddEditDishPage = ({ mode }) => {
             if (isDirty) {
                 e.preventDefault();
 
-                // Сохраняем целевую навигацию и показываем модалку для действия "popstate"
-                setPendingNavigation(() => () => { // Если пользователь подтвредит переход
-                    navigate('/menu/dishes', { replace: true });
+                // Показываем модальное окно и блокируем переход
+                setPendingNavigation(() => () => {
+                    // При подтверждении выполняем переход
+                    window.history.replaceState(null, null, "/menu/dishes");
+                    navigate("/menu/dishes", { replace: true });
                 });
                 setShowNavigationConfirmModal(true);
-                return;
             }
         };
 
+        // Добавляем новую запись в историю вместо замены
         window.history.pushState(null, null, window.location.pathname);
-        window.addEventListener('popstate', handleBackButton);
+        window.addEventListener("popstate", handleBackButton);
 
         return () => {
-            window.removeEventListener('popstate', handleBackButton);
+            window.removeEventListener("popstate", handleBackButton);
         };
     }, [isDirty, navigate]);
+
+    // Обработчик отмены перехода
+    const handleCancelNavigation = () => {
+        // Возвращаем исходный URL
+        window.history.pushState(null, null, window.location.pathname);
+        setShowNavigationConfirmModal(false);
+    };
 
     // Сохраняем состояние о наличии несохраненных данных на странице
     useEffect(() => {
@@ -672,12 +681,14 @@ const AddEditDishPage = ({ mode }) => {
             {/* Модальное окно подтверждения ухода со страницы */}
             <NavigationConfirmModal
                 isOpen={showNavigationConfirmModal}
-                onConfirm={() => {
-                    setIsDirty(false); // Нет несохраненных данных
-                    pendingNavigation?.();
-                    setShowNavigationConfirmModal(false);
-                }}
-                onCancel={() => setShowNavigationConfirmModal(false)}
+                // onConfirm={() => {
+                //     setIsDirty(false); // Нет несохраненных данных
+                //     pendingNavigation?.();
+                //     setShowNavigationConfirmModal(false);
+                // }}
+                // onCancel={() => setShowNavigationConfirmModal(false)}
+                onConfirm={pendingNavigation}
+                onCancel={handleCancelNavigation}
             />
 
         </main>

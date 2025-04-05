@@ -62,7 +62,7 @@ const Menu = () => {
 
     // Навигация по меню
     const performNavigation = (buttonIndex) => {
-        const routes = ['/menu', '/news', '/sales-report'];
+        const routes = ['/menu/dishes', '/menu/categories'];
 
         // Обновляем состояние только если меняется выбор
         if (buttonIndex !== selectedButton) {
