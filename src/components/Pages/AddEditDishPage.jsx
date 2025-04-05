@@ -11,7 +11,11 @@ import "./../../styles/addEditDishPage.css"; // Основной для данн
 // Импорт иконок
 import crossIcon from './../../assets/icons/cross.png' // Крестик
 
-import api from '../../utils/api'; // Импорт API
+// Импорт компонентов
+import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
+
+// Импорт API
+import api from '../../utils/api';
 
 const AddEditDishPage = ({ mode }) => {
 
@@ -27,15 +31,22 @@ const AddEditDishPage = ({ mode }) => {
     const { id } = useParams(); // Получаем ID только в режиме редактирования
     const navigate = useNavigate(); // Для управления маршрутом приложения
 
+    // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
+    const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
+    const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
+
     // Обработчик для кнопки "Назад" браузера
     useEffect(() => {
         const handleBackButton = (e) => {
             if (isDirty) {
                 e.preventDefault();
-                if (window.confirm('Есть несохранённые изменения. Уйти?')) {
-                    setIsDirty(false);
+
+                // Сохраняем целевую навигацию и показываем модалку для действия "popstate"
+                setPendingNavigation(() => () => { // Если пользователь подтвредит переход
                     navigate('/menu/dishes', { replace: true });
-                }
+                });
+                setShowNavigationConfirmModal(true);
+                return;
             }
         };
 
@@ -174,7 +185,12 @@ const AddEditDishPage = ({ mode }) => {
     // Обработчик закрытия
     const handleClose = (forceClose = false) => { // Функция принимает аргумент forceClose, по умолчанию равный false. Аргумент позволяет при необходимости принудительно закрыть окно или перейти на другую страницу, минуя любые проверки
         if (!forceClose && isDirty) { // Если есть несохраненные изменения
-            if (!window.confirm('Есть несохранённые изменения. Закрыть?')) return; // Диалоговое окно с подтверждением. При отказе закрыть страницу возвращается return
+            // Показываем модальное окно вместо confirm
+            setPendingNavigation(() => () => {
+                navigate('/menu/dishes', { replace: true });
+            });
+            setShowNavigationConfirmModal(true);
+            return;
         }
         navigate('/menu/dishes', { replace: true }); // Возврат пользователя на страницу dishes с удалением предыдущего маршрута
     };
@@ -225,7 +241,7 @@ const AddEditDishPage = ({ mode }) => {
         }
     }
 
-    // Блокируем обновление страницы, если есть несохраненные данные
+    // Блокируем обноывление страницы, если есть несохраненные данные
     useEffect(() => {
         const handleBeforeUnload = (event) => {
             if (isDirty) {
@@ -297,7 +313,7 @@ const AddEditDishPage = ({ mode }) => {
 
                 setSelectedImage(reader.result);
 
-                const newData = { ...formData, image: reader.result  }; // Обновляем изображение. Сохраняем только чистый base64
+                const newData = { ...formData, image: reader.result }; // Обновляем изображение. Сохраняем только чистый base64
                 setFormData(newData); // Фиксируем изменения
                 setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
             };
@@ -652,6 +668,17 @@ const AddEditDishPage = ({ mode }) => {
 
 
             </div>
+
+            {/* Модальное окно подтверждения ухода со страницы */}
+            <NavigationConfirmModal
+                isOpen={showNavigationConfirmModal}
+                onConfirm={() => {
+                    setIsDirty(false); // Нет несохраненных данных
+                    pendingNavigation?.();
+                    setShowNavigationConfirmModal(false);
+                }}
+                onCancel={() => setShowNavigationConfirmModal(false)}
+            />
 
         </main>
     );

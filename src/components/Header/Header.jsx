@@ -6,9 +6,15 @@ import "./../../styles/header.css";
 import userIcon from './../../assets/icons/user.png';
 import settingsIcon from './../../assets/icons/settings.png';
 
+// Импорт компонентов
+import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
+
 const Header = () => {
     const navigate = useNavigate();
     const location = useLocation(); // Получаем текущий маршрут
+
+    const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
+    const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
 
     // Определяем активную кнопку на основе текущего пути
     const getInitialButtonIndex = () => {
@@ -37,22 +43,35 @@ const Header = () => {
         }
     }, [selectedButton, navigate, location.pathname]);
 
-    // Получение индекса выбранной кнопки и навигация
+    // Получение индекса выбранной кнопки и последующая навигация
     const handleButtonClick = (buttonIndex) => {
         const routes = ['/menu', '/news', '/sales-report'];
 
         // Проверка на несохраненные изменения
         if (localStorage.getItem('isDirty') === 'true') {
-            if (!window.confirm('Есть несохранённые изменения. Уйти?')) return;
-            localStorage.setItem('isDirty', 'false'); // Сбрасываем флаг
+            // Сохраняем целевую навигацию и показываем модалку
+            setPendingNavigation(() => () => { // Если пользователь подтвредит переход
+                localStorage.setItem('isDirty', 'false');
+                navigate(routes[buttonIndex]);
+            });
+            setShowNavigationConfirmModal(true);
+            return;
         }
+
+        // Осуществляем навигацию по меню
+        performNavigation(buttonIndex);
+    };
+
+    // Навигация по меню
+    const performNavigation = (buttonIndex) => {
+        const routes = ['/menu', '/news', '/sales-report'];
 
         // Обновляем состояние только если меняется выбор
         if (buttonIndex !== selectedButton) {
             setSelectedButton(buttonIndex);
             localStorage.setItem('selectedButtonHeaderIndex', buttonIndex);
         }
-        navigate(routes[buttonIndex]);
+        navigate(routes[buttonIndex]); // Всегда переходим на страницу
     };
 
     // Названия кнопок
@@ -84,6 +103,17 @@ const Header = () => {
                     <img src={settingsIcon} alt="Settings" />
                 </div>
             </header>
+
+            {/* Модальное окно подтверждения ухода со страницы */}
+            <NavigationConfirmModal
+                isOpen={showNavigationConfirmModal}
+                onConfirm={() => {
+                    pendingNavigation?.();
+                    setShowNavigationConfirmModal(false);
+                }}
+                onCancel={() => setShowNavigationConfirmModal(false)}
+            />
+
         </div>
     );
 };

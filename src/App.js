@@ -10,6 +10,7 @@ import MainLayout from './components/UnderHeader/MainLayout'; // Подменю
 import Dishes from './components/Pages/Dishes'; // Список блюд
 import AddEditDishPage from './components/Pages/AddEditDishPage'; // Управление блюдом. Добавление или редактирование
 import Categories from './components/Pages/Categories'; // Список категорий
+import AddEditCategoryPage from './components/Pages/AddEditCategoryPage'; // Управление категорией. Добавление или редактирование
 import './styles/app.css';
 
 function App() {
@@ -23,6 +24,8 @@ function App() {
           <Route path="dishes/new" element={<AddEditDishPage mode="add" />} />
           <Route path="dishes/edit/:id" element={<AddEditDishPage mode="edit" />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="categories/new" element={<AddEditCategoryPage mode="add" />} />
+          <Route path="categories/edit/:id" element={<AddEditCategoryPage mode="edit" />} />
         </Route>
       </Routes>
     </Router>

@@ -2,73 +2,73 @@
 
 /* Пространство за модальным окном */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  /* Модальное окно */
-  .confirmation-modal {
-    background: white;
-    width: 400px;
-    border-radius: 8px;
-    padding: 20px;
-  }
-  
-  /* Заголовок */
-  .modal-header {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-  }
-  
-  /* Текст заголовка */
-  .modal-header h3 {
-    margin: 0;
-    color: #2c3e50;
-  }
-  
-  /* Тело сообщения */
-  .modal-body p {
-    margin: 0 0 20px 0;
-    color: #34495e;
-  }
-  
-  /* Контейнер кнопок */
-  .modal-footer {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-  }
-  
-  /* Кнопки */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
 
-  .confirm-button, .cancel-button {
-    padding: 8px 16px;
-    /* border: none; */
-    border-radius: 4px;
-    cursor: pointer;
-    transition: opacity 0.3s;
-  }
+/* Модальное окно */
+.confirmation-modal {
+  background: white;
+  width: 400px;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+/* Заголовок */
+.modal-header {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+/* Текст заголовка */
+.modal-header h3 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+/* Тело сообщения */
+.modal-body p {
+  margin: 0 0 20px 0;
+  color: #34495e;
+}
+
+/* Контейнер кнопок */
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Кнопки */
+
+.confirm-button,
+.cancel-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.confirm-button {
   
-  .confirm-button {
-    color: black;
-    background-color: white;
-  }
-  
-  .cancel-button {
-    color: black;
-    background-color: white;
-  }
-  
-  .confirm-button:hover, .cancel-button:hover {
-    opacity: 0.8;
-    color: white;
-  }
+}
+
+.cancel-button {
+  color: black;
+  background-color: white;
+}
+
+.confirm-button:hover,
+.cancel-button:hover {
+  opacity: 0.8;
+  color: white;
+}
