@@ -18,6 +18,7 @@ import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Прос
 import DropdownColumnSelection from "../Elements/DropdownColumnSelection"; // Выбор колонок для отображения таблицы
 import CustomTable from "../Elements/CustomTable"; // Таблица
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
+import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения
 
 import api from '../../utils/api';
 
@@ -413,6 +414,60 @@ const Dishes = () => {
         setSelectedDishIds(selectedIds);
     };
 
+    // Модальное окно подтверждения действия
+    const [showConfirmation, setShowConfirmation] = useState(false); // Отображение модального окна
+    const [currentAction, setCurrentAction] = useState(null); // Действие модального окна: «Удалить», «Архивировать» или «Разархивировать»
+
+    // Обработчики действий модального окна подтверждения действия
+    const handleActionConfirmation = (actionType) => {
+        if (selectedDishIds.length === 0) return; // Проверка выбранных строк
+        setCurrentAction(actionType); // Устанавливаем действие
+        setShowConfirmation(true); // Отображаем модальное окно
+    }
+
+    // Вызов функции. «Удалить», «Архивировать» или «Разархивировать»
+    const handleConfirmAction = async () => {
+        try {
+            switch (currentAction) {
+                case 'delete':
+                    await handleDeleteSelected();
+                    break;
+                case 'archive':
+                    await handleArchiveSelected(true);
+                    break;
+                case 'unarchive':
+                    await handleArchiveSelected(false);
+                    break;
+                default:
+                    break;
+            }
+        } finally {
+            // После окончания действий и нажатия кнопки закрытия модального окна
+            setShowConfirmation(false);
+            setCurrentAction(null);
+        }
+    };
+
+    // Заголовки для модального окна подтверждения действия
+    const getActionTitle = (action) => {
+        switch (action) {
+            case 'delete': return "Подтвердите удаление";
+            case 'archive': return "Подтвердите архивацию";
+            case 'unarchive': return "Подтвердите разархивацию";
+            default: return "Подтвердите действие";
+        }
+    };
+
+    // Тело сообщения для модального окна подтверждения действия
+    const getActionMessage = (action) => {
+        switch (action) {
+            case 'delete': return "Вы уверены, что хотите удалить выбранные элементы?";
+            case 'archive': return "Вы уверены, что хотите архивировать выбранные элементы?";
+            case 'unarchive': return "Вы уверены, что хотите извлечь выбранные элементы из архива?";
+            default: return "Вы уверены, что хотите выполнить это действие?";
+        }
+    };
+
     // Удаление выбранных объектов строк
     const handleDeleteSelected = async () => {
         if (selectedDishIds.length === 0) return; // Проверка выбранных строк
@@ -455,91 +510,96 @@ const Dishes = () => {
     return (
         <main className="page">
 
-            <>
+            {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
+            <div className="control-components">
 
-                {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
-                <div className="control-components">
+                {/* Обновить страницу */}
+                <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
-                    {/* Обновить страницу */}
-                    <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
-
-                    {/* Заголовок страницы */}
-                    <div className="page-name">
-                        Блюда
-                    </div>
-
-                    <div className="add-filter-change-group">
-                        {/* Кнопка добавить */}
-                        <button className="button-control add" onClick={handleAddClick}>
-                            <img src={addIcon} alt="Update" className="icon-button" />
-                            Блюдо
-                        </button>
-
-                        {/* Кнопка фильтра */}
-                        <FilterButton
-                            isActive={filterState.isActive}
-                            toggleFilter={toggleFilter}
-                        />
-
-                        {/* Кнопка изменить с выпадающим списком */}
-                        <DropdownButtonChange
-                            IsArchived={isArchiveOpen}
-                            onDelete={handleDeleteSelected}
-                            onArchive={() => handleArchiveSelected(true)}
-                            onUnarchive={() => handleArchiveSelected(false)}
-                        />
-                    </div>
-
-                    {/* Поиск */}
-                    <SearchInput
-                        ref={searchInputRef}
-                        placeholder="Поиск блюда"
-                        onSearch={handleSearch}
-                    />
-
-                    <div className="archive-settings-group">
-                        {/* Архив */}
-                        <ArchiveStorageButton
-                            onToggleArchive={handleArchiveToggle}
-                            pageId={pageId}
-                        />
-
-                        {/* Настройка колонок */}
-                        <DropdownColumnSelection
-                            options={columnOptions}
-                            title="Колонки"
-                            defaultSelected={defaultColumns}
-                            setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
-                        />
-                    </div>
-
+                {/* Заголовок страницы */}
+                <div className="page-name">
+                    Блюда
                 </div>
 
-                {/* Меню фильтра */}
-                <div className="page-filter">
+                <div className="add-filter-change-group">
+                    {/* Кнопка добавить */}
+                    <button className="button-control add" onClick={handleAddClick}>
+                        <img src={addIcon} alt="Update" className="icon-button" />
+                        Блюдо
+                    </button>
 
-                    <FilterMenu
-                        isOpen={filterState.isOpen}
-                        filters={filters}
-                        formData={filterState.formData}
-                        onFormUpdate={handleFilterFormUpdate}
-                        onSearch={handleFilterSearch}
-                        onReset={handleFilterReset}
+                    {/* Кнопка фильтра */}
+                    <FilterButton
+                        isActive={filterState.isActive}
+                        toggleFilter={toggleFilter}
+                    />
+
+                    {/* Кнопка изменить с выпадающим списком */}
+                    <DropdownButtonChange
+                        IsArchived={isArchiveOpen}
+                        onDelete={() => handleActionConfirmation('delete')}
+                        onArchive={() => handleActionConfirmation('archive')}
+                        onUnarchive={() => handleActionConfirmation('unarchive')}
                     />
                 </div>
 
-                {/* Таблица */}
-                <div className="table-page">
-                    {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
-                        columns={selectedColumns}
-                        data={tableData}
-                        onSelectionChange={handleSelectionChange}
-                        onRowClick={handleRowClick}
-                        tableId={pageId}
-                    />}
+                {/* Поиск */}
+                <SearchInput
+                    ref={searchInputRef}
+                    placeholder="Поиск блюда"
+                    onSearch={handleSearch}
+                />
+
+                <div className="archive-settings-group">
+                    {/* Архив */}
+                    <ArchiveStorageButton
+                        onToggleArchive={handleArchiveToggle}
+                        pageId={pageId}
+                    />
+
+                    {/* Настройка колонок */}
+                    <DropdownColumnSelection
+                        options={columnOptions}
+                        title="Колонки"
+                        defaultSelected={defaultColumns}
+                        setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
+                    />
                 </div>
 
-            </>
+            </div>
+
+            {/* Меню фильтра */}
+            <div className="page-filter">
+
+                <FilterMenu
+                    isOpen={filterState.isOpen}
+                    filters={filters}
+                    formData={filterState.formData}
+                    onFormUpdate={handleFilterFormUpdate}
+                    onSearch={handleFilterSearch}
+                    onReset={handleFilterReset}
+                />
+            </div>
+
+            {/* Таблица */}
+            <div className="table-page">
+                {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
+                    columns={selectedColumns}
+                    data={tableData}
+                    onSelectionChange={handleSelectionChange}
+                    onRowClick={handleRowClick}
+                    tableId={pageId}
+                />}
+            </div>
+
+            {/* Модальное окно подтверждения действия */}
+            <ConfirmationModal
+                isOpen={showConfirmation}
+                title={getActionTitle(currentAction)}
+                message={getActionMessage(currentAction)}
+                onConfirm={handleConfirmAction}
+                onCancel={() => setShowConfirmation(false)}
+            />
 
         </main>
     );

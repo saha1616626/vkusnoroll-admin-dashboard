@@ -14,6 +14,8 @@ import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Просмотр архива
 import CustomTable from "../Elements/CustomTable"; // Таблица
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
+import DeletionResultModal from '../Elements/DeletionResultModal'; // Модальное окно результата удаления
+import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения
 
 import api from '../../utils/api';
 
@@ -143,16 +145,89 @@ const Categories = () => {
         fetchData(isArchiveOpen);
     }, [fetchData, isArchiveOpen]);
 
+    // Модальное окно результата удаления
+    const [showDeletionModal, setShowDeletionModal] = useState(false); // Отображение модального окна
+    const [deletionResult, setDeletionResult] = useState({ // Данные результата удаления
+        conflicts: [],
+        deleted: []
+    });
+
+    // Модальное окно подтверждения действия
+    const [showConfirmation, setShowConfirmation] = useState(false); // Отображение модального окна
+    const [currentAction, setCurrentAction] = useState(null); // Действие модального окна: «Удалить», «Архивировать» или «Разархивировать»
+
+    // Обработчики действий модального окна подтверждения действия
+    const handleActionConfirmation = (actionType) => {
+        if (selectedСategoryIds.length === 0) return; // Проверка выбранных строк
+        setCurrentAction(actionType); // Устанавливаем действие
+        setShowConfirmation(true); // Отображаем модальное окно
+    }
+
+    // Вызов функции. «Удалить», «Архивировать» или «Разархивировать»
+    const handleConfirmAction = async () => {
+        try {
+            switch (currentAction) {
+                case 'delete':
+                    await handleDeleteSelected();
+                    break;
+                case 'archive':
+                    await handleArchiveSelected(true);
+                    break;
+                case 'unarchive':
+                    await handleArchiveSelected(false);
+                    break;
+                default:
+                    break;
+            }
+        } finally {
+            // После окончания действий и нажатия кнопки закрытия модального окна
+            setShowConfirmation(false);
+            setCurrentAction(null);
+        }
+    };
+
+    // Заголовки для модального окна подтверждения действия
+    const getActionTitle = (action) => {
+        switch (action) {
+            case 'delete': return "Подтвердите удаление";
+            case 'archive': return "Подтвердите архивацию";
+            case 'unarchive': return "Подтвердите разархивацию";
+            default: return "Подтвердите действие";
+        }
+    };
+
+    // Тело сообщения для модального окна подтверждения действия
+    const getActionMessage = (action) => {
+        switch (action) {
+            case 'delete': return "Вы уверены, что хотите удалить выбранные элементы?";
+            case 'archive': return "Вы уверены, что хотите архивировать выбранные элементы?";
+            case 'unarchive': return "Вы уверены, что хотите извлечь выбранные элементы из архива?";
+            default: return "Вы уверены, что хотите выполнить это действие?";
+        }
+    };
+
     // Удаление выбранных объектов строк
     const handleDeleteSelected = async () => {
         if (selectedСategoryIds.length === 0) return; // Проверка выбранных строк
+
         try {
-            await api.deleteCategories(selectedСategoryIds); // Удаляем выбранные объекты
-            await fetchData(isArchiveOpen); // Обновляем список таблицы
-            setSelectedСategoryIds([]); // Сбрасываем выборку строк
+            const response = await api.deleteCategories(selectedСategoryIds);
+
+            if (response.data.conflicts) { // Если есть конфликты со связями при удалении
+                setDeletionResult({
+                    conflicts: response.data.conflicts || [],
+                    deleted: response.data.deleted || []
+                });
+                setShowDeletionModal(true);
+                await fetchData(isArchiveOpen); // Обновить данные
+                setSelectedСategoryIds([]); // Сбрасываем выборку строк
+            }
+            else { // Если нет конфликтов со связями при удалении
+                await fetchData(isArchiveOpen); // Обновить данные
+                setSelectedСategoryIds([]); // Сбрасываем выборку строк
+            }
         } catch (error) {
-            console.error('Delete error:', error);
-            alert('Ошибка удаления');
+            console.error('Ошибка удаления:', error);
         }
     };
 
@@ -230,9 +305,9 @@ const Categories = () => {
                         {/* Кнопка изменить с выпадающим списком */}
                         <DropdownButtonChange
                             IsArchived={isArchiveOpen}
-                            onDelete={handleDeleteSelected}
-                            onArchive={() => handleArchiveSelected(true)}
-                            onUnarchive={() => handleArchiveSelected(false)}
+                            onDelete={() => handleActionConfirmation('delete')}
+                            onArchive={() => handleActionConfirmation('archive')}
+                            onUnarchive={() => handleActionConfirmation('unarchive')}
                         />
                     </div>
 
@@ -262,6 +337,24 @@ const Categories = () => {
                     tableId={pageId}
                 />}
             </div>
+
+            {/* Модальное окно результата удаления */}
+            <DeletionResultModal
+                isOpen={showDeletionModal}
+                title="Результат удаления категорий"
+                conflicts={deletionResult.conflicts}
+                deleted={deletionResult.deleted}
+                onClose={() => setShowDeletionModal(false)}
+            />
+
+            {/* Модальное окно подтверждения действия */}
+            <ConfirmationModal
+                isOpen={showConfirmation}
+                title={getActionTitle(currentAction)}
+                message={getActionMessage(currentAction)}
+                onConfirm={handleConfirmAction}
+                onCancel={() => setShowConfirmation(false)}
+            />
 
         </main>
     );
