@@ -18,6 +18,7 @@ import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Прос
 import DropdownColumnSelection from "../Elements/DropdownColumnSelection"; // Выбор колонок для отображения таблицы
 import CustomTable from "../Elements/CustomTable"; // Таблица
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
+import DeletionResultModal from '../Elements/DeletionResultModal'; // Модальное окно результата удаления
 import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения
 
 import api from '../../utils/api';
@@ -414,6 +415,13 @@ const Dishes = () => {
         setSelectedDishIds(selectedIds);
     };
 
+    // Модальное окно результата удаления
+    const [showDeletionModal, setShowDeletionModal] = useState(false); // Отображение модального окна
+    const [deletionResult, setDeletionResult] = useState({ // Данные результата удаления
+        conflicts: [],
+        deleted: []
+    });
+
     // Модальное окно подтверждения действия
     const [showConfirmation, setShowConfirmation] = useState(false); // Отображение модального окна
     const [currentAction, setCurrentAction] = useState(null); // Действие модального окна: «Удалить», «Архивировать» или «Разархивировать»
@@ -471,13 +479,24 @@ const Dishes = () => {
     // Удаление выбранных объектов строк
     const handleDeleteSelected = async () => {
         if (selectedDishIds.length === 0) return; // Проверка выбранных строк
+
         try {
-            await api.deleteDishes(selectedDishIds); // Удаляем выбранные объекты
-            await fetchData(isArchiveOpen); // Обновляем список таблицы
-            setSelectedDishIds([]); // Сбрасываем выборку строк
+            const response = await api.deleteDishes(selectedDishIds); // Удаляем выбранные объекты
+
+            if (response.data.conflicts) { // Если есть конфликты со связями при удалении
+                setDeletionResult({
+                    conflicts: response.data.conflicts || [],
+                    deleted: response.data.deleted || []
+                });
+                setShowDeletionModal(true); // Запуск модального окна
+                await fetchData(isArchiveOpen); // Обновляем данные в таблице
+                setSelectedDishIds([]); // Сбрасываем выборку строк
+            } else { // Если нет конфликтов со связями при удалении
+                await fetchData(isArchiveOpen); // Обновить данные
+                setSelectedDishIds([]); // Сбрасываем выборку строк
+            }
         } catch (error) {
-            console.error('Delete error:', error);
-            alert('Ошибка удаления');
+            console.error('Ошибка удаления:', error);
         }
     };
 
@@ -591,6 +610,15 @@ const Dishes = () => {
                     tableId={pageId}
                 />}
             </div>
+
+            {/* Модальное окно результата удаления */}
+            <DeletionResultModal
+                isOpen={showDeletionModal}
+                title="Результат удаления категорий"
+                conflicts={deletionResult.conflicts}
+                deleted={deletionResult.deleted}
+                onClose={() => setShowDeletionModal(false)}
+            />
 
             {/* Модальное окно подтверждения действия */}
             <ConfirmationModal
