@@ -448,7 +448,7 @@ const AddEditDishPage = ({ mode }) => {
                             </div>
                         </div>
 
-                        <div className="image-upload-container">
+                        <div className="dish-image-upload-container">
                             <input
                                 type="file"
                                 id="imageUpload"
@@ -458,20 +458,20 @@ const AddEditDishPage = ({ mode }) => {
                             />
                             <label
                                 htmlFor="imageUpload"
-                                className="button-control upload-button"
+                                className="button-control dish-upload-button"
                             >
                                 Загрузить изображение
                             </label>
 
                             {selectedImage && (
-                                <div className="image-preview-wrapper">
+                                <div className="dish-image-preview-wrapper">
                                     <img
                                         src={selectedImage}
                                         alt="Preview"
-                                        className="image-preview"
+                                        className="dish-image-preview"
                                     />
                                     <button
-                                        className="remove-image-btn"
+                                        className="dish-remove-image-btn"
                                         onClick={handleImageRemove}>
                                         <img src={crossIcon} alt="Remove" />
                                     </button>
@@ -613,7 +613,7 @@ const AddEditDishPage = ({ mode }) => {
                                         }}>
                                             <div className="form-group">
                                                 <label className="input-label">
-                                                    {label === 'Вес' ? 'Вес (г)*' : 'Объем (мл)*'}
+                                                    {label === 'Вес' ? 'Вес (г)*' : 'Объем (л)*'}
                                                 </label>
                                                 <input
                                                     type="number"
@@ -660,7 +660,7 @@ const AddEditDishPage = ({ mode }) => {
 
                         {quantityVisible && (
                             <div className="form-group">
-                                <label className="input-label">Кол-во штук*</label>
+                                <label className="input-label">Кол-во (шт)*</label>
                                 <input
                                     type="number"
                                     className="input-field"
@@ -681,12 +681,6 @@ const AddEditDishPage = ({ mode }) => {
             {/* Модальное окно подтверждения ухода со страницы */}
             <NavigationConfirmModal
                 isOpen={showNavigationConfirmModal}
-                // onConfirm={() => {
-                //     setIsDirty(false); // Нет несохраненных данных
-                //     pendingNavigation?.();
-                //     setShowNavigationConfirmModal(false);
-                // }}
-                // onCancel={() => setShowNavigationConfirmModal(false)}
                 onConfirm={pendingNavigation}
                 onCancel={handleCancelNavigation}
             />

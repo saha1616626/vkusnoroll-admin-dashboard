@@ -43,14 +43,13 @@ const Menu = () => {
 
     // Получение индекса выбранной кнопки и навигация
     const handleButtonClick = (buttonIndex) => {
-        const routes = ['/menu/dishes', '/menu/categories'];
 
         // Проверка на несохраненные изменения
         if (localStorage.getItem('isDirty') === 'true') {
             // Сохраняем целевую навигацию и показываем модалку
             setPendingNavigation(() => () => { // Если пользователь подтвредит переход
                 localStorage.setItem('isDirty', 'false');
-                navigate(routes[buttonIndex]);
+                performNavigation(buttonIndex); // Осуществляем навигацию по меню
             });
             setShowNavigationConfirmModal(true);
             return;

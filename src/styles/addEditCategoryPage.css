@@ -1,0 +1,15 @@
+/* Стили для страницы - управление категориями */
+
+/* Главный контейнер содержимого */
+.addEditCategoryPage-data {
+    margin-top: 30px;
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+/* Контейнер левой части содержимого страницы */
+.addEditCategoryPage-left-column {
+    flex: 1;
+    min-width: 300px;
+}

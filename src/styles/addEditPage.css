@@ -104,3 +104,44 @@
     font-size: 14px;
     color: #444;
 }
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .input-field {
+        width: 100% !important;
+    }
+    
+    .control-components {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .archive-close-save-group {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-name {
+        font-size: 1.5rem;
+    }
+    
+    .upload-button {
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .image-preview {
+        width: 100%;
+        height: auto;
+        max-width: 300px;
+    }
+}
