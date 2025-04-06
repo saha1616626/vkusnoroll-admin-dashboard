@@ -59,7 +59,8 @@
 }
 
 .confirm-button {
-  
+  color: black;
+  background-color: white;
 }
 
 .cancel-button {

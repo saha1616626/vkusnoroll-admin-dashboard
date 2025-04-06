@@ -1,6 +1,6 @@
 /* Стили модального окна результата удаления */
 
-.modal-overlay {
+.deletion-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -23,14 +23,14 @@
     flex-direction: column;
 }
 
-.modal-header h3 {
+.deletion-modal-header h3 {
     margin: 0;
     color: #2c3e50;
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
 }
 
-.modal-content {
+.deletion-modal-content {
     flex: 1;
     overflow: hidden;
     margin: 15px 0;

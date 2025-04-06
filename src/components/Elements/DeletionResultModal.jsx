@@ -12,13 +12,13 @@ const DeletionResultModal = ({
     if (!isOpen) return null; // Не рендерить, если isOpen=false
 
     return (
-        <div className="modal-overlay">
+        <div className="deletion-modal-overlay">
             <div className="deletion-modal">
-                <div className="modal-header">
+                <div className="deletion-modal-header">
                     <h3>{title}</h3>
                 </div>
 
-                <div className="modal-content">
+                <div className="deletion-modal-content">
                     {/* Конфликтные элементы */}
                     {conflicts.length > 0 && (
                         <div className="section">

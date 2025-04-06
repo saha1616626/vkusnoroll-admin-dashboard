@@ -29,21 +29,21 @@ const NavigationConfirmModal = ({
     if (!isOpen) return null; // Не рендерить, если isOpen=false
 
     return (
-        <div className="modal-overlay">
+        <div className="navigation-modal-overlay">
             <div className="navigation-confirm-modal">
-                <div className="modal-header">
+                <div className="navigation-modal-header">
                     <h3>Несохранённые изменения</h3>
                 </div>
 
-                <div className="modal-body">
+                <div className="navigation-modal-body">
                     <p>У вас есть несохранённые изменения. Вы уверены, что хотите уйти?</p>
                 </div>
 
-                <div className="modal-footer">
-                    <button className="button-control confirm-button" onClick={onConfirm}>
+                <div className="navigation-modal-footer">
+                    <button className="button-control navigation-confirm-button" onClick={onConfirm}>
                         Уйти
                     </button>
-                    <button className="button-control cancel-button" onClick={onCancel}>
+                    <button className="button-control navigation-cancel-button" onClick={onCancel}>
                         Остаться
                     </button>
                 </div>

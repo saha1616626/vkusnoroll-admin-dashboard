@@ -10,6 +10,7 @@ import "./../../styles/addEditCategoryPage.css"; // Основной для да
 
 // Импорт компонентов
 import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
+import ValidationErrorModal from "../Elements/ValidationErrorModal"; // Модальное окно вывода ошибки ввода при сохранении данных
 
 // Импорт API
 import api from '../../utils/api';
@@ -31,6 +32,10 @@ const AddEditCategoryPage = ({ mode }) => {
     // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
     const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
     const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
+
+    // Модальное окно вывода ошибки ввода при сохранении данных
+    const [validationErrors, setValidationErrors] = useState([]); // Ошибки
+    const [showValidationModal, setShowValidationModal] = useState(false); // Отображение
 
     // Обработчик для кнопки "Назад" браузера
     useEffect(() => {
@@ -167,8 +172,13 @@ const AddEditCategoryPage = ({ mode }) => {
     // Обработчик сохранения
     const handleSave = async () => {
         try {
-            if (!formData.name) {
-                alert('Заполните обязательные поля (помечены *)');
+            const errors = []; // Ошибки заполнения
+
+            if (!formData.name.trim()) errors.push('Наименование категории');
+
+            if (errors.length > 0) { // Если есть ошибки, отображаем модальное окно
+                setValidationErrors(errors);
+                setShowValidationModal(true);
                 return;
             }
 
@@ -309,6 +319,13 @@ const AddEditCategoryPage = ({ mode }) => {
                 isOpen={showNavigationConfirmModal}
                 onConfirm={pendingNavigation}
                 onCancel={handleCancelNavigation}
+            />
+
+            {/* Модальное окно вывода ошибки ввода при сохранении данных */}
+            <ValidationErrorModal
+                errors={validationErrors}
+                onClose={() => setShowValidationModal(false)}
+                isOpen={showValidationModal}
             />
 
         </main>
