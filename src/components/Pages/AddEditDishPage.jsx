@@ -62,7 +62,7 @@ const AddEditDishPage = ({ mode }) => {
 
     // Обработчик отмены перехода
     const handleCancelNavigation = () => {
-        // Возвращаем исходный URL
+        // Возвращаем исходный URL при отмене перехода назад через popstate браузера
         window.history.pushState(null, null, window.location.pathname);
         setShowNavigationConfirmModal(false);
     };
