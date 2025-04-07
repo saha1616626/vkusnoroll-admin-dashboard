@@ -325,7 +325,7 @@ const AddEditDishPage = ({ mode }) => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 2 * 1024 * 1024) {
-                alert('Файл слишком большой');
+                alert('Файл слишком большой. Не более 2 мегабайт');
                 return;
             }
 

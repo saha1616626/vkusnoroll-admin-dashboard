@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
-import "./../../styles/dishes.css"; // Стили только для данной страницы
+import "./../../styles/news.css"; // Стили только для данной страницы
 
 // Импорт иконок
 import addIcon from './../../assets/icons/add.png'
@@ -15,41 +15,32 @@ import FilterMenu from '../Elements/FilterMenu'; // Кнопка меню
 import DropdownButtonChange from './../Elements/DropdownButtonChange'; // Кнопка "Изменить"
 import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Просмотр архива
-import DropdownColumnSelection from "../Elements/DropdownColumnSelection"; // Выбор колонок для отображения таблицы
-import CustomTable from "../Elements/CustomTable"; // Таблица
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
 import DeletionResultModal from '../Elements/DeletionResultModal'; // Модальное окно результата удаления
 import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения
+import NewsCard from '../Elements/NewsCard'; // Список карточек новостей
 
+// Импорт API
 import api from '../../utils/api';
 
-const Dishes = () => {
-    const pageId = 'dish-page'; // Уникальный идентификатор страницы
+const News = () => {
+    const pageId = 'news-page'; // Уникальный идентификатор страницы
     const timeOut = 500; // Задержка перед отключением анимации загрузки данных
 
     /* 
     ===========================
-     Добавление и редактирование блюда
+     Добавление и редактирование новости
     ===========================
     */
 
     const navigate = useNavigate();
 
     const handleAddClick = () => {
-        navigate('/menu/dishes/new'); // Переход на страницу добавления блюда
+        navigate('/news/new'); // Переход на страницу добавления
     };
 
-    const handleEditClick = (dish) => {
-        navigate(`/menu/dishes/edit/${dish.id}`); // Переход на страницу редактирования блюда
-    };
-
-
-    // Обработчик клика по строке в таблице
-    const handleRowClick = (rowData) => {
-        const originalDish = rawData.find(dish => dish.id === rowData.id); // Получаем исходные данные по id из выбранной строки
-        if (originalDish) {
-            handleEditClick(originalDish); // Передаем данные выбранной строки и запускаем страницу для редактирования
-        }
+    const handleEditClick = (news) => {
+        navigate(`/news/edit/${news.id}`); // Переход на страницу редактирования
     };
 
     /* 
@@ -79,10 +70,10 @@ const Dishes = () => {
     }
 
     /* 
-      ===========================
-      Фильтр
-      ===========================
-    */
+  ===========================
+  Фильтр
+  ===========================
+*/
 
     const [filters, setFilters] = useState([]); // Функции фильтра
     const [filterState, setFilterState] = useState({ // Управление состоянием фильтра (неактивный фильтр)
@@ -92,32 +83,11 @@ const Dishes = () => {
     });
     const [activeFilters, setActiveFilters] = useState({}); // Активный фильтр (применен в работу) 
 
-    // Получение списка категорий
-    const fetchCategories = async () => {
-        try {
-            const response = await api.getCategories();
-            const categories = response.data; // Получаем данные
-
-            // Проверяем наличие данных
-            if (!categories || !Array.isArray(categories)) {
-                throw new Error('Invalid categories data');
-            }
-            // Извлекаем названия категорий
-            const nameCategories = categories.map(category => category.name);
-            return nameCategories;
-        } catch (error) {
-            // Обработка ошибок axios
-            console.error('Error:', error.response ? error.response.data : error.message);
-            return [];
-        }
-    };
-
-    // Загрузка категорий и инициализация фильтров
+    // Инициализация фильтров
     useEffect(() => {
         const loadCategories = async () => {
             try {
-                const categories = await fetchCategories();
-                initFilters(categories);
+                initFilters();
                 loadSavedFilterState();
             } catch (error) {
                 console.error('Category loading error:', error);
@@ -130,16 +100,7 @@ const Dishes = () => {
     // Инициализация фильтров с динамическими категориями
     const initFilters = (categories) => {
         setFilters([
-            {
-                type: 'multi-select',
-                name: 'categories',
-                label: 'Категория',
-                options: categories,
-                placeholder: 'Выберите категорию(и)'
-            },
-            { type: 'number', name: 'weight', label: 'Вес (г)', placeholder: '' },
-            { type: 'number', name: 'volume', label: 'Объём (л)', placeholder: '' },
-            { type: 'number', name: 'quantityInSet', label: 'Кол-во в наборе (шт)', placeholder: '' }
+            { type: 'date-range', name: 'date', label: 'Период публикации' },
         ]);
     }
 
@@ -189,30 +150,12 @@ const Dishes = () => {
     const applyFilters = useCallback((data, filters) => {
         let result = data;
 
-        // Фильтрация по категориям (только если есть выбранные категории)
-        if (filters.categories && filters.categories.length > 0) {
-            result = result.filter(dish =>
-                filters.categories.includes(dish.category)
-            );
-        }
-
-        // Фильтрация по весу (проверяем, что значение не пустое и валидное)
-        if (filters.weight && filters.weight.trim() !== "" && !isNaN(filters.weight)) {
-            const weight = parseFloat(filters.weight);
-            result = result.filter(dish => dish.weight === weight);
-        }
-
-        // Фильтрация объему (проверяем, что значение не пустое и валидное)
-        if (filters.volume && filters.volume.trim() !== "" && !isNaN(filters.volume)) {
-            const volume = parseFloat(filters.volume);
-            result = result.filter(dish => dish.volume === volume);
-        }
-
-        // Фильтрация по кол-ву штук в наборе (проверяем, что значение не пустое и валидное)
-        if (filters.quantityInSet && filters.quantityInSet.trim() !== "" && !isNaN(filters.quantityInSet)) {
-            const quantity = parseFloat(filters.quantityInSet);
-            result = result.filter(dish => dish.quantity === quantity);
-        }
+        // Фильтрация по периоду дат и времени публикации
+        // if (filters.categories && filters.categories.length > 0) {
+        //     result = result.filter(dish =>
+        //         filters.categories.includes(dish.category)
+        //     );
+        // }
 
         return result;
     }, []); // Все используемые данные в фильтрах
@@ -277,47 +220,39 @@ const Dishes = () => {
 
     /* 
       ===========================
-      Поиск
+      Список, архив, поиск
       ===========================
     */
+
+    const [isLoading, setIsLoading] = useState(true); // Отображение анимации загрузки при загрузке данных
+    const [isArchiveOpen, setIsArchiveOpen] = useState(false); // Состояние архива (открыто/закрыто)
+    const [selectedNewsIds, setSelectedNewsIds] = useState([]); // Массив выбранных новостей
+
+    // Поиск
     const [searchQuery, setSearchQuery] = useState(''); // Поисковый запрос
     const [rawData, setRawData] = useState([]); // Исходные данные из API
     const searchInputRef = React.useRef(); // Очистка поля поиска
-
-    /* 
-      ===========================
-      Таблица, архив
-      ===========================
-    */
-    const defaultColumns = ['Наименование', 'Описание', 'Категория', 'Цена', 'Калории', 'Жиры', 'Белки', 'Углеводы', 'Вес', 'Объём', 'Кол-во в наборе', 'В архиве']; // Колонки для отображения по умолчанию
-    const columnOptions = ['Наименование', 'Описание', 'Категория', 'Цена', 'Калории', 'Жиры', 'Белки', 'Углеводы', 'Вес', 'Объём', 'Кол-во в наборе', 'В архиве'];  // Массив всех возможных колонок для отображения
-
-    const [tableData, setTableData] = useState([]); // Данные таблицы
-    const [isLoading, setIsLoading] = useState(true); // Отображение анимации загрузки при загрузке данных
-    const [isArchiveOpen, setIsArchiveOpen] = useState(false); // Состояние архива (открыто/закрыто)
-    const [selectedColumns, setSelectedColumns] = useState(defaultColumns); // Отображаемые столбцы таблицы
-
-    const [selectedDishIds, setSelectedDishIds] = useState([]); // Массив выбранных строк с блюдами в БД
 
     // Универсальная функция загрузки данных из БД
     const fetchData = useCallback(async (archivedStatus) => {
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
-            const response = await api.getDishes();
-            const dishes = response.data; // Получаем данные
+            const response = await api.getNewsPosts();
+            const news = response.data; // Получаем данные
 
             // Проверяем наличие данных
-            if (!dishes || !Array.isArray(dishes)) {
-                throw new Error('Invalid dishes data');
+            if (!news || !Array.isArray(news)) {
+                throw new Error('Invalid news data');
             }
 
-            setRawData(dishes.sort((a, b) => b.id - a.id)); // Сохраняем сырые данные + сортировка по убыванию Id
+            setRawData(transformNewsData(news.sort((a, b) => b.id - a.id))); // Сохраняем сырые данные + сортировка по убыванию Id
 
-            // Фильтруем блюда исходя из состония архива
-            const filteredData = dishes.filter(dish =>
-                archivedStatus ? dish.isArchived : !dish.isArchived);
+            // Фильтруем исходя из состония архива
+            // const filteredData = news.filter(dish =>
+            //     archivedStatus ? dish.isArchived : !dish.isArchived);
 
-            setTableData(transformDishData(filteredData));
+            // setTableData(transformNewsData(filteredData));
+            // setRawData(transformNewsData(filteredData));
         } catch (error) {
             // Обработка ошибок axios
             console.error('Error:', error.response ? error.response.data : error.message);
@@ -333,10 +268,10 @@ const Dishes = () => {
     useEffect(() => {
         const applyFiltersAndSearch = () => {
             let result = rawData
-                .filter(dish => isArchiveOpen ? dish.isArchived : !dish.isArchived)
-                .filter(dish =>
+                .filter(news => isArchiveOpen ? news.isArchived : !news.isArchived)
+                .filter(news =>
                     searchQuery
-                        ? dish.name.toLowerCase().includes(searchQuery.toLowerCase())
+                        ? news.title.toLowerCase().includes(searchQuery.toLowerCase())
                         : true
                 );
 
@@ -345,10 +280,10 @@ const Dishes = () => {
                 result = applyFilters(result, activeFilters);
             }
 
-            return transformDishData(result);
+            return transformNewsData(result);
         };
 
-        setTableData(applyFiltersAndSearch());
+        // setTableData(applyFiltersAndSearch());
     }, [rawData, isArchiveOpen, searchQuery, activeFilters, applyFilters]);
 
     // Обработчик поиска
@@ -382,37 +317,22 @@ const Dishes = () => {
         fetchData(isArchiveOpen);
     }, [fetchData, isArchiveOpen]);
 
-    // Трансформация данных для представления в таблице
-    const transformDishData = (data) => data.map(dish => ({
-        id: dish.id, // Необходим для связи с исходными данными
-        'Наименование': dish.name,
-        'Описание': dish.description,
-        'Категория': dish.category,
-        'Цена': `${dish.price} ₽`,
-        'Калории': dish.calories || '—',
-        'Жиры': dish.fats || '—',
-        'Белки': dish.squirrels || '—',
-        'Углеводы': dish.carbohydrates || '—',
-        'Вес': dish.weight ? `${dish.weight} г` : '—',
-        'Объём': dish.volume ? `${dish.volume} л` : '—',
-        'Кол-во в наборе': dish.quantity ? `${dish.quantity} шт` : '—',
-        'В архиве': dish.isArchived ? '✓' : '✗'
+    // Трансформация данных для представления в списке
+    const transformNewsData = (data) => data.map(news => ({
+        id: news.id, // Необходим для связи с исходными данными
+        dateTimePublication: news.dateTimePublication || null,
+        image: news.image || null,
+        title: news.title || '',
+        message: news.message || '',
+        isArchived: news.isArchived
     }));
 
-    // Загружаем выбранные столбцы из localStorage
-    useEffect(() => {
-        const savedOptions = localStorage.getItem('selectedOptions');
-        if (savedOptions) {
-            setSelectedColumns(JSON.parse(savedOptions));
-        }
-    }, []);
-
-    // Обработчик выбора строк в таблице
+    // Обработчик выбора постов в списке
     const handleSelectionChange = (selectedIndices) => {
-        const selectedIds = selectedIndices
-            .map(index => tableData[index]?.id)
-            .filter(id => id !== undefined);
-        setSelectedDishIds(selectedIds);
+        // const selectedIds = selectedIndices
+        //     .map(index => tableData[index]?.id)
+        //     .filter(id => id !== undefined);
+        // setSelectedNewsIds(selectedIds);
     };
 
     // Модальное окно результата удаления
@@ -428,7 +348,7 @@ const Dishes = () => {
 
     // Обработчики действий модального окна подтверждения: «Удалить», «Архивировать» или «Разархивировать»
     const handleActionConfirmation = (actionType) => {
-        if (selectedDishIds.length === 0) return; // Проверка выбранных строк
+        if (selectedNewsIds.length === 0) return; // Проверка выбранных строк
         setCurrentAction(actionType); // Устанавливаем действие
         setShowConfirmation(true); // Отображаем модальное окно
     }
@@ -478,10 +398,10 @@ const Dishes = () => {
 
     // Удаление выбранных объектов
     const handleDeleteSelected = async () => {
-        if (selectedDishIds.length === 0) return; // Проверка выбранных строк
+        if (selectedNewsIds.length === 0) return; // Проверка выбранных объектов
 
         try {
-            const response = await api.deleteDishes(selectedDishIds); // Удаляем выбранные объекты
+            const response = await api.deleteNewsPosts(selectedNewsIds); // Удаляем выбранные объекты
 
             if (response.data.conflicts) { // Если есть конфликты со связями при удалении
                 setDeletionResult({
@@ -490,10 +410,10 @@ const Dishes = () => {
                 });
                 setShowDeletionModal(true); // Запуск модального окна
                 await fetchData(isArchiveOpen); // Обновляем данные в таблице
-                setSelectedDishIds([]); // Сбрасываем выборку строк
+                setSelectedNewsIds([]); // Сбрасываем выборку строк
             } else { // Если нет конфликтов со связями при удалении
                 await fetchData(isArchiveOpen); // Обновить данные
-                setSelectedDishIds([]); // Сбрасываем выборку строк
+                setSelectedNewsIds([]); // Сбрасываем выборку строк
             }
         } catch (error) {
             console.error('Ошибка удаления:', error);
@@ -502,11 +422,11 @@ const Dishes = () => {
 
     // Архивировать или разархивировать выбранные объекты строк
     const handleArchiveSelected = async (archive = true) => {
-        if (selectedDishIds.length === 0) return;
+        if (selectedNewsIds.length === 0) return;
         try {
-            await api.archiveDishes(selectedDishIds, archive);
+            await api.archiveNewsPosts(selectedNewsIds, archive);
             await fetchData(isArchiveOpen);
-            setSelectedDishIds([]);
+            setSelectedNewsIds([]);
         } catch (error) {
             console.error('Archive error:', error);
             alert(archive ? 'Ошибка архивации' : 'Ошибка разархивации');
@@ -514,10 +434,10 @@ const Dishes = () => {
     };
 
     /* 
-     ===========================
-     Дополнительно
-     ===========================
-   */
+ ===========================
+ Дополнительно
+ ===========================
+*/
 
     // Очистка localStorage при размонтировании
     useEffect(() => {
@@ -529,7 +449,7 @@ const Dishes = () => {
     return (
         <main className="page">
 
-            {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
+            {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив*/}
             <div className="control-components">
 
                 {/* Обновить страницу */}
@@ -537,14 +457,14 @@ const Dishes = () => {
 
                 {/* Заголовок страницы */}
                 <div className="page-name">
-                    Блюда
+                    Новости сервиса
                 </div>
 
                 <div className="add-filter-change-group">
                     {/* Кнопка добавить */}
                     <button className="button-control add" onClick={handleAddClick}>
                         <img src={addIcon} alt="Update" className="icon-button" />
-                        Блюдо
+                        Новость
                     </button>
 
                     {/* Кнопка фильтра */}
@@ -565,31 +485,20 @@ const Dishes = () => {
                 {/* Поиск */}
                 <SearchInput
                     ref={searchInputRef}
-                    placeholder="Поиск блюда"
+                    placeholder="Поиск новости"
                     onSearch={handleSearch}
                 />
 
-                <div className="archive-settings-group">
-                    {/* Архив */}
-                    <ArchiveStorageButton
-                        onToggleArchive={handleArchiveToggle}
-                        pageId={pageId}
-                    />
-
-                    {/* Настройка колонок */}
-                    <DropdownColumnSelection
-                        options={columnOptions}
-                        title="Колонки"
-                        defaultSelected={defaultColumns}
-                        setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
-                    />
-                </div>
+                {/* Архив */}
+                <ArchiveStorageButton
+                    onToggleArchive={handleArchiveToggle}
+                    pageId={pageId}
+                />
 
             </div>
 
             {/* Меню фильтра */}
             <div className="page-filter">
-
                 <FilterMenu
                     isOpen={filterState.isOpen}
                     filters={filters}
@@ -600,21 +509,23 @@ const Dishes = () => {
                 />
             </div>
 
-            {/* Таблица */}
-            <div className="table-page">
-                {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
-                    columns={selectedColumns}
-                    data={tableData}
-                    onSelectionChange={handleSelectionChange}
-                    onRowClick={handleRowClick}
-                    tableId={pageId}
-                />}
+            {/* Карточик постов */}
+            <div className="news-grid-News">
+                {rawData
+                    .filter(news => isArchiveOpen ? news.isArchived : !news.isArchived)
+                    .map(news => (
+                        <NewsCard
+                            key={news.id}
+                            news={news}
+                            onEdit={handleEditClick}
+                        />
+                    ))}
             </div>
 
             {/* Модальное окно результата удаления */}
             <DeletionResultModal
                 isOpen={showDeletionModal}
-                title="Результат удаления блюд"
+                title="Результат удаления новостных постов"
                 conflicts={deletionResult.conflicts}
                 deleted={deletionResult.deleted}
                 onClose={() => setShowDeletionModal(false)}
@@ -631,6 +542,7 @@ const Dishes = () => {
 
         </main>
     );
+
 };
 
-export default Dishes; // Делаем компонент доступным для импорта в других файлах 
+export default News;

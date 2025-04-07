@@ -25,6 +25,16 @@ const apiMethods = {
     updateСategory: (id, data) => api.put(`/categories/${id}`, data),
     deleteCategories: (ids) => api.delete('/categories', { data: { ids } }), // Удаление категорий
     archiveCategories: (ids, archive) => api.put('/categories', { ids, archive }), // Архивация и разархивация категорий
+
+    // Новостные посты
+    getNewsPosts: () => api.get('/newsPosts'),
+    getNewsPostsById: (id) => api.get(`/newsPosts/${id}`),
+    createNewsPost: (data) => api.post('/newsPosts', data),
+    updateNewsPost: (id, data) => api.put(`/newsPosts/${id}`, data),
+    deleteNewsPosts: (ids) => api.delete('/newsPosts', { data: { ids } }), // Удаление
+    archiveNewsPosts: (ids, archive) => api.put('/newsPosts', { ids, archive }), // Архивация и разархивация
+
+    
 };
 
 // Экспортируем объект по умолчанию

@@ -1,4 +1,4 @@
-// Управление категорией. Добавление или редактирование
+// Управление новостями. Добавление или редактирование
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom"; // useNavigate - позволяет программно изменять маршрут (навигацию) приложения, nакже позволяет передавать состояние и управлять историей переходов с помощью таких параметров, как replace (заменить текущий элемент в истории) и state (передавать дополнительные данные в маршрут). useLocation - позволяет получать доступ к объекту location, представляющему текущее местоположение (маршрут) приложения. При вызове useLocation объект включает такие свойства, как pathname, search и state.
@@ -6,7 +6,10 @@ import isEqual from 'lodash/isEqual';  // Сравнивает два значе
 
 // Импорт стилей
 import "./../../styles/addEditPage.css";  // Для всех страниц добавления или редактирования данных
-import "./../../styles/addEditCategoryPage.css"; // Основной для данной страницы
+import "./../../styles/addEditNews.css"; // Основной для данной страницы
+
+// Импорт иконок
+import crossIcon from './../../assets/icons/cross.png' // Крестик
 
 // Импорт компонентов
 import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
@@ -15,13 +18,13 @@ import ValidationErrorModal from "../Elements/ValidationErrorModal"; // Мода
 // Импорт API
 import api from '../../utils/api';
 
-const AddEditCategoryPage = ({ mode }) => {
+const AddEditNews = ({ mode }) => {
 
     /* 
-    ===========================
-     Управление страницей
-    ===========================
-    */
+===========================
+Управление страницей
+===========================
+*/
 
     const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
     const [initialData, setInitialData] = useState(null); // Исходные данные о Блюде, которые были получены при загрузке страницы (Если таковые имеются)
@@ -35,7 +38,7 @@ const AddEditCategoryPage = ({ mode }) => {
 
     // Модальное окно вывода ошибки ввода при сохранении данных
     const [validationErrors, setValidationErrors] = useState([]); // Ошибки
-    const [showValidationModal, setShowValidationModal] = useState(false); // Отображение
+    const [showValidationModal, setShowValidationModal] = useState(false); // Отображение    
 
     // Обработчик для кнопки "Назад" браузера
     useEffect(() => {
@@ -46,8 +49,8 @@ const AddEditCategoryPage = ({ mode }) => {
                 // Показываем модальное окно и блокируем переход
                 setPendingNavigation(() => () => {
                     // При подтверждении выполняем переход
-                    window.history.replaceState(null, null, "/menu/categories");
-                    navigate("/menu/categories", { replace: true });
+                    window.history.replaceState(null, null, "/news");
+                    navigate("/news", { replace: true });
                 });
                 setShowNavigationConfirmModal(true);
             }
@@ -85,49 +88,51 @@ const AddEditCategoryPage = ({ mode }) => {
     useEffect(() => {
 
         if (mode === 'edit' && id) { // Проверка режима редактирования и наличие переданного id
-            const fetchCategory = async () => {
+            const fetchNews = async () => {
                 try {
 
-                    const response = await api.getСategoryById(id);
-                    const category = response.data; // Получаем данные
+                    const response = await api.getNewsPostsById(id);
+                    const news = response.data; // Получаем данные
 
                     // Проверяем наличие данных
-                    if (!category) {
+                    if (!news) {
                         throw new Error('Invalid category data');
                     }
 
                     // Заполняем поля полученными данными
-                    const formattedData = formatCategoryData(category);
+                    const formattedData = formatNewsData(news);
                     setFormData(formattedData); // Текущие значения в полях
                     setInitialData(formattedData); // Сохранение исходных данных
                     setIsDirty(false); // Изменений на странице, требующих сохранений, нет
 
                     // Устанавливаем видимость полей
-                    setIsArchived(category.isArchived);
+                    setIsArchived(news.isArchived);
 
                 } catch (error) {
                     console.error('Error:', error.response ? error.response.data : error.message);
-                    navigate('/menu/categories', { replace: true }); // Перенаправление при ошибке
+                    navigate('/news', { replace: true }); // Перенаправление при ошибке
                 }
             };
 
-            fetchCategory();
+            fetchNews();
         }
 
         if (mode === 'add') {
             // Заполняем пустыми данными
-            setFormData(formatCategoryData({})); // Текущие значения в полях
-            setInitialData(formatCategoryData({})); // Сохранение исходных данных
+            setFormData(formatNewsData({})); // Текущие значения в полях
+            setInitialData(formatNewsData({})); // Сохранение исходных данных
         }
 
     }, [mode, id, navigate]); // Срабатывает при маршрутизации, изменении режима и id
 
-    // Функция для форматирования данных блюда
-    const formatCategoryData = (category) => {
+    // Функция для форматирования данных новости
+    const formatNewsData = (news) => {
         return {
-            name: category.name || '',
-            description: category.description || '',
-            isArchived: !!category.isArchived
+            dateTimePublication: news.dateTimePublication || null,
+            image: news.image || null,
+            title: news.title || '',
+            message: news.message || '',
+            isArchived: !!news.isArchived
         };
     };
 
@@ -161,12 +166,12 @@ const AddEditCategoryPage = ({ mode }) => {
         if (!forceClose && isDirty) { // Если есть несохраненные изменения
             // Показываем модальное окно вместо confirm
             setPendingNavigation(() => () => {
-                navigate('/menu/categories', { replace: true });
+                navigate('/news', { replace: true });
             });
             setShowNavigationConfirmModal(true);
             return;
         }
-        navigate('/menu/categories', { replace: true }); // Возврат пользователя на страницу categories с удалением предыдущего маршрута
+        navigate('/news', { replace: true }); // Возврат пользователя на страницу categories с удалением предыдущего маршрута
     };
 
     // Обработчик сохранения
@@ -174,7 +179,7 @@ const AddEditCategoryPage = ({ mode }) => {
         try {
             const errors = []; // Ошибки заполнения
 
-            if (!formData.name.trim()) errors.push('Наименование категории');
+            if (!formData.title.trim() && !formData.image) errors.push('Введите заголовок или прикрепите изображение');
 
             if (errors.length > 0) { // Если есть ошибки, отображаем модальное окно
                 setValidationErrors(errors);
@@ -184,15 +189,17 @@ const AddEditCategoryPage = ({ mode }) => {
 
             // Преобразуем данные перед отправкой
             const payload = {
-                name: formData.name.trim(),
-                description: formData.description.trim() || null,
+                dateTimePublication: getCurrentDateTimeInMoscow(),
+                image: formData.image ? formData.image.split(',')[1] : null, // Заменяем на null, если нет изображения
+                title: formData.title.trim() || null,
+                message: formData.message.trim() || null,
                 isArchived: Boolean(formData.isArchived)
             };
 
             if (mode === 'add') {
-                await api.createСategory(payload);
+                await api.createNewsPost(payload);
             } else {
-                await api.updateСategory(id, payload);
+                await api.updateNewsPost(id, payload);
             }
 
             // Обработка успешной операции
@@ -205,6 +212,36 @@ const AddEditCategoryPage = ({ mode }) => {
                 (error.response?.data?.message || error.message));
         }
     }
+
+    // Возврат текущего времени по МСК
+    const getCurrentDateTimeInMoscow = () => {
+        // Создаем объект даты, который будет содержать текущее время
+        const date = new Date();
+
+        // Опции для форматирования
+        const options = {
+            timeZone: 'Europe/Moscow',  // Указываем временную зону
+            year: 'numeric',              // ГГГГ
+            month: '2-digit',             // ММ
+            day: '2-digit',               // ДД
+            hour: '2-digit',              // ЧЧ
+            minute: '2-digit',            // ММ
+            second: '2-digit',            // СС
+            hour12: false                 // 24-часовой формат
+        };
+
+        // Форматируем дату
+        const formattedDateTime = new Intl.DateTimeFormat('ru-RU', options).format(date);
+
+        // Получаем компоненты даты и времени
+        const [datePart, timePart] = formattedDateTime.split(',');
+
+        // Формируем строку в формате 'YYYY-MM-DD HH:MM:SS'
+        const [day, month, year] = datePart.split('.');
+        const result = `${year}-${month}-${day}${timePart}`;
+
+        return result;
+    };
 
     // Блокируем обноывление страницы, если есть несохраненные данные
     useEffect(() => {
@@ -229,13 +266,54 @@ const AddEditCategoryPage = ({ mode }) => {
     ===========================
     */
 
+    const [selectedImage, setSelectedImage] = useState(null); // Выбранное изображение
     const [isArchived, setIsArchived] = useState(false); // Архив
 
     const [formData, setFormData] = useState({ // Инициализация полей
-        name: '',
-        description: '',
+        dateTimePublication: null,
+        image: null,
+        title: '',
+        message: '',
         isArchived: false
     });
+
+    // Обработчик установки изображения на отображние при загрузке страницы
+    useEffect(() => {
+        if (formData?.image) { // Если изображение передано
+            setSelectedImage(formData.image);
+        }
+    }, [formData])
+
+    // Обработчик загрузки изображения из файлов
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) { // < 5 МБ
+                alert('Файл слишком большой. Не более 5 мегабайт');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+
+                setSelectedImage(reader.result);
+
+                const newData = { ...formData, image: reader.result }; // Обновляем изображение. Сохраняем только чистый base64
+                setFormData(newData); // Фиксируем изменения
+                setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Убрать изображение
+    const handleImageRemove = () => {
+        setSelectedImage(null);
+
+        const newData = { ...formData, image: null }; // Обновляем изображение
+        setFormData(newData); // Фиксируем изменения
+        setIsDirty(checkDirty(newData)); // Проверка необходимости сохранения изменений при наличии
+    };
 
     return (
         <main className="addEditPage-container">
@@ -243,7 +321,7 @@ const AddEditCategoryPage = ({ mode }) => {
             <div className="control-components">
 
                 {/* Заголовок страницы */}
-                <div className="page-name">{id ? 'Редактирование категории' : 'Добавить категорию'}</div>
+                <div className="page-name">{id ? 'Редактирование новости' : 'Добавить новость'}</div>
 
                 <div className="archive-close-save-group">
                     {/* Архивировать */}
@@ -276,38 +354,78 @@ const AddEditCategoryPage = ({ mode }) => {
             </div>
 
             {/* Основное содержимое */}
-            <div className="addEditCategoryPage-data">
+            <div className="addEditNewsPage-data">
 
                 {/* Левая часть страницы */}
-                <div className="addEditCategoryPage-left-column" style={{ paddingRight: '20px' }}>
+                <div className="addEditNewsPage-left-column" style={{ width: '50%', paddingRight: '0px' }}>
 
-                    <div style={{ width: '40%' }}>
-                        <h3 className="section-title" style={{ width: '100%' }}>Общие данные</h3>
+                    <div style={{ width: '80%' }}>
+                        {/* Полоска + подзаголовок */}
+                        <h3 className="section-title" style={{ width: '100%' }}> </h3>
 
                         <div className="form-group">
-                            <label className="input-label">Наименование категории*</label>
+                            <label className="input-label">Заголовок</label>
                             <input
-                                maxLength={50}
+                                maxLength={100}
                                 type="text"
                                 className="input-field"
                                 style={{ width: 'auto', height: '30px' }}
-                                name="name"
-                                value={formData.name}
+                                name="title"
+                                value={formData.title}
                                 onChange={handleInputChange}
                             />
                         </div>
 
-                        <div className="form-group" style={{ width: '70%' }}>
-                            <label className="input-label">Описание</label>
+                        <div className="form-group" style={{ width: '100%' }}>
+                            <label className="input-label">Сообщение</label>
                             <textarea
-                                maxLength={200}
+                                maxLength={3000}
                                 className="input-field"
-                                style={{ width: 'auto', height: '100px' }}
-                                name="description"
-                                value={formData.description}
+                                style={{ width: 'auto', height: '260px' }}
+                                name="message"
+                                value={formData.message}
                                 onChange={handleInputChange}
                             />
                         </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
+                            <input
+                                type="file"
+                                id="imageUpload"
+                                hidden
+                                onChange={handleImageUpload}
+                                accept="image/*"
+                            />
+                            <label
+                                htmlFor="imageUpload"
+                                className="button-control dish-upload-button"
+                            >
+                                Загрузить изображение
+                            </label>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {/* Правая часть страницы */}
+                <div className="addEditNewsPage-right-column" style={{ width: '50%' }}>
+
+                    <div className="news-image-upload-container">
+                        {selectedImage && (
+                            <div className="news-image-preview-wrapper">
+                                <img
+                                    src={selectedImage}
+                                    alt="Preview"
+                                    className="news-image-preview"
+                                />
+                                <button
+                                    className="news-remove-image-btn"
+                                    onClick={handleImageRemove}>
+                                    <img src={crossIcon} alt="Remove" />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                 </div>
@@ -330,7 +448,6 @@ const AddEditCategoryPage = ({ mode }) => {
 
         </main>
     );
-
 };
 
-export default AddEditCategoryPage;
+export default AddEditNews;

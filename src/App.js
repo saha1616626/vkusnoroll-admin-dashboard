@@ -11,6 +11,8 @@ import Dishes from './components/Pages/Dishes'; // Список блюд
 import AddEditDishPage from './components/Pages/AddEditDishPage'; // Управление блюдом. Добавление или редактирование
 import Categories from './components/Pages/Categories'; // Список категорий
 import AddEditCategoryPage from './components/Pages/AddEditCategoryPage'; // Управление категорией. Добавление или редактирование
+import News from './components/Pages/News'; // Список новостей
+import AddEditNews from './components/Pages/AddEditNews'; // Управление новостями. Добавление или редактирование
 import './styles/app.css';
 
 function App() {
@@ -27,6 +29,9 @@ function App() {
           <Route path="categories/new" element={<AddEditCategoryPage mode="add" />} />
           <Route path="categories/edit/:id" element={<AddEditCategoryPage mode="edit" />} />
         </Route>
+        <Route path="news" element={<News />} />
+        <Route path="news/new" element={<AddEditNews mode="add" />} />
+        <Route path="news/edit/:id" element={<AddEditNews mode="edit" />} />
       </Routes>
     </Router>
   );
