@@ -18,6 +18,7 @@ const NewsCard = ({ news, onEdit }) => {
                     type="checkbox"
                     checked={isSelected}
                     onChange={(e) => setIsSelected(e.target.checked)}
+                    style={{ width: '17px', height: '17px' }}
                 />
                 <span className={`status-NewsCard ${news.isArchived ? 'archived' : ''}`}>
                     {news.isArchived ? 'В архиве' : 'Опубликовано'}
@@ -40,12 +41,12 @@ const NewsCard = ({ news, onEdit }) => {
                 />
             ) : (
                 <div className="post-preview-NewsCard">
-                    {news.message?.slice(0, 100)}{news.message?.length > 100 && '...'}
+                    {news.message?.slice(0, 350)}{news.message?.length > 350 && '...'}
                 </div>
             )}
 
             <div className="card-footer-NewsCard">
-                <h4 className="post-title-NewsCard">{news.title}</h4>
+                <h4 className="post-title-NewsCard">{news.title?.slice(0, 30)}{news.title?.length > 30 && '...'}</h4>
                 <span className="post-date-NewsCard">
                     {new Date(news.dateTimePublication).toLocaleString()}
                 </span>
