@@ -21,8 +21,8 @@
     align-items: center;
 }
 
-/* Загрузка изображения */
-.news-image-upload-container {
+/* Контейнер для загрузки изображения */
+.news-image-upload-container-AddEditNews {
     position: relative;
     margin: 20px 0;
     text-align: center;
@@ -57,21 +57,18 @@
     margin-top: 15px;
 }
 
-/* Изображение */
-.news-image-preview {
+/* Превью изображения */
+.news-image-preview-AddEditNews {
     max-width: 100%; /* Добавили адаптивность */
     max-height: 440px; /* Сохранили максимальную высоту */
-    width: auto; /* Заменили фиксированную ширину */
-    height: auto; /* Заменили фиксированную высоту */
-    object-fit: contain; /* Изменили на contain для сохранения пропорций */
-
-    border: 2px solid #eee;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    object-fit: contain;
+    border-radius: 6px;
+    background: #f8f9fa;
+    padding: 5px;
 }
 
-/* Кнопка убрать изображение */
-.news-remove-image-btn {
+/* Кнопка удаления изображения */
+.news-remove-image-btn-AddEditNews {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -85,13 +82,26 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     transition: all 0.3s;
 }
-.news-remove-image-btn:hover {
+.news-remove-image-btn-AddEditNews:hover {
     background: white;
     transform: scale(1.1);
 }
-.news-remove-image-btn img {
+.news-remove-image-btn-AddEditNews img {
     width: 100%;
     height: 100%;
+}
+
+/* Подсказка при отсутствии изображения */
+.image-upload-prompt-AddEditNews {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: #6c757d;
+    text-align: center;
+    padding: 25px;
+    border-radius: 6px;
+    background: #f8f9fa;
 }
 
 /* Адаптивность */

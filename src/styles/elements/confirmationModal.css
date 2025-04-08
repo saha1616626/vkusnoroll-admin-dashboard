@@ -50,26 +50,18 @@
 
 /* Кнопки */
 
-.confirm-button,
-.cancel-button {
+.confirm-button-ConfirmationModal,
+.cancel-button-ConfirmationModal {
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
   transition: opacity 0.3s;
-}
-
-.confirm-button {
   color: black;
   background-color: white;
 }
 
-.cancel-button {
-  color: black;
-  background-color: white;
-}
-
-.confirm-button:hover,
-.cancel-button:hover {
+.confirm-button-ConfirmationModal:hover,
+.cancel-button-ConfirmationModal:hover {
   opacity: 0.8;
   color: white;
 }

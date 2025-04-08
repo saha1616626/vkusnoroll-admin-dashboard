@@ -24,8 +24,8 @@ const ConfirmationModal = ({
                 </div>
 
                 <div className="modal-footer">
-                    <button className="button-control confirm-button" onClick={onConfirm}>Да</button>
-                    <button className="button-control cancel-button" onClick={onCancel}>Отмена</button>
+                    <button className="button-control confirm-button-ConfirmationModal" onClick={onConfirm}>Да</button>
+                    <button className="button-control cancel-button-ConfirmationModal" onClick={onCancel}>Отмена</button>
                 </div>
             </div>
         </div>

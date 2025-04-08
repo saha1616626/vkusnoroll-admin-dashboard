@@ -416,24 +416,28 @@ const AddEditNews = ({ mode }) => {
 
                 {/* Правая часть страницы */}
                 <div className="addEditNewsPage-right-column" style={{ width: '50%' }}>
-
-                    <div className="news-image-upload-container">
+                    <div className="news-image-upload-container-AddEditNews">
                         {selectedImage && (
                             <div className="news-image-preview-wrapper">
                                 <img
                                     src={selectedImage}
                                     alt="Preview"
-                                    className="news-image-preview"
+                                    className="news-image-preview-AddEditNews"
                                 />
                                 <button
-                                    className="news-remove-image-btn"
+                                    className="news-remove-image-btn-AddEditNews"
                                     onClick={handleImageRemove}>
                                     <img src={crossIcon} alt="Remove" />
                                 </button>
                             </div>
                         )}
+                        {!selectedImage && (
+                            <div className="image-upload-prompt-AddEditNews">
+                                <span>Изображение отсутствует</span>
+                                <span>Рекомендуемый размер: 800x600px</span>
+                            </div>
+                        )}
                     </div>
-
                 </div>
 
             </div>
