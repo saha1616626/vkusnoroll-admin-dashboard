@@ -14,6 +14,7 @@ import crossIcon from './../../assets/icons/cross.png' // Крестик
 // Импорт компонентов
 import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
 import ValidationErrorModal from "../Elements/ValidationErrorModal"; // Модальное окно вывода ошибки ввода при сохранении данных
+import ErrorModal from "../Elements/ErrorModal"; // Модальное окно для отображения прочих ошибок
 
 // Импорт API
 import api from '../../utils/api';
@@ -39,6 +40,10 @@ const AddEditNews = ({ mode }) => {
     // Модальное окно вывода ошибки ввода при сохранении данных
     const [validationErrors, setValidationErrors] = useState([]); // Ошибки
     const [showValidationModal, setShowValidationModal] = useState(false); // Отображение    
+
+    // Модальное окно для отображения прочих ошибок
+    const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
+    const [errorMessages, setErrorMessages] = useState([]); // Ошибки
 
     // Обработчик для кнопки "Назад" браузера
     useEffect(() => {
@@ -289,7 +294,8 @@ const AddEditNews = ({ mode }) => {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) { // < 5 МБ
-                alert('Файл слишком большой. Не более 5 мегабайт');
+                setErrorMessages(['Файл слишком большой. Максимальный размер - 5 МБ']);
+                setShowErrorModal(true);
                 return;
             }
 
@@ -444,6 +450,14 @@ const AddEditNews = ({ mode }) => {
                 errors={validationErrors}
                 onClose={() => setShowValidationModal(false)}
                 isOpen={showValidationModal}
+            />
+
+            {/* Модальное окно для отображения прочих ошибок */}
+            <ErrorModal
+                isOpen={showErrorModal}
+                title="Ошибка загрузки"
+                errors={errorMessages}
+                onClose={() => setShowErrorModal(false)}
             />
 
         </main>
