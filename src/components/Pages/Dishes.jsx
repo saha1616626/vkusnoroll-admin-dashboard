@@ -602,7 +602,7 @@ const Dishes = () => {
 
             {/* Таблица */}
             <div className="table-page">
-                {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Отображение анимации загрузки при загрузке данных из БД
+                {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Отображение анимации загрузки при загрузке данных
                     columns={selectedColumns}
                     data={tableData}
                     onSelectionChange={handleSelectionChange}

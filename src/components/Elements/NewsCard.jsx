@@ -8,8 +8,15 @@ import "./../../styles/elements/newsCard.css"; // Общие стили
 // Импорт иконок
 import editIcon from './../../assets/icons/edit.png';
 
-const NewsCard = ({ news, onEdit }) => {
+const NewsCard = ({ news, onEdit, onSelect }) => {
     const [isSelected, setIsSelected] = useState(false);
+
+    // Нажатие на чекбокс
+    const handleCheckboxChange = (e) => {
+        const checked = e.target.checked; // Получаем состояние чекбокса
+        setIsSelected(checked);
+        onSelect(news.id, checked);
+    };
 
     return (
         <div className="news-card-NewsCard">
@@ -17,7 +24,7 @@ const NewsCard = ({ news, onEdit }) => {
                 <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={(e) => setIsSelected(e.target.checked)}
+                    onChange={handleCheckboxChange}
                     style={{ width: '17px', height: '17px' }}
                 />
                 <span className={`status-NewsCard ${news.isArchived ? 'archived' : ''}`}>
@@ -41,14 +48,19 @@ const NewsCard = ({ news, onEdit }) => {
                 />
             ) : (
                 <div className="post-preview-NewsCard">
-                    {news.message?.slice(0, 350)}{news.message?.length > 350 && '...'}
+                    {news.message?.slice(0, 260)}{news.message?.length > 260 && '...'}
                 </div>
             )}
 
             <div className="card-footer-NewsCard">
                 <h4 className="post-title-NewsCard">{news.title?.slice(0, 30)}{news.title?.length > 30 && '...'}</h4>
                 <span className="post-date-NewsCard">
-                    {new Date(news.dateTimePublication).toLocaleString()}
+                    {new Date(news.dateTimePublication).toLocaleDateString('ru-RU')}
+                    {' '}
+                    {new Date(news.dateTimePublication).toLocaleTimeString('ru-RU', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
                 </span>
             </div>
         </div>

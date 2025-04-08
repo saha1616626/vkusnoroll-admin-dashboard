@@ -17,6 +17,12 @@ const FilterMenu = ({
     onReset
 }) => {
 
+    // Инициализация полей дат
+    const initialDateValues = {
+        start: formData.date?.start || '',
+        end: formData.date?.end || ''
+    };
+
     // Функция обработки изменения значения в поле
     const handleChange = (e) => {
         const { name, value } = e.target; // Деструктуризация для доступа к имени и значению элемента
@@ -25,8 +31,24 @@ const FilterMenu = ({
 
     // Обработка изменений в полях дат
     const handleDateChange = (e, type) => {
-        const { name, value } = e.target;
-        onFormUpdate(`${name}_${type}`, value); // Передаем название поля (start или end) для четкого обозначения
+        let value = e.target.value;
+
+        // Автоматически выставляем время если не указано
+        if (value && !value.includes('T')) {
+            if (type === 'start') {
+                value += 'T00:00';
+            } else {
+                value += 'T23:59';
+            }
+        }
+
+        // Сохраняем в формате { date: { start, end } }
+        const newDate = {
+            ...formData.date,
+            [type]: value
+        };
+
+        onFormUpdate('date', newDate);
     }
 
     const handleBlur = (e, options) => {
@@ -89,8 +111,8 @@ const FilterMenu = ({
                                 <input
                                     id={`${filter.name}_start`}
                                     type="datetime-local"
-                                    name={`${filter.name}_start`}
-                                    value={formData[`${filter.name}_start`] || ''}
+                                    name="date"
+                                    value={initialDateValues.start || ''}
                                     onChange={(e) => handleDateChange(e, 'start')}
                                     className="filter-input-date"
                                 />
@@ -98,8 +120,8 @@ const FilterMenu = ({
                                 <input
                                     id={`${filter.name}_start`}
                                     type="datetime-local"
-                                    name={`${filter.name}_end`}
-                                    value={formData[`${filter.name}_end`] || ''}
+                                    name="date"
+                                    value={initialDateValues.end || ''}
                                     onChange={(e) => handleDateChange(e, 'end')}
                                     className="filter-input-date"
                                 />

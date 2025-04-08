@@ -16,7 +16,6 @@ import DropdownButtonChange from './../Elements/DropdownButtonChange'; // Кно
 import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Просмотр архива
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
-import DeletionResultModal from '../Elements/DeletionResultModal'; // Модальное окно результата удаления
 import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения
 import NewsCard from '../Elements/NewsCard'; // Список карточек новостей
 
@@ -98,9 +97,13 @@ const News = () => {
     }, []);
 
     // Инициализация фильтров с динамическими категориями
-    const initFilters = (categories) => {
+    const initFilters = () => {
         setFilters([
-            { type: 'date-range', name: 'date', label: 'Период публикации' },
+            {
+                type: 'date-range',
+                name: 'date',
+                label: 'Период публикации'
+            },
         ]);
     }
 
@@ -145,20 +148,6 @@ const News = () => {
             return newState;
         });
     }
-
-    // Фильтрация данных
-    const applyFilters = useCallback((data, filters) => {
-        let result = data;
-
-        // Фильтрация по периоду дат и времени публикации
-        // if (filters.categories && filters.categories.length > 0) {
-        //     result = result.filter(dish =>
-        //         filters.categories.includes(dish.category)
-        //     );
-        // }
-
-        return result;
-    }, []); // Все используемые данные в фильтрах
 
     // Поиск по заданным параметрам фильтра
     const handleFilterSearch = () => {
@@ -233,6 +222,8 @@ const News = () => {
     const [rawData, setRawData] = useState([]); // Исходные данные из API
     const searchInputRef = React.useRef(); // Очистка поля поиска
 
+    const [filteredData, setFilteredData] = useState([]); // Отфильтрованные данные
+
     // Универсальная функция загрузки данных из БД
     const fetchData = useCallback(async (archivedStatus) => {
         setIsLoading(true); // Включаем анимацию загрузки данных
@@ -245,22 +236,17 @@ const News = () => {
                 throw new Error('Invalid news data');
             }
 
-            setRawData(transformNewsData(news.sort((a, b) => b.id - a.id))); // Сохраняем сырые данные + сортировка по убыванию Id
+            // Преобразуем данные с фильтрацией по архиву
+            const transformedData = transformNewsData(news)
+                .filter(item => archivedStatus ? item.isArchived : !item.isArchived);
 
-            // Фильтруем исходя из состония архива
-            // const filteredData = news.filter(dish =>
-            //     archivedStatus ? dish.isArchived : !dish.isArchived);
-
-            // setTableData(transformNewsData(filteredData));
-            // setRawData(transformNewsData(filteredData));
+            setRawData(transformedData.sort((a, b) => b.id - a.id)); // Сохраняем данные с сортировкой по убыванию Id
         } catch (error) {
             // Обработка ошибок axios
             console.error('Error:', error.response ? error.response.data : error.message);
         } finally {
             // Отключаем анимацию загрузки данных
-            setTimeout(() => {
-                setIsLoading(false); // Данные загружены из БД, анимация загрузки данных выключена
-            }, timeOut);
+            setTimeout(() => setIsLoading(false), timeOut);
         }
     }, []);
 
@@ -268,23 +254,48 @@ const News = () => {
     useEffect(() => {
         const applyFiltersAndSearch = () => {
             let result = rawData
-                .filter(news => isArchiveOpen ? news.isArchived : !news.isArchived)
                 .filter(news =>
                     searchQuery
                         ? news.title.toLowerCase().includes(searchQuery.toLowerCase())
                         : true
                 );
 
-            // Применяем фильтры, только если они есть
-            if (Object.keys(activeFilters).length > 0) {
-                result = applyFilters(result, activeFilters);
+            // Применяем фильтры, только стоят две даты
+            if (activeFilters.date?.start && activeFilters.date?.end) {
+                result = result.filter(news => {
+                    const postDate = new Date(news.dateTimePublication); // Преобразование в дату
+                    const startDate = new Date(activeFilters.date.start);
+                    const endDate = new Date(activeFilters.date.end);
+
+                    return postDate >= startDate && postDate <= endDate; // Отбираем значения, которые входят в диапазон
+                });
             }
 
-            return transformNewsData(result);
+            // Применяем фильтры, только стоит start дата
+            if (activeFilters.date?.start) {
+                result = result.filter(news => {
+                    const postDate = new Date(news.dateTimePublication); // Преобразование в дату
+                    const startDate = new Date(activeFilters.date.start);
+
+                    return postDate >= startDate; // Отбираем значения, которые входят в диапазон
+                });
+            }
+
+            // Применяем фильтры, только стоит end дата
+            if (activeFilters.date?.end) {
+                result = result.filter(news => {
+                    const postDate = new Date(news.dateTimePublication); // Преобразование в дату
+                    const endDate = new Date(activeFilters.date.end);
+
+                    return postDate <= endDate; // Отбираем значения, которые входят в диапазон
+                });
+            }
+
+            return result;
         };
 
-        // setTableData(applyFiltersAndSearch());
-    }, [rawData, isArchiveOpen, searchQuery, activeFilters, applyFilters]);
+        setFilteredData(applyFiltersAndSearch());
+    }, [rawData, searchQuery, activeFilters]);
 
     // Обработчик поиска
     const handleSearch = (term) => {
@@ -320,7 +331,7 @@ const News = () => {
     // Трансформация данных для представления в списке
     const transformNewsData = (data) => data.map(news => ({
         id: news.id, // Необходим для связи с исходными данными
-        dateTimePublication: news.dateTimePublication || null,
+        dateTimePublication: news.dateTimePublication,
         image: news.image || null,
         title: news.title || '',
         message: news.message || '',
@@ -328,19 +339,12 @@ const News = () => {
     }));
 
     // Обработчик выбора постов в списке
-    const handleSelectionChange = (selectedIndices) => {
-        // const selectedIds = selectedIndices
-        //     .map(index => tableData[index]?.id)
-        //     .filter(id => id !== undefined);
-        // setSelectedNewsIds(selectedIds);
+    const handleNewsSelection = (newsId, isSelected) => {
+        setSelectedNewsIds(prev =>
+            isSelected
+                ? [...prev, newsId]
+                : prev.filter(id => id !== newsId));
     };
-
-    // Модальное окно результата удаления
-    const [showDeletionModal, setShowDeletionModal] = useState(false); // Отображение модального окна
-    const [deletionResult, setDeletionResult] = useState({ // Данные результата удаления
-        conflicts: [],
-        deleted: []
-    });
 
     // Модальное окно подтверждения действия
     const [showConfirmation, setShowConfirmation] = useState(false); // Отображение модального окна
@@ -399,22 +403,10 @@ const News = () => {
     // Удаление выбранных объектов
     const handleDeleteSelected = async () => {
         if (selectedNewsIds.length === 0) return; // Проверка выбранных объектов
-
         try {
-            const response = await api.deleteNewsPosts(selectedNewsIds); // Удаляем выбранные объекты
-
-            if (response.data.conflicts) { // Если есть конфликты со связями при удалении
-                setDeletionResult({
-                    conflicts: response.data.conflicts || [],
-                    deleted: response.data.deleted || []
-                });
-                setShowDeletionModal(true); // Запуск модального окна
-                await fetchData(isArchiveOpen); // Обновляем данные в таблице
-                setSelectedNewsIds([]); // Сбрасываем выборку строк
-            } else { // Если нет конфликтов со связями при удалении
-                await fetchData(isArchiveOpen); // Обновить данные
-                setSelectedNewsIds([]); // Сбрасываем выборку строк
-            }
+            await api.deleteNewsPosts(selectedNewsIds); // Удаляем выбранные объекты
+            await fetchData(isArchiveOpen); // Обновляем данные в таблице
+            setSelectedNewsIds([]);  // Сбрасываем выборку строк
         } catch (error) {
             console.error('Ошибка удаления:', error);
         }
@@ -509,27 +501,17 @@ const News = () => {
                 />
             </div>
 
-            {/* Карточик постов */}
-            <div className="news-grid-News">
-                {rawData
-                    .filter(news => isArchiveOpen ? news.isArchived : !news.isArchived)
-                    .map(news => (
-                        <NewsCard
-                            key={news.id}
-                            news={news}
-                            onEdit={handleEditClick}
-                        />
-                    ))}
-            </div>
-
-            {/* Модальное окно результата удаления */}
-            <DeletionResultModal
-                isOpen={showDeletionModal}
-                title="Результат удаления новостных постов"
-                conflicts={deletionResult.conflicts}
-                deleted={deletionResult.deleted}
-                onClose={() => setShowDeletionModal(false)}
-            />
+            {/* Карточик постов */} 
+            {isLoading ? <Loader isWorking={isLoading} /> : <div className="news-grid-News"> {/* Отображение анимации загрузки при загрузке данных */} 
+                {filteredData.map(news => (
+                    <NewsCard
+                        key={news.id}
+                        news={news}
+                        onEdit={handleEditClick}
+                        onSelect={handleNewsSelection}
+                    />
+                ))}
+            </div>}
 
             {/* Модальное окно подтверждения действия */}
             <ConfirmationModal
