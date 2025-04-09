@@ -34,7 +34,9 @@ const apiMethods = {
     deleteNewsPosts: (ids) => api.delete('/newsPosts', { data: { ids } }), // Удаление
     archiveNewsPosts: (ids, archive) => api.put('/newsPosts', { ids, archive }), // Архивация и разархивация
 
-    
+    // Авторизация и выход
+    login: (credentials) => api.post('/auth/login', credentials), // Вход
+    logout: () => api.post('/auth/logout'), // Выход
 };
 
 // Экспортируем объект по умолчанию

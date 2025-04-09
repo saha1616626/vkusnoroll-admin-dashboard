@@ -1,11 +1,14 @@
-import React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route
 } from 'react-router-dom';
 
-import Header from './components/Header/Header'; // Главное меню
+import Login from './components/Pages/Login'; // Страница авторизации
+import PrivateRoute from './components/Elements/PrivateRoute'; // Контент, доступный после авторизации
+
+import HeaderLayout from './components/Header/HeaderLayout'; // Header и весь дочерний контент
 import MainLayout from './components/UnderHeader/MainLayout'; // Подменю (Блюда, категории)
 import Dishes from './components/Pages/Dishes'; // Список блюд
 import AddEditDishPage from './components/Pages/AddEditDishPage'; // Управление блюдом. Добавление или редактирование
@@ -26,45 +29,65 @@ import Delivery from './components/Pages/Delivery'; // Доставка
 import './styles/app.css';
 
 function App() {
+  // Проверяем состояние токена, если он некорректный, то перенаправляем пользователя на страницу авторизации.
+  const [isAuthenticated, setIsAuthenticated] = useState( // Актуальный статус авторизации пользователя
+    () => !!localStorage.getItem('authToken')
+  );
+
+  // Обновление статуса авторизации
+  const updateAuthStatus = useCallback((status) => {
+    setIsAuthenticated(status);
+  }, []);
+
   return (
     <Router>
-      <Header />
       <Routes>
-        {/* Подменю (Блюда, категории) */}
-        <Route path="/menu" element={<MainLayout />}>
-          {/* Дочерние маршруты для menu */}
-          {/* Блюда */}
-          <Route path="dishes" element={<Dishes />} />
-          <Route path="dishes/new" element={<AddEditDishPage mode="add" />} />
-          <Route path="dishes/edit/:id" element={<AddEditDishPage mode="edit" />} />
-          {/* Ктаегории блюд */}
-          <Route path="categories" element={<Categories />} />
-          <Route path="categories/new" element={<AddEditCategoryPage mode="add" />} />
-          <Route path="categories/edit/:id" element={<AddEditCategoryPage mode="edit" />} />
+        <Route
+          path="/login"
+          element={<Login updateAuth={updateAuthStatus} />}
+        />
+
+        <Route element={<PrivateRoute isAuthenticated={isAuthenticated} />}>
+          {/* Все защищенные маршруты */}
+          <Route path="/" element={<HeaderLayout />}>
+            {/* Подменю (Блюда, категории) */}
+            <Route path="/menu" element={<MainLayout />}>
+              {/* Дочерние маршруты для menu */}
+              {/* Блюда */}
+              <Route path="dishes" element={<Dishes />} />
+              <Route path="dishes/new" element={<AddEditDishPage mode="add" />} />
+              <Route path="dishes/edit/:id" element={<AddEditDishPage mode="edit" />} />
+              {/* Ктаегории блюд */}
+              <Route path="categories" element={<Categories />} />
+              <Route path="categories/new" element={<AddEditCategoryPage mode="add" />} />
+              <Route path="categories/edit/:id" element={<AddEditCategoryPage mode="edit" />} />
+            </Route>
+            {/* Новости */}
+            <Route path="news" element={<News />} />
+            <Route path="news/new" element={<AddEditNews mode="add" />} />
+            <Route path="news/edit/:id" element={<AddEditNews mode="edit" />} />
+            {/* Отчет по продажам */}
+            <Route path="sales-report" element={<SalesReport />} />
+            {/* Личный кабинет */}
+            <Route path="personal-account" element={<PersonalAccount updateAuth={updateAuthStatus} />} />
+            {/* Подменю настройки */}
+            <Route path="/settings" element={<SettingsMenuLayout />}>
+              {/* Сотрудники */}
+              <Route path="employees" element={<Staff />} />
+              <Route path="employees/new" element={<AddEditStaff mode="add" />} />
+              <Route path="employees/edit/:id" element={<AddEditStaff mode="edit" />} />
+              {/* Пользователи */}
+              <Route path="users" element={<Users />} />
+              {/* Статусы заказов */}
+              <Route path="order-statuses" element={<OrderStatuses />} />
+              {/* График работы */}
+              <Route path="schedule" element={<Schedule />} />
+              {/* Доставка */}
+              <Route path="delivery" element={<Delivery />} />
+            </Route>
+          </Route>
         </Route>
-        {/* Новости */}
-        <Route path="news" element={<News />} />
-        <Route path="news/new" element={<AddEditNews mode="add" />} />
-        <Route path="news/edit/:id" element={<AddEditNews mode="edit" />} />
-        {/* Отчет по продажам */}
-        <Route path="sales-report" element={<SalesReport />} />
-        {/* Личный кабинет */}
-        <Route path="personal-account" element={<PersonalAccount />} />
-        {/* Подменю настройки */}
-        <Route path="/settings" element={<SettingsMenuLayout />}>
-          {/* Сотрудники */}
-          <Route path="employees" element={<Staff />} />
-          <Route path="employees/new" element={<AddEditStaff mode="add" />} />
-          <Route path="employees/edit/:id" element={<AddEditStaff mode="edit" />} />
-          {/* Пользователи */}
-          <Route path="users" element={<Users />} />
-          {/* Статусы заказов */}
-          <Route path="order-statuses" element={<OrderStatuses />} />
-          {/* График работы */}
-          <Route path="schedule" element={<Schedule />} />
-          {/* Доставка */}
-          <Route path="delivery" element={<Delivery />} />
-        </Route>
+
       </Routes>
     </Router>
   );
