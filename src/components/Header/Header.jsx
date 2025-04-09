@@ -15,16 +15,18 @@ const Header = () => {
 
     const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
     const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
-    const [selectedButton, setSelectedButton] = useState(0); // По умолчанию "Меню"
+    const [selectedButton, setSelectedButton] = useState(0);
 
     // Инициализация при рендере компонента
     useEffect(() => {
         // Если текущий путь не соответствует ни одному из маршрутов
-        if (!location.pathname.startsWith('/menu') &&
+        if (
+            !location.pathname.startsWith('/menu') &&
             !location.pathname.startsWith('/news') &&
             !location.pathname.startsWith('/sales-report') &&
             !location.pathname.startsWith('/personal-account') &&
-            !location.pathname.startsWith('/settings')) {
+            !location.pathname.startsWith('/settings')
+        ) {
             navigate('/menu'); // Перенаправляем на маршрут по умолчанию
         }
     }, [navigate, location.pathname]);
@@ -35,6 +37,8 @@ const Header = () => {
         if (path.startsWith('/menu')) setSelectedButton(0);
         else if (path.startsWith('/news')) setSelectedButton(1);
         else if (path.startsWith('/sales-report')) setSelectedButton(2);
+        else if (path.startsWith('/personal-account')) setSelectedButton(null); // Снимаем выделение кнопки
+        else if (path.startsWith('/settings')) setSelectedButton(null);
     }, [location.pathname]);
 
     // Очистка localStorage при размонтировании
@@ -53,6 +57,10 @@ const Header = () => {
                 const index = ['/menu', '/news', '/sales-report'].indexOf(path);
                 setSelectedButton(index);
                 localStorage.setItem('selectedButtonHeaderIndex', index);
+            }
+            else { //  Если нажата кнопка с маршрутом "/personal-account" или "/settings", сбрасываем выделение кнопки
+                setSelectedButton(null);
+                localStorage.setItem('selectedButtonHeaderIndex', selectedButton);
             }
         };
 
