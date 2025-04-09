@@ -17,6 +17,10 @@ import SalesReport from './components/Pages/SalesReport'; //  Отчет по п
 import SettingsMenuLayout from './components/UnderHeader/SettingsMenuLayout'; // Подменю настроек
 import Staff from './components/Pages/Staff'; // Список сотрудников
 import AddEditStaff from './components/Pages/AddEditStaff'; // // Управление сотрудниками. Добавление или редактирование
+import Users from './components/Pages/Users'; // Список сотрудников
+import OrderStatuses from './components/Pages/OrderStatuses'; // Список статусов заказов
+import Schedule from './components/Pages/Schedule'; // График доставки
+import Delivery from './components/Pages/Delivery'; // Доставка
 
 import './styles/app.css';
 
@@ -46,9 +50,13 @@ function App() {
         {/* Подменю настройки */}
         <Route path="/settings" element={<SettingsMenuLayout />}>
           {/* Сотрудники */}
-          <Route path="staff" element={<Staff />} />
-          <Route path="staff/new" element={<AddEditStaff mode="add" />} />
-          <Route path="staff/edit/:id" element={<AddEditStaff mode="edit" />} />
+          <Route path="employees" element={<Staff />} />
+          <Route path="employees/new" element={<AddEditStaff mode="add" />} />
+          <Route path="employees/edit/:id" element={<AddEditStaff mode="edit" />} />
+          <Route path="users" element={<Users />} />
+          <Route path="order-statuses" element={<OrderStatuses />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path="delivery" element={<Delivery />} />
         </Route>
       </Routes>
     </Router>

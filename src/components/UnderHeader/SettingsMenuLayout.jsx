@@ -7,9 +7,11 @@ import SettingsMenu from "./SettingsMenu"; // Подменю настроек
 
 const SettingsMenuLayout = () => {
     return (
-        <div>
+        <div style={{ display: 'flex' }}>
             <SettingsMenu />
-            <Outlet /> {/* Здесь будут отображаться дочерние маршруты */}
+            <div style={{ marginLeft: '250px', width: 'calc(100% - 250px)', padding: '20px' }}>
+                <Outlet />
+            </div>
         </div>
     );
 };

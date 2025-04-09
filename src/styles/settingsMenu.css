@@ -1,2 +1,43 @@
 /* Стили подменю настроек */
 
+/* Контейнер меню */
+.settings-menu-container {
+    width: 250px;
+    height: 100vh;
+    background-color: #fff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    position: fixed;
+    right: 1;
+    top: 1; /* Над хедером */
+}
+
+/* Заголовок */
+.settings-title {
+    color: #2c3e50;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+}
+
+/* Контейнер с кнопками */
+.settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Кнопки */
+.settings-nav-button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.settings-nav-button:hover {
+    background-color: #f8f9fa;
+}
