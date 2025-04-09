@@ -1,4 +1,4 @@
-// Компонент для отображения подменю и его дочерних страниц
+// Компонент для отображения подменю "Menu" и его дочерних страниц
 import React from "react";
 import Menu from "./Menu";
 import { Outlet } from "react-router-dom";
