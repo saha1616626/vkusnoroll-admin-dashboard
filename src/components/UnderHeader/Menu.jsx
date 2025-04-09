@@ -14,7 +14,6 @@ const Menu = () => {
     const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
     const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
 
-
     // Определяем активную кнопку на основе текущего пути
     const getInitialButtonIndex = () => {
         // Получение индекса кнопки из localStorage
@@ -28,7 +27,7 @@ const Menu = () => {
         return savedIndex ? parseInt(savedIndex, 10) : 0;
     };
 
-    const [selectedButton, setSelectedButton] = useState(getInitialButtonIndex);
+    const [selectedButton, setSelectedButton] = useState(getInitialButtonIndex());
 
     // Автоматическая навигация при изменении кнопки
     useEffect(() => {
@@ -66,7 +65,7 @@ const Menu = () => {
         // Обновляем состояние только если меняется выбор
         if (buttonIndex !== selectedButton) {
             setSelectedButton(buttonIndex);
-            localStorage.setItem('selectedButtonHeaderIndex', buttonIndex);
+            localStorage.setItem('selectedButtonUnderHeaderMenuIndex', buttonIndex);
         }
         navigate(routes[buttonIndex]); // Всегда переходим на страницу
     };

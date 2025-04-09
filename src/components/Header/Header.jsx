@@ -15,78 +15,80 @@ const Header = () => {
 
     const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
     const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
+    const [selectedButton, setSelectedButton] = useState(0); // По умолчанию "Меню"
 
-    // Определяем активную кнопку на основе текущего пути
-    const getInitialButtonIndex = () => {
-        // Получение индекса кнопки из localStorage
-        const savedIndex = localStorage.getItem('selectedButtonHeaderIndex');
-
-        // Если текущий путь соответствует одному из маршрутов кнопок, то запускаем подходящий маршрут
-        if (location.pathname.startsWith('/menu')) return 0;
-        if (location.pathname.startsWith('/news')) return 1;
-        if (location.pathname.startsWith('/sales-report')) return 2;
-
-        // Если нет - используем сохранённое значение
-        return savedIndex ? parseInt(savedIndex, 10) : 0;
-    };
-
-    const [selectedButton, setSelectedButton] = useState(getInitialButtonIndex);
-
-    // Автоматическая навигация при изменении кнопки
+    // Инициализация при рендере компонента
     useEffect(() => {
-        const routes = ['/menu', '/news', '/sales-report']; // Все маршруты
-        const targetRoute = routes[selectedButton]; // Индекс кнопки соответствует 1 маршруту
-
-        // Навигация только если текущий путь НЕ начинается с целевого маршрута
-        if (!location.pathname.startsWith(targetRoute)) {
-            navigate(targetRoute);
+        // Если текущий путь не соответствует ни одному из маршрутов
+        if (!location.pathname.startsWith('/menu') &&
+            !location.pathname.startsWith('/news') &&
+            !location.pathname.startsWith('/sales-report') &&
+            !location.pathname.startsWith('/personal-account') &&
+            !location.pathname.startsWith('/settings')) {
+            navigate('/menu'); // Перенаправляем на маршрут по умолчанию
         }
-    }, [selectedButton, navigate, location.pathname]);
+    }, [navigate, location.pathname]);
 
-    // Получение индекса выбранной кнопки и последующая навигация
-    const handleButtonClick = (buttonIndex) => {
+    // Определение активной кнопки при загрузке и изменении маршрута
+    useEffect(() => {
+        const path = location.pathname;
+        if (path.startsWith('/menu')) setSelectedButton(0);
+        else if (path.startsWith('/news')) setSelectedButton(1);
+        else if (path.startsWith('/sales-report')) setSelectedButton(2);
+    }, [location.pathname]);
+
+    // Очистка localStorage при размонтировании
+    useEffect(() => {
+        return () => {
+            localStorage.removeItem('selectedButtonHeaderIndex'); // Хеадер
+            localStorage.removeItem('selectedButtonUnderHeaderMenuIndex'); // Подменю (Блюда, категории)
+        };
+    }, []);
+
+    // Навигация
+    const handleNavigation = (path, shouldUpdateButton) => {
+        const checkNavigation = () => {
+            navigate(path);
+            if (shouldUpdateButton) {
+                const index = ['/menu', '/news', '/sales-report'].indexOf(path);
+                setSelectedButton(index);
+                localStorage.setItem('selectedButtonHeaderIndex', index);
+            }
+        };
 
         // Проверка на несохраненные изменения
-        if (localStorage.getItem('isDirty') === 'true') {
-            // Сохраняем целевую навигацию и показываем модалку
-            setPendingNavigation(() => () => { // Если пользователь подтвредит переход
-                localStorage.setItem('isDirty', 'false');
-                performNavigation(buttonIndex);  // Осуществляем навигацию по меню
-            });
+        if (localStorage.getItem('isDirty') === 'true') { // На false isDirty при выходе без сохранения менять не нужно, так как компонент размонтируется и удалит состоние isDirty в localStorage
+            setPendingNavigation(() => checkNavigation);
             setShowNavigationConfirmModal(true);
-            return;
+        } else {
+            checkNavigation();
         }
-
-        // Осуществляем навигацию по меню
-        performNavigation(buttonIndex);
     };
 
-    // Навигация по меню
-    const performNavigation = (buttonIndex) => {
-        const routes = ['/menu', '/news', '/sales-report'];
-
-        // Обновляем состояние только если меняется выбор
-        if (buttonIndex !== selectedButton) {
-            setSelectedButton(buttonIndex);
-            localStorage.setItem('selectedButtonHeaderIndex', buttonIndex);
-        }
-        navigate(routes[buttonIndex]); // Всегда переходим на страницу
-    };
-
-    // Названия кнопок
-    const buttonLabels = ['Меню', 'Новости', 'Отчет по продажам'];
+    // Обработчики кликов
+    const handleLogoClick = () => handleNavigation('/menu', true);
+    const handleUserClick = () => handleNavigation('/personal-account', false);
+    const handleSettingsClick = () => handleNavigation('/settings', false);
+    const handleMenuButton = (index) =>
+        handleNavigation(['/menu', '/news', '/sales-report'][index], true);
 
     return (
         <div>
             <header className="header">
-                <div className="logo">ВкусноРолл.Админ</div>
+                <div
+                    className="logo"
+                    onClick={handleLogoClick}
+                    style={{ cursor: 'pointer' }}
+                >
+                    ВкусноРолл.Админ
+                </div>
 
                 <nav style={{ display: 'flex', gap: '10px', justifyContent: 'center', margin: '0', padding: '0' }}>
-                    {buttonLabels.map((label, index) => (
+                    {['Меню', 'Новости', 'Отчет по продажам'].map((label, index) => (
                         <button
                             className="nav-button"
                             key={index}
-                            onClick={() => handleButtonClick(index)}
+                            onClick={() => handleMenuButton(index)}
                             style={{
                                 backgroundColor: selectedButton === index ? 'gray' : 'transparent',
                                 color: selectedButton === index ? 'white' : 'black'
@@ -98,8 +100,18 @@ const Header = () => {
                 </nav>
 
                 <div className="icons">
-                    <img src={userIcon} alt="User" />
-                    <img src={settingsIcon} alt="Settings" />
+                    <img
+                        src={userIcon}
+                        alt="User"
+                        onClick={handleUserClick}
+                        style={{ cursor: 'pointer' }}
+                    />
+                    <img
+                        src={settingsIcon}
+                        alt="Settings"
+                        onClick={handleSettingsClick}
+                        style={{ cursor: 'pointer' }}
+                    />
                 </div>
             </header>
 

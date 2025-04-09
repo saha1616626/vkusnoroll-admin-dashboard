@@ -40,10 +40,10 @@ const NavigationConfirmModal = ({
                 </div>
 
                 <div className="navigation-modal-footer">
-                    <button className="button-control navigation-confirm-button" onClick={onConfirm}>
+                    <button className="navigation-confirm-button button-control" onClick={onConfirm}>
                         Уйти
                     </button>
-                    <button className="button-control navigation-cancel-button" onClick={onCancel}>
+                    <button className="navigation-cancel-button button-control" onClick={onCancel}>
                         Остаться
                     </button>
                 </div>
