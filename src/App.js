@@ -14,6 +14,7 @@ import AddEditCategoryPage from './components/Pages/AddEditCategoryPage'; // У�
 import News from './components/Pages/News'; // Список новостей
 import AddEditNews from './components/Pages/AddEditNews'; // Управление новостями. Добавление или редактирование
 import SalesReport from './components/Pages/SalesReport'; //  Отчет по продажам
+import PersonalAccount from './components/Pages/PersonalAccount'; //  Личный кабинет
 import SettingsMenuLayout from './components/UnderHeader/SettingsMenuLayout'; // Подменю настроек
 import Staff from './components/Pages/Staff'; // Список сотрудников
 import AddEditStaff from './components/Pages/AddEditStaff'; // // Управление сотрудниками. Добавление или редактирование
@@ -47,15 +48,21 @@ function App() {
         <Route path="news/edit/:id" element={<AddEditNews mode="edit" />} />
         {/* Отчет по продажам */}
         <Route path="sales-report" element={<SalesReport />} />
+        {/* Личный кабинет */}
+        <Route path="personal-account" element={<PersonalAccount />} />
         {/* Подменю настройки */}
         <Route path="/settings" element={<SettingsMenuLayout />}>
           {/* Сотрудники */}
           <Route path="employees" element={<Staff />} />
           <Route path="employees/new" element={<AddEditStaff mode="add" />} />
           <Route path="employees/edit/:id" element={<AddEditStaff mode="edit" />} />
+          {/* Пользователи */}
           <Route path="users" element={<Users />} />
+          {/* Статусы заказов */}
           <Route path="order-statuses" element={<OrderStatuses />} />
+          {/* График работы */}
           <Route path="schedule" element={<Schedule />} />
+          {/* Доставка */}
           <Route path="delivery" element={<Delivery />} />
         </Route>
       </Routes>
