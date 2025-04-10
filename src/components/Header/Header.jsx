@@ -17,6 +17,12 @@ const Header = () => {
     const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
     const [selectedButton, setSelectedButton] = useState(0);
 
+    // Данные об авторизованном пользователе
+    const [userData, setUserData] = useState({
+        name: localStorage.getItem('userName') || '',
+        role: localStorage.getItem('userRole') || ''
+    });
+
     // Инициализация при рендере компонента
     useEffect(() => {
         // Если текущий путь не соответствует ни одному из маршрутов
@@ -108,6 +114,10 @@ const Header = () => {
                 </nav>
 
                 <div className="icons">
+                    <div className="user-details-Headers">
+                        <span className="user-name-Header">{userData.name}</span>
+                        <span className="user-role-Header">{userData.role}</span>
+                    </div>
                     <img
                         src={userIcon}
                         alt="User"

@@ -46,3 +46,26 @@
 .icons img {
     width: 40px;
 }
+
+/* Контейнер информации о пользователе */
+.user-details-Headers {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-right: 20px;
+}
+
+/* Имя пользователя */
+.user-name-Header {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Роль пользователя */
+.user-role-Header {
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+    font-weight: 500;
+    opacity: 0.7;
+}
