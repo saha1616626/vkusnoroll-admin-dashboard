@@ -148,7 +148,8 @@ const CustomTable = ({
                                     key={column}
                                     style={{
                                         width: column === 'select' ? '40px' : columnWidths[column],
-                                        textAlign: column === 'В архиве' ? "center" : "left"
+                                        textAlign: column === 'В архиве' ? "center"
+                                            : column === 'Заблокирован' ? "center" : "left"
                                     }}
                                     // Останавливаем всплытие события onRowClick для всей ячейки с чекбоксом
                                     onClick={(e) => column === 'select' && e.stopPropagation()}

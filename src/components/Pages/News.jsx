@@ -330,7 +330,7 @@ const News = () => {
 
     // Трансформация данных для представления в списке
     const transformNewsData = (data) => data.map(news => ({
-        id: news.id, // Необходим для связи с исходными данными
+        id: news.id, // Необходим для связи с исходными данными API
         dateTimePublication: news.dateTimePublication,
         image: news.image || null,
         title: news.title || '',

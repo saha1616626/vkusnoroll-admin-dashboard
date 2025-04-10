@@ -23,8 +23,9 @@ import SalesReport from './components/Pages/SalesReport'; //  Отчет по п
 import PersonalAccount from './components/Pages/PersonalAccount'; //  Личный кабинет
 import SettingsMenuLayout from './components/UnderHeader/SettingsMenuLayout'; // Подменю настроек
 import Staff from './components/Pages/Staff'; // Список сотрудников
-import AddEditStaff from './components/Pages/AddEditStaff'; // // Управление сотрудниками. Добавление или редактирование
+import AddEditStaff from './components/Pages/AddEditStaff'; // Управление сотрудниками. Добавление или редактирование
 import Users from './components/Pages/Users'; // Список сотрудников
+import AddEditUser from './components/Pages/AddEditUser'; // Управление пользователями. Добавление или редактирование
 import OrderStatuses from './components/Pages/OrderStatuses'; // Список статусов заказов
 import Schedule from './components/Pages/Schedule'; // График доставки
 import Delivery from './components/Pages/Delivery'; // Доставка
@@ -93,12 +94,15 @@ function App() {
             <Route path="personal-account" element={<PersonalAccount updateAuth={updateAuthStatus} />} />
             {/* Подменю настройки */}
             <Route path="/settings" element={<SettingsMenuLayout />}>
+              <Route index element={<Navigate to="employees" replace />} />  {/* Перенаправление по умолчанию на Staff */}
               {/* Сотрудники */}
               <Route path="employees" element={<Staff />} />
               <Route path="employees/new" element={<AddEditStaff mode="add" />} />
               <Route path="employees/edit/:id" element={<AddEditStaff mode="edit" />} />
               {/* Пользователи */}
               <Route path="users" element={<Users />} />
+              <Route path="users/new" element={<AddEditUser mode="add" />} />
+              <Route path="users/edit/:id" element={<AddEditUser mode="edit" />} />
               {/* Статусы заказов */}
               <Route path="order-statuses" element={<OrderStatuses />} />
               {/* График работы */}

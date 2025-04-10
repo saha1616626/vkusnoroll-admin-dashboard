@@ -3,15 +3,15 @@ import PropTypes from 'prop-types';
 
 // Импорт стилей
 import "./../../styles/elements/dropdownColumnSelection.css";
- 
+
 // Импорт иконок
 import resetIcon from './../../assets/icons/reset.png';
 
-const DropdownColumnSelection = ({ options, title, defaultSelected, setSelectedColumns }) => {
+const DropdownColumnSelection = ({ options, title, defaultSelected, setSelectedColumns, pageId }) => {
     const [isOpen, setIsOpen] = useState(false); // Состояние для управления открытием/закрытием списка
     const [selectedOptions, setSelectedOptions] = useState(() => {
-        // Загрузка выбранных столбцов из localStorage при инициализации состояния
-        const savedOptions = localStorage.getItem('selectedOptions');
+        // Загрузка выбранных столбцов из localStorage при инициализации состояния по ключу таблицы
+        const savedOptions = localStorage.getItem(`selectedOptions_${pageId}`);
         return savedOptions ? JSON.parse(savedOptions) : defaultSelected || [];
     }); // Сохранение выбранных опций
     const dropdownRef = useRef(null); // Ссылка на элемент выпадающего списка
@@ -44,9 +44,12 @@ const DropdownColumnSelection = ({ options, title, defaultSelected, setSelectedC
             const updatedOptions = prev.includes(option)
                 ? prev.filter(item => item !== option) // Деактивация опции
                 : [...prev, option]; // Активировать опцию
-            
-            // Сохранение обновленных опций в localStorage
-            localStorage.setItem('selectedOptions', JSON.stringify(updatedOptions));
+
+            // Сохранение обновленных опций в localStorage с учетом pageId
+            localStorage.setItem(
+                `selectedOptions_${pageId}`,
+                JSON.stringify(updatedOptions)
+            );
             return updatedOptions;
         });
     };
@@ -54,7 +57,11 @@ const DropdownColumnSelection = ({ options, title, defaultSelected, setSelectedC
     // Обработчик установки значения по умолчанию
     const handleReset = () => {
         setSelectedOptions(defaultSelected); // Установить значения по умолчанию
-        localStorage.setItem('selectedOptions', JSON.stringify(defaultSelected)); // Сохранение значения по умолчанию в localStorage
+        // Сбрасываем с учетом pageId
+        localStorage.setItem(
+            `selectedOptions_${pageId}`,
+            JSON.stringify(defaultSelected)
+        );
     };
 
     const toggleDropdown = () => {
@@ -81,7 +88,7 @@ const DropdownColumnSelection = ({ options, title, defaultSelected, setSelectedC
                     {options.map(option => (
                         <label key={option} className="dropdown-option-columns">
 
-<input
+                            <input
                                 type="checkbox"
                                 checked={selectedOptions.includes(option)}
                                 onChange={() => handleCheckboxChange(option)}
@@ -89,7 +96,7 @@ const DropdownColumnSelection = ({ options, title, defaultSelected, setSelectedC
                             {option}
                         </label>
                     ))}
-                    
+
                 </div>
             )}
         </div>
@@ -101,6 +108,7 @@ DropdownColumnSelection.propTypes = {
     title: PropTypes.string, // Заголовок для кнопки
     defaultSelected: PropTypes.arrayOf(PropTypes.string), // Массив опций по умолчанию
     setSelectedColumns: PropTypes.func.isRequired, // Функция для установки выбранных столбцов
+    pageId: PropTypes.string.isRequired
 };
 
 export default DropdownColumnSelection;

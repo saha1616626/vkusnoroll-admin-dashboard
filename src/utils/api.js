@@ -60,6 +60,14 @@ const apiMethods = {
     // Авторизация и выход
     login: (credentials) => api.post('/auth/login', credentials), // Вход
     logout: () => api.post('/auth/logout'), // Выход
+
+    // Роли
+    getRoles: () => api.get('/roles'),
+
+    // Учетные записи
+    getEmployees: () => api.get('/accounts/employees'), // Сотрудники
+    getClients: () => api.get('/accounts/clients'), // Клиенты
+
 };
 
 // Экспортируем объект по умолчанию

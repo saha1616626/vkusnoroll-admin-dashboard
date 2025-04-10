@@ -11,7 +11,7 @@ import addIcon from './../../assets/icons/add.png'
 // Импорт компонентов
 import RefreshButton from "../Elements/RefreshButton"; // Кнопка обновления данных на странице
 import FilterButton from "../Elements/FilterButton"; // Кнопка фильтра
-import FilterMenu from '../Elements/FilterMenu'; // Кнопка меню
+import FilterMenu from '../Elements/FilterMenu'; // Кнопка меню фильтра
 import DropdownButtonChange from './../Elements/DropdownButtonChange'; // Кнопка "Изменить"
 import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Просмотр архива
@@ -21,7 +21,7 @@ import Loader from '../Elements/Loader'; // Анимация загрузки д
 import DeletionResultModal from '../Elements/DeletionResultModal'; // Модальное окно результата удаления
 import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения
 
-import api from '../../utils/api';
+import api from '../../utils/api'; // API сервера
 
 const Dishes = () => {
     const pageId = 'dish-page'; // Уникальный идентификатор страницы
@@ -68,7 +68,7 @@ const Dishes = () => {
             const searchQuery = searchInputRef.current.search(); // Получаем текущее введенное значение из поля поиска
             setSearchQuery(searchQuery);
         } catch (error) {
-
+            console.error('Refresh error:', error);
         }
         finally {
             // Отключаем анимацию загрузки данных
@@ -179,8 +179,7 @@ const Dishes = () => {
                 isActive: !prev.isActive // Управление кнопкой
             };
 
-            // Сохраняем состояние кнопки в localStorage
-            localStorage.setItem(`filterState_${pageId}`, JSON.stringify(newState));
+            saveFilterState(newState); // Сохраняем состояние фильтра в localStorage
             return newState;
         });
     }
@@ -297,7 +296,7 @@ const Dishes = () => {
     const [isArchiveOpen, setIsArchiveOpen] = useState(false); // Состояние архива (открыто/закрыто)
     const [selectedColumns, setSelectedColumns] = useState(defaultColumns); // Отображаемые столбцы таблицы
 
-    const [selectedDishIds, setSelectedDishIds] = useState([]); // Массив выбранных строк с блюдами в БД
+    const [selectedDishIds, setSelectedDishIds] = useState([]); // Массив выбранных строк в таблице
 
     // Универсальная функция загрузки данных из БД
     const fetchData = useCallback(async (archivedStatus) => {
@@ -401,11 +400,11 @@ const Dishes = () => {
 
     // Загружаем выбранные столбцы из localStorage
     useEffect(() => {
-        const savedOptions = localStorage.getItem('selectedOptions');
+        const savedOptions = localStorage.getItem(`selectedOptions_${pageId}`);
         if (savedOptions) {
             setSelectedColumns(JSON.parse(savedOptions));
         }
-    }, []);
+    }, [pageId]);
 
     // Обработчик выбора строк в таблице
     const handleSelectionChange = (selectedIndices) => {
@@ -582,6 +581,7 @@ const Dishes = () => {
                         title="Колонки"
                         defaultSelected={defaultColumns}
                         setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
+                        pageId={pageId}
                     />
                 </div>
 
