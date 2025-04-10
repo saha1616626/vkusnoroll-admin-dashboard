@@ -15,7 +15,7 @@ const PersonalAccount = ({ updateAuth }) => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userRole');
         updateAuth(false); // Передаем состояние о выходе
-        navigate('/login');
+        window.location.href = '/login';
     };
 
     return (

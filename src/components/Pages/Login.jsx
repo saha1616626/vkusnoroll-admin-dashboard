@@ -1,8 +1,9 @@
 // Авторизация
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
+import { isTokenValid } from './../../utils/auth'; // Проверка токена
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
@@ -14,13 +15,24 @@ const Login = ({ updateAuth }) => {
     const [error, setError] = useState(''); // Ошибки
     const navigate = useNavigate(); // Навигация
 
+    // Авто перенаправление пользвоателя в меню, если он перешел на страницу авторизации
+    useEffect(() => {
+        const token = localStorage.getItem('authToken');
+        if (isTokenValid(token)) {
+            navigate('/menu');
+        }
+    }, [navigate]);
+
     // Обработка авторизации
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const response = await api.login({ login, password });
-            localStorage.setItem('authToken', response.token); //  JWT-токен, который сгенерировал сервер
-            localStorage.setItem('userRole', response.role); //  Роль, которую вернул сервер
+            // Сохраняем токен из куки (сервер уже установил его)
+            const token = response.data.token;
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('userRole', response.data.role); //  Роль, которую вернул сервер
+            
             updateAuth(true); // Вызываем функцию обновления
             navigate('/menu');
         } catch (err) {

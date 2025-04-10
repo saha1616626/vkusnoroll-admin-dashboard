@@ -2,8 +2,11 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
-  Route
+  Route,
+  Navigate,
+  useNavigate // Используем useNavigate внутри Router
 } from 'react-router-dom';
+import { isTokenValid } from './utils/auth';
 
 import Login from './components/Pages/Login'; // Страница авторизации
 import PrivateRoute from './components/Elements/PrivateRoute'; // Контент, доступный после авторизации
@@ -29,23 +32,41 @@ import Delivery from './components/Pages/Delivery'; // Доставка
 import './styles/app.css';
 
 function App() {
-  // Проверяем состояние токена, если он некорректный, то перенаправляем пользователя на страницу авторизации.
-  const [isAuthenticated, setIsAuthenticated] = useState( // Актуальный статус авторизации пользователя
-    () => !!localStorage.getItem('authToken')
-  );
+  // Проверяем состояние токена, если он неактивный, то перенаправляем пользователя на страницу авторизации.
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem('authToken'); // Актуальный статус авторизации пользователя
+    return isTokenValid(token);
+  });
 
   // Обновление статуса авторизации
   const updateAuthStatus = useCallback((status) => {
     setIsAuthenticated(status);
   }, []);
 
-  return (
-    <Router>
+  const AppContent = () => { // <Router> должен использоваться только внутри <Router>, поэтому пришло обернуть в AppContent
+    const navigate = useNavigate(); // Навигация
+
+    // Проверка срока действия токена при инициализации
+    useEffect(() => {
+      const checkTokenValidity = () => {
+        const token = localStorage.getItem('authToken');
+        if (!isTokenValid(token)) {
+          localStorage.removeItem('authToken');
+          setIsAuthenticated(false);
+          navigate('/login');
+        }
+      };
+
+      checkTokenValidity();
+      const interval = setInterval(checkTokenValidity, 60000); // Проверка каждую минуту статуса токена
+      return () => clearInterval(interval);
+    }, [navigate]);
+
+    return (
       <Routes>
-        <Route
-          path="/login"
-          element={<Login updateAuth={updateAuthStatus} />}
-        />
+        <Route path="/login" element={
+          isAuthenticated ? <Navigate to="/menu" /> : <Login updateAuth={updateAuthStatus} />
+        } />
 
         <Route element={<PrivateRoute isAuthenticated={isAuthenticated} />}>
           {/* Все защищенные маршруты */}
@@ -89,6 +110,12 @@ function App() {
         </Route>
 
       </Routes>
+    );
+  };
+
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
