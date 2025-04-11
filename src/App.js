@@ -52,7 +52,9 @@ function App() {
       const checkTokenValidity = () => {
         const token = localStorage.getItem('authToken');
         if (!isTokenValid(token)) {
-          localStorage.removeItem('authToken');
+          // Токен, роль, id и имя удаляется из локального хранилища
+          ['authToken', 'userRole', 'userId', 'userName']
+            .forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
           navigate('/login');
         }

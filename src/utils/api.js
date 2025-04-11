@@ -25,7 +25,9 @@ api.interceptors.response.use(
     response => response, // Если запрос успешный (т.е. сервер вернул ответ с кодом состояния 2xx), то просто возвращаем ответ
     error => {
         if (error.response?.status === 401) { // Токен недействителен или отсутствует
-            localStorage.removeItem('authToken'); // Токен удаляется из локального хранилища
+            // Токен, роль, id и имя удаляется из локального хранилища
+            ['authToken', 'userRole', 'userId', 'userName']
+                .forEach(key => localStorage.removeItem(key));
             window.location.href = '/login'; // Переход на страницу входа
         }
         return Promise.reject(error); // Возвращает ошибку для дальнейшей обработки в компонентах
@@ -65,6 +67,7 @@ const apiMethods = {
     getRoles: () => api.get('/roles'),
 
     // Учетные записи
+    getAccountById: (id) => api.get(`/accounts/user/${id}`), // Пользователь
     getEmployees: () => api.get('/accounts/employees'), // Сотрудники
     getClients: () => api.get('/accounts/clients'), // Клиенты
 
