@@ -361,12 +361,14 @@ const Users = () => {
             {/* Обновить страницу, название, добавить, фильтрация, поиcк, колонки */}
             <div className="control-components">
 
-                {/* Обновить страницу */}
-                <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
+                <div className="refresh-title-group">
+                    {/* Обновить страницу */}
+                    <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
-                {/* Заголовок страницы */}
-                <div className="page-name">
-                    Пользователи
+                    {/* Заголовок страницы */}
+                    <div className="page-name">
+                        Пользователи
+                    </div>
                 </div>
 
                 <div className="filter-search-column-group">

@@ -210,7 +210,7 @@ const AddEditNews = ({ mode }) => {
             // Обработка успешной операции
             setIsDirty(false); // Несохраненных изменений нет
             setInitialData(formData); // Обновляем начальные данные полей на странице, чтобы проверка наличия сохранения данных начиналась от них
-            navigate('/menu/categories');
+            navigate('/news');
         } catch (error) {
             console.error('Ошибка сохранения:', error);
             alert('Произошла ошибка при сохранении: ' +
