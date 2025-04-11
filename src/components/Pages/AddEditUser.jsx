@@ -10,6 +10,12 @@ import "./../../styles/addEditUser.css"; // Стили только для да�
 
 const AddEditUser = ({ mode }) => {
 
+
+    return (
+        <div className="addEditPage-container">
+            Пользователи
+        </div>
+    );
 };
 
 export default AddEditUser;

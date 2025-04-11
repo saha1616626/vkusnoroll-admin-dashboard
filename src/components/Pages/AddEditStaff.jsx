@@ -10,7 +10,12 @@ import "./../../styles/addEditStaff.css"; // Стили только для да
 
 const AddEditStaff = ({ mode }) => {
 
+    return (
+        <div className="addEditPage-container">
+            Сотрудники
+        </div>
+    );
 };
-
+ 
 export default AddEditStaff;
 

@@ -69,11 +69,11 @@ const Users = () => {
      Навигация и CRUD операции
     ===========================
     */
-    const handleAddClick = () => navigate('/settings/users/new'); // Переход на страницу добавления
-    const handleEditClick = (staff) => navigate(`/settings/users/edit/${staff.id}`); // Переход на страницу редактирования
+
+    const handleEditClick = (client) => navigate(`/settings/users/edit/${client.id}`); // Переход на страницу редактирования
     const handleRowClick = (rowData) => { // Обработчик клика по строке в таблице
-        const originalDish = rawData.find(dish => dish.id === rowData.id); // Получаем исходные данные по id из выбранной строки
-        if (originalDish) handleEditClick(originalDish); // Передаем данные выбранной строки и запускаем страницу для редактирования
+        const originalClient = rawData.find(client => client.id === rowData.id); // Получаем исходные данные по id из выбранной строки
+        if (originalClient) handleEditClick(originalClient); // Передаем данные выбранной строки и запускаем страницу для редактирования
     };
 
     /* 
@@ -83,7 +83,7 @@ const Users = () => {
     */
 
     // Трансформация данных для представления в таблице
-    const transformStaffData = (data) => data.map(staff => {
+    const transformClientsData = (data) => data.map(client => {
 
         // Функция для форматирования даты в нужный формат
         const formatRegistrationDate = (dateString) => {
@@ -107,16 +107,16 @@ const Users = () => {
         };
 
         return {
-            id: staff.id,
-            'Имя': staff.name,
-            'Фамилия': staff.surname,
-            'Отчество': staff.patronymic,
-            'Логин': staff.login,
-            'Email': staff.email || '—',
-            'Номер телефона': staff.numberPhone || '—',
-            'Роль': staff.role,
-            'Зарегистрирован': formatRegistrationDate(staff.registrationDate),
-            'Заблокирован': staff.isAccountTermination ? '✓' : '✗'
+            id: client.id,
+            'Имя': client.name,
+            'Фамилия': client.surname,
+            'Отчество': client.patronymic,
+            'Логин': client.login,
+            'Email': client.email || '—',
+            'Номер телефона': client.numberPhone || '—',
+            'Роль': client.role,
+            'Зарегистрирован': formatRegistrationDate(client.registrationDate),
+            'Заблокирован': client.isAccountTermination ? '✓' : '✗'
         };
     });
 
@@ -124,14 +124,14 @@ const Users = () => {
     const fetchData = useCallback(async () => {
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
-            const response = await api.getEmployees();
-            const staff = response.data; // Получаем данные
+            const response = await api.getClients();
+            const client = response.data; // Получаем данные
 
             // Проверяем наличие данных
-            if (!staff || !Array.isArray(staff)) { throw new Error('Invalid staff data') };
+            if (!client || !Array.isArray(client)) { throw new Error('Invalid client data') };
 
-            setRawData(staff.sort((a, b) => b.id - a.id)); // Сохраняем необработанные данные и упорядочиваем их по убыванию идентификатора
-            setTableData(transformStaffData(staff));
+            setRawData(client.sort((a, b) => b.id - a.id)); // Сохраняем необработанные данные и упорядочиваем их по убыванию идентификатора
+            setTableData(transformClientsData(client));
         } catch (error) { // Обработка ошибок axios
             console.error('Error:', error.response ? error.response.data : error.message);
         } finally {
@@ -172,30 +172,11 @@ const Users = () => {
         localStorage.setItem(`filterState_${pageId}`, JSON.stringify(state));
     };
 
-    // Получение списка ролей
-    const fetchRoles = async () => {
-        try {
-            const response = await api.getRoles();
-
-            // Проверяем наличие данных
-            if (!response.data || !Array.isArray(response.data)) { throw new Error('Invalid roles data'); }
-
-            response.data = response.data.filter(role => role.name !== 'Пользователь'); // Исключаем роль
-
-            return response.data.map(role => role.name);
-        } catch (error) {
-            console.error('Error:', error.response ? error.response.data : error.message);
-            return [];
-        }
-    };
-
     // Инициализация фильтров
     const initFilters = (roles) => {
         setFilters([
             { type: 'text', name: 'numberPhone', label: 'Телефон', placeholder: '' },
-            { type: 'text', name: 'email', label: 'E-mail', placeholder: '' },
-            { type: 'select', name: 'role', label: 'Роль', options: roles },
-            { type: 'text', name: 'login', label: 'Логин', placeholder: '' },
+            { type: 'text', name: 'name', label: 'Имя', placeholder: '' },
             { type: 'select', name: 'isAccountTermination', label: 'Доступ', options: ['Заблокирован', 'Не заблокирован'] }
         ]);
     };
@@ -206,28 +187,18 @@ const Users = () => {
 
         // Фильтрация по номеру телефона
         if (filters.numberPhone && filters.numberPhone.trim()) {
-            result = result.filter(staff => staff.numberPhone === filters.numberPhone.trim());
+            result = result.filter(client => client.numberPhone === filters.numberPhone.trim());
         }
 
-        // Фильтрация по email
-        if (filters.email && filters.email.trim()) {
-            result = result.filter(staff => staff.email === filters.email.trim());
-        }
-
-        // Фильтрация по роли
-        if (filters.role) {
-            result = result.filter(staff => staff.role === filters.role);
-        }
-
-        // Фильтрация по логину
-        if (filters.login && filters.login.trim()) {
-            result = result.filter(staff => staff.login === filters.login.trim());
+        // Фильтрация по имени
+        if (filters.name && filters.name.trim()) {
+            result = result.filter(client => client.name === filters.name.trim());
         }
 
         // Фильтрация по доступу к учетной записи
         if (filters.isAccountTermination) {
             const isTermination = filters.isAccountTermination === "Заблокирован" ? true : false;
-            result = result.filter(staff => staff.isAccountTermination === isTermination);
+            result = result.filter(client => client.isAccountTermination === isTermination);
         }
 
         return result;
@@ -318,11 +289,10 @@ const Users = () => {
         fetchData();
     }, [fetchData]);
 
-    // Загрузка ролей и инициализация фильтров
+    // Инициализация фильтров
     useEffect(() => {
         const loadCategories = async () => {
-            const roles = await fetchRoles();
-            initFilters(roles);
+            initFilters();
             const savedState = localStorage.getItem(`filterState_${pageId}`);
             if (savedState) {
                 const parsedState = JSON.parse(savedState);
@@ -337,16 +307,16 @@ const Users = () => {
     useEffect(() => {
         const applyFiltersAndSearch = () => {
             let result = rawData
-                .filter(staff =>
+                .filter(client =>
                     searchQuery
-                        ? `${staff.surname} ${staff.name} ${staff.patronymic}`.toLowerCase().includes(searchQuery.toLowerCase()) // Проверяем, содержится ли searchQuery в объединенной строке
+                        ? client.email.toLowerCase().includes(searchQuery.toLowerCase()) // Проверяем, содержится ли searchQuery в объединенной строке
                         : true
                 );
 
             if (Object.keys(activeFilters).length > 0) { // Применяем фильтры, только если они есть
                 result = applyFilters(result, activeFilters);
             }
-            return transformStaffData(result);
+            return transformClientsData(result);
         };
         setTableData(applyFiltersAndSearch());
     }, [rawData, searchQuery, activeFilters, applyFilters]);
@@ -410,7 +380,7 @@ const Users = () => {
                     {/* Поиск */}
                     <SearchInput
                         ref={searchInputRef}
-                        placeholder="Поиск сотрудника по ФИО"
+                        placeholder="Поиск пользователя по Email"
                         onSearch={handleSearch}
                     />
 

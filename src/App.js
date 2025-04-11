@@ -101,7 +101,6 @@ function App() {
               <Route path="employees/edit/:id" element={<AddEditStaff mode="edit" />} />
               {/* Пользователи */}
               <Route path="users" element={<Users />} />
-              <Route path="users/new" element={<AddEditUser mode="add" />} />
               <Route path="users/edit/:id" element={<AddEditUser mode="edit" />} />
               {/* Статусы заказов */}
               <Route path="order-statuses" element={<OrderStatuses />} />
