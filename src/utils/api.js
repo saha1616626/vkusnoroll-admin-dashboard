@@ -13,7 +13,7 @@ const api = axios.create({
 
 // Автоматическая отправка токена авторизации в заголовки каждого исходящего HTTP-запроса
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('authToken'); // Извлекается токен аутентификации из локального хранилища браузера
+    const token = localStorage.getItem('authAdminToken'); // Извлекается токен аутентификации из локального хранилища браузера
     if (token) {
         config.headers.Authorization = `Bearer ${token}`; // Если токен существует, он добавляется в заголовок Authorization с типом Bearer
     }
@@ -26,7 +26,7 @@ api.interceptors.response.use(
     error => {
         if (error.response?.status === 401) { // Токен недействителен или отсутствует
             // Токен, роль, id и имя удаляется из локального хранилища
-            ['authToken', 'userRole', 'userId', 'userName']
+            ['authAdminToken', 'userRole', 'userId', 'userName']
                 .forEach(key => localStorage.removeItem(key));
             window.location.href = '/login'; // Переход на страницу входа
         }
@@ -60,8 +60,8 @@ const apiMethods = {
     archiveNewsPosts: (ids, archive) => api.put('/newsPosts', { ids, archive }), // Архивация и разархивация
 
     // Авторизация и выход
-    login: (credentials) => api.post('/auth/login', credentials), // Вход
-    logout: () => api.post('/auth/logout'), // Выход
+    login: (credentials) => api.post('/auth/admin/login', credentials), // Вход
+    logout: () => api.post('/auth/admin/logout'), // Выход
 
     // Роли
     getRoles: () => api.get('/roles'),

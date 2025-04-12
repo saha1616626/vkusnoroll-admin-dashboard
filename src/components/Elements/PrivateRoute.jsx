@@ -5,9 +5,11 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { isTokenValid } from './../../utils/auth'; // Проверка токена
 
 const PrivateRoute = ({ isAuthenticated }) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('authAdminToken');
     if (!isAuthenticated || !isTokenValid(token)) {
-        localStorage.removeItem('authToken');
+        // Токен, роль, id и имя удаляется из локального хранилища
+        ['authAdminToken', 'userRole', 'userId', 'userName']
+            .forEach(key => localStorage.removeItem(key));
         return <Navigate to="/login" replace />;
     }
 

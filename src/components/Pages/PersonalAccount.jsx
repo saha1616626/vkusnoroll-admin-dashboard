@@ -72,7 +72,7 @@ const PersonalAccount = ({ updateAuth }) => {
     // Выход из аккаунта
     const handleLogout = () => {
         // Токен, роль, id и имя удаляется из локального хранилища
-        ['authToken', 'userRole', 'userId', 'userName']
+        ['authAdminToken', 'userRole', 'userId', 'userName']
             .forEach(key => localStorage.removeItem(key));
         updateAuth(false); // Передаем состояние о выходе
         navigate('/login');

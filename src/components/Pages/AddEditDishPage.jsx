@@ -498,7 +498,7 @@ const AddEditDishPage = ({ mode }) => {
                             {!selectedImage && (
                                 <div className="image-upload-prompt-AddEditDish">
                                     <span>Изображение отсутствует</span>
-                                    <span>Рекомендуемый размер: 500x500px</span>
+                                    <span>Рекомендуемый размер: <br></br> 1080 x 1080 px (1:1)</span>
                                 </div>
                             )}
 

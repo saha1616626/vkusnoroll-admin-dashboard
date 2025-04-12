@@ -35,7 +35,7 @@ import './styles/app.css';
 function App() {
   // Проверяем состояние токена, если он неактивный, то перенаправляем пользователя на страницу авторизации.
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const token = localStorage.getItem('authToken'); // Актуальный статус авторизации пользователя
+    const token = localStorage.getItem('authAdminToken'); // Актуальный статус авторизации пользователя
     return isTokenValid(token);
   });
 
@@ -50,10 +50,10 @@ function App() {
     // Проверка срока действия токена при инициализации
     useEffect(() => {
       const checkTokenValidity = () => {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authAdminToken');
         if (!isTokenValid(token)) {
           // Токен, роль, id и имя удаляется из локального хранилища
-          ['authToken', 'userRole', 'userId', 'userName']
+          ['authAdminToken', 'userRole', 'userId', 'userName']
             .forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
           navigate('/login');

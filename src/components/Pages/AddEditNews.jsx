@@ -194,7 +194,9 @@ const AddEditNews = ({ mode }) => {
 
             // Преобразуем данные перед отправкой
             const payload = {
-                dateTimePublication: getCurrentDateTimeInMoscow(),
+                dateTimePublication: mode === 'add'
+                    ? getCurrentDateTimeInMoscow()
+                    : convertToMoscowDateTime(formData.dateTimePublication),
                 image: formData.image ? formData.image.split(',')[1] : null, // Заменяем на null, если нет изображения
                 title: formData.title.trim() || null,
                 message: formData.message.trim() || null,
@@ -218,34 +220,33 @@ const AddEditNews = ({ mode }) => {
         }
     }
 
-    // Возврат текущего времени по МСК
+    // Конвертация существующей даты в московское время
+    const convertToMoscowDateTime = (dateTime) => {
+        const date = new Date(dateTime);
+
+        // Добавляем смещение для московского времени (UTC+6)
+        const moscowOffset = 6 * 60; // минуты
+        const localOffset = date.getTimezoneOffset();
+        const moscowTime = new Date(date.getTime() + (localOffset + moscowOffset) * 60000);
+
+        return formatDateToMoscowString(moscowTime);
+    };
+
+    // Общая функция форматирования даты
+    const formatDateToMoscowString = (date) => {
+        const pad = (n) => n.toString().padStart(2, '0');
+
+        return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ` +
+            `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+    };
+
+    // Получения текущей даты и времени по МСК
     const getCurrentDateTimeInMoscow = () => {
-        // Создаем объект даты, который будет содержать текущее время
         const date = new Date();
+        const moscowOffset = 6 * 60 * 60000; // MSK UTC+6 в миллисекундах
+        const moscowTime = new Date(date.getTime() + (date.getTimezoneOffset() * 60000) + moscowOffset);
 
-        // Опции для форматирования
-        const options = {
-            timeZone: 'Europe/Moscow',  // Указываем временную зону
-            year: 'numeric',              // ГГГГ
-            month: '2-digit',             // ММ
-            day: '2-digit',               // ДД
-            hour: '2-digit',              // ЧЧ
-            minute: '2-digit',            // ММ
-            second: '2-digit',            // СС
-            hour12: false                 // 24-часовой формат
-        };
-
-        // Форматируем дату
-        const formattedDateTime = new Intl.DateTimeFormat('ru-RU', options).format(date);
-
-        // Получаем компоненты даты и времени
-        const [datePart, timePart] = formattedDateTime.split(',');
-
-        // Формируем строку в формате 'YYYY-MM-DD HH:MM:SS'
-        const [day, month, year] = datePart.split('.');
-        const result = `${year}-${month}-${day}${timePart}`;
-
-        return result;
+        return formatDateToMoscowString(moscowTime);
     };
 
     // Блокируем обноывление страницы, если есть несохраненные данные
@@ -434,7 +435,7 @@ const AddEditNews = ({ mode }) => {
                         {!selectedImage && (
                             <div className="image-upload-prompt-AddEditNews">
                                 <span>Изображение отсутствует</span>
-                                <span>Рекомендуемый размер: 800x600px</span>
+                                <span>Рекомендуемый размер: 1280 x 720 px (16:9)</span>
                             </div>
                         )}
                     </div>

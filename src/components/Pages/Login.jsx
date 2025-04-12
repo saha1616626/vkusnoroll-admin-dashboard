@@ -23,7 +23,7 @@ const Login = ({ updateAuth }) => {
 
     // Авто перенаправление пользвоателя в меню, если он перешел на страницу авторизации
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authAdminToken');
         if (isTokenValid(token)) {
             navigate('/menu');
         }
@@ -36,7 +36,7 @@ const Login = ({ updateAuth }) => {
             const response = await api.login({ login, password });
             // Сохраняем токен из куки (сервер уже установил его)
             const token = response.data.token;
-            localStorage.setItem('authToken', token);
+            localStorage.setItem('authAdminToken', token);
             localStorage.setItem('userRole', response.data.role); // Сохраняем роль, которую вернул сервер
             localStorage.setItem('userId', response.data.userId);
             localStorage.setItem('userName', response.data.userName); //  Сохраняем имя, которое вернул сервер
