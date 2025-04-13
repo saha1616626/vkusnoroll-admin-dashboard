@@ -31,7 +31,7 @@ const Login = ({ updateAuth }) => {
 
     // Обработка авторизации
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Отменяет действие события по умолчанию
         try {
             const response = await api.login({ login, password });
             // Сохраняем токен из куки (сервер уже установил его)

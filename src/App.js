@@ -21,7 +21,7 @@ import News from './components/Pages/News'; // Список новостей
 import AddEditNews from './components/Pages/AddEditNews'; // Управление новостями. Добавление или редактирование
 import SalesReport from './components/Pages/SalesReport'; //  Отчет по продажам
 import PersonalAccount from './components/Pages/PersonalAccount'; //  Личный кабинет
-import SettingsMenuLayout from './components/UnderHeader/SettingsMenuLayout'; // Подменю настроек
+import SettingsMenuLayout from './components/UnderHeader/SettingsMenuLayout'; // Меню настроек
 import Staff from './components/Pages/Staff'; // Список сотрудников
 import AddEditStaff from './components/Pages/AddEditStaff'; // Управление сотрудниками. Добавление или редактирование
 import Users from './components/Pages/Users'; // Список сотрудников
@@ -44,7 +44,7 @@ function App() {
     setIsAuthenticated(status);
   }, []);
 
-  const AppContent = () => { // <Router> должен использоваться только внутри <Router>, поэтому пришло обернуть в AppContent
+  const AppContent = () => { // <Router> должен использоваться только внутри <Router> (для использования навигации), поэтому пришлось обернуть в AppContent
     const navigate = useNavigate(); // Навигация
 
     // Проверка срока действия токена при инициализации
@@ -52,7 +52,7 @@ function App() {
       const checkTokenValidity = () => {
         const token = localStorage.getItem('authAdminToken');
         if (!isTokenValid(token)) {
-          // Токен, роль, id и имя удаляется из локального хранилища
+          // Токен, роль, id и имя удаляются из локального хранилища
           ['authAdminToken', 'userRole', 'userId', 'userName']
             .forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
@@ -94,7 +94,7 @@ function App() {
             <Route path="sales-report" element={<SalesReport />} />
             {/* Личный кабинет */}
             <Route path="personal-account" element={<PersonalAccount updateAuth={updateAuthStatus} />} />
-            {/* Подменю настройки */}
+            {/* Меню настройки */}
             <Route path="/settings" element={<SettingsMenuLayout />}>
               <Route index element={<Navigate to="employees" replace />} />  {/* Перенаправление по умолчанию на Staff */}
               {/* Сотрудники */}
