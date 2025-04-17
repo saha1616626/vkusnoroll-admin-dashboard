@@ -71,6 +71,13 @@ const apiMethods = {
     getEmployees: () => api.get('/accounts/employees'), // Сотрудники
     getClients: () => api.get('/accounts/clients'), // Клиенты
 
+    // Статусы заказов
+    getOrderStatuses: () => api.get('/orderStatuses'),
+    createOrderStatus: (data) => api.post('/orderStatuses', data),
+    updateOrderStatus: (id, data) => api.put(`/orderStatuses/${id}`, data),
+    deleteOrderStatus: (id) => api.delete(`/orderStatuses/${id}`),
+    updateOrderStatusesSequence: (sequence) => api.put('/orderStatuses/sequence', { sequence }),
+
 };
 
 // Экспортируем объект по умолчанию

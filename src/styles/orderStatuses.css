@@ -1,2 +1,112 @@
  /* Стили для страницы "Статусы заказов" */
 
+ /* Контейнер управляющих элементов над списком */
+ .order-statuses-controls {
+     display: flex;
+     gap: 15px;
+     margin-bottom: 40px;
+ }
+
+ /* Кнопка сохранить и удалить в режиме изменения порядка */
+.order-statuses-actions img {
+    object-fit: cover;
+    width: 20px;
+}
+
+.order-statuses-actions button:hover {
+    transform: translateY(-2px);
+}
+
+
+ /* Заголовок перед списком статусов */
+ .order-statuses-header {
+     display: grid;
+     grid-template-columns: 2fr 1fr 1.5fr 1.5fr 100px;
+     gap: 15px;
+     padding: 10px;
+     background: #f5f5f5;
+     border-radius: 4px;
+     font-weight: bold;
+     margin-bottom: 10px;
+ }
+
+ /* Контейнер списка */
+ .order-statuses-list {
+     border: 1px solid #eee;
+     border-radius: 8px;
+ }
+
+ /* Элемент списка */
+ .order-statuses-item {
+     display: grid;
+     grid-template-columns: 2fr 1fr 1.5fr 1.5fr 100px;
+     gap: 15px;
+     padding: 15px;
+     border-bottom: 1px solid #eee;
+     background: white;
+     transition: background 0.2s;
+     position: relative;
+     touch-action: none;
+     /* Важно для touch-устройств */
+ }
+
+ .order-statuses-item:hover {
+     background: #f9f9f9;
+ }
+
+ /* Стиль при перетаскивании */
+ .order-statuses-item.dragging {
+     opacity: 0.5;
+     background: #f0f0f0;
+ }
+
+ /* Контейнер кнопок в элементе списка */
+ .order-statuses-actions {
+     display: flex;
+     gap: 10px;
+ }
+
+ /* Кнопки в элементе списка */
+ .order-statuses-actions button {
+     background: none;
+     border: none;
+     cursor: pointer;
+     padding: 5px;
+ }
+
+ /* Модальное окно для добавленияя и редактирования */
+
+/* Фон модального окна */
+.order-statuses-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}
+
+ /* Модальное окно */
+ .order-statuses-modal {
+     position: fixed;
+     top: 50%;
+     left: 50%;
+     transform: translate(-50%, -50%);
+     background: white;
+     padding: 30px;
+     border-radius: 8px;
+     box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+     z-index: 1000;
+ }
+
+ /* Форма модального окна */
+ .order-statuses-modal form {
+     display: flex;
+     flex-direction: column;
+     gap: 15px;
+     min-width: 400px;
+ }
