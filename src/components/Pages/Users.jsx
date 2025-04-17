@@ -361,7 +361,7 @@ const Users = () => {
             {/* Обновить страницу, название, добавить, фильтрация, поиcк, колонки */}
             <div className="control-components">
 
-                <div className="refresh-title-group">
+                <div className="grouping-groups-elements">
                     {/* Обновить страницу */}
                     <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
@@ -371,7 +371,7 @@ const Users = () => {
                     </div>
                 </div>
 
-                <div className="filter-search-column-group">
+                <div className="grouping-groups-elements">
 
                     {/* Кнопка фильтра */}
                     <FilterButton

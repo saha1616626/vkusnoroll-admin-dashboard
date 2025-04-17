@@ -283,7 +283,7 @@ const Categories = () => {
             {/* Управляющие элементы над таблицей */}
             <div className="control-components">
 
-                <div className="refresh-title-group">
+                <div className="grouping-groups-elements">
                     {/* Обновить страницу */}
                     <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
@@ -293,9 +293,9 @@ const Categories = () => {
                     </div>
                 </div>
 
-                <div className="elements-group">
+                <div className="grouping-groups-elements">
 
-                    <div className="add-change-group">
+                    <div className="grouping-elements">
                         {/* Кнопка добавить */}
                         <button className="button-control add" onClick={handleAddClick}>
                             <img src={addIcon} alt="Update" className="icon-button" />

@@ -30,7 +30,7 @@ const OrderStatuses = () => {
 
             <div className="control-components">
 
-                <div className="refresh-title-group">
+                <div className="grouping-groups-elements">
                     {/* Обновить страницу */}
                     <RefreshButton title="Обновить страницу" />
 
@@ -40,25 +40,28 @@ const OrderStatuses = () => {
                     </div>
                 </div>
 
-                <div className="order-status-buttons-search-group">
-                    {/* Кнопка добавить */}
-                    <button className="button-control add" >
-                        <img src={addIcon} alt="Update" className="icon-button" />
-                        Статус
-                    </button>
+                <div className="grouping-groups-elements">
+                    <div className="grouping-elements">
+                        {/* Кнопка добавить */}
+                        <button className="button-control add" >
+                            <img src={addIcon} alt="Update" className="icon-button" />
+                            Статус
+                        </button>
 
-                    {/* Кнопка изменить порядок */}
-                    <button className="button-control add" >
-                        <img src={sortIcon} alt="Update" className="icon-button" />
-                        Изменить порядок
-                    </button>
+                        {/* Кнопка изменить порядок */}
+                        <button className="button-control add" >
+                            <img src={sortIcon} alt="Update" className="icon-button" />
+                            Изменить порядок
+                        </button>
+
+                    </div>
 
                     {/* Поиск */}
                     <SearchInput
                         placeholder="Поиск статуса"
                     />
-
                 </div>
+
             </div>
 
         </div>

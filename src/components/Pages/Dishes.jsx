@@ -531,7 +531,7 @@ const Dishes = () => {
             {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
             <div className="control-components">
 
-                <div className="refresh-title-group">
+                <div className="grouping-groups-elements">
                     {/* Обновить страницу */}
                     <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
@@ -541,8 +541,8 @@ const Dishes = () => {
                     </div>
                 </div>
 
-                <div className="elements-group">
-                    <div className="add-filter-change-group">
+                <div className="grouping-groups-elements">
+                    <div className="grouping-elements">
                         {/* Кнопка добавить */}
                         <button className="button-control add" onClick={handleAddClick}>
                             <img src={addIcon} alt="Update" className="icon-button" />
@@ -571,7 +571,7 @@ const Dishes = () => {
                         onSearch={handleSearch}
                     />
 
-                    <div className="archive-settings-group">
+                    <div className="grouping-elements">
                         {/* Архив */}
                         <ArchiveStorageButton
                             onToggleArchive={handleArchiveToggle}

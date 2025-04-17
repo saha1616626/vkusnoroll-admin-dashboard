@@ -444,7 +444,7 @@ const News = () => {
             {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив*/}
             <div className="control-components">
 
-                <div className="refresh-title-group">
+                <div className="grouping-groups-elements">
                     {/* Обновить страницу */}
                     <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
@@ -454,8 +454,8 @@ const News = () => {
                     </div>
                 </div>
 
-                <div className="elements-group">
-                    <div className="add-filter-change-group">
+                <div className="grouping-groups-elements">
+                    <div className="grouping-elements">
                         {/* Кнопка добавить */}
                         <button className="button-control add" onClick={handleAddClick}>
                             <img src={addIcon} alt="Update" className="icon-button" />

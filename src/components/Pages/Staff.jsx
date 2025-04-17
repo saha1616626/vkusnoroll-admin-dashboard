@@ -389,7 +389,7 @@ const Staff = () => {
             {/* Обновить страницу, название, добавить, фильтрация, поиcк, колонки */}
             <div className="control-components">
 
-                <div className="refresh-title-group">
+                <div className="grouping-groups-elements">
                     {/* Обновить страницу */}
                     <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
@@ -399,19 +399,22 @@ const Staff = () => {
                     </div>
                 </div>
 
-                <div className="add-filter-search-column-group">
+                <div className="grouping-groups-elements">
+                    <div className="grouping-elements">
 
-                    {/* Кнопка добавить */}
-                    <button className="button-control add" onClick={handleAddClick}>
-                        <img src={addIcon} alt="Update" className="icon-button" />
-                        Сотрудник
-                    </button>
+                        {/* Кнопка добавить */}
+                        <button className="button-control add" onClick={handleAddClick}>
+                            <img src={addIcon} alt="Update" className="icon-button" />
+                            Сотрудник
+                        </button>
 
-                    {/* Кнопка фильтра */}
-                    <FilterButton
-                        isActive={filterState.isActive}
-                        toggleFilter={toggleFilter}
-                    />
+                        {/* Кнопка фильтра */}
+                        <FilterButton
+                            isActive={filterState.isActive}
+                            toggleFilter={toggleFilter}
+                        />
+
+                    </div>
 
                     {/* Поиск */}
                     <SearchInput
@@ -428,7 +431,6 @@ const Staff = () => {
                         setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
                         pageId={pageId}
                     />
-
                 </div>
 
             </div>
