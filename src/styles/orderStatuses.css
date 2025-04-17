@@ -26,6 +26,7 @@
      background-color: #3e9b1d;
  }
 
+ /* Шапка списка */
 
  /* Заголовок перед списком статусов */
  .order-statuses-header {
@@ -46,20 +47,31 @@
      grid-template-columns: 60px 2fr 1.5fr 1.5fr 90px;
  }
 
- /* В обычном режиме выключаем 1 столбец */
- .order-statuses-header:not(.editing) div:nth-child(1) {
-     display: none;
- }
-
  /* Обычный режим */
  .order-statuses-header:not(.editing) {
      grid-template-columns: 2fr 1.5fr 1.5fr 120px;
+ }
+
+ /* В обычном режиме выключаем 1 столбец */
+ .order-statuses-header:not(.editing) div:nth-child(1) {
+     display: none;
  }
 
  /* Скрываем заголовок порядкового номера */
  .order-statuses-header div:nth-child(3) {
      display: none;
  }
+
+ /* Иконка в шапке */
+ .order-statuses-heade-icon {
+     width: 18px;
+     object-fit: cover;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+ }
+
+ /* Тело списка */
 
  /* Контейнер списка */
  .order-statuses-list {
@@ -89,34 +101,14 @@
      grid-template-columns: 2fr 1.5fr 1.5fr 120px;
  }
 
- /* В обычном режиме центрируем 2 элемент */
- .order-statuses-item:not(.editing) div:nth-child(2) {
+ /* Wентрируем все элементы */
+ .order-statuses-item div {
      display: flex;
      align-items: center;
      justify-content: center;
      width: 100%;
  }
 
- .order-statuses-item div:nth-child(3) {
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     width: 100%;
- }
-
- .order-statuses-item div:nth-child(4) {
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     width: 100%;
- }
-
- .order-statuses-item div:nth-child(2) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-}
 
  /* Контейнер кнопок в элементе списка */
  .order-statuses-actions {

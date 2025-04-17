@@ -192,7 +192,7 @@ const OrderStatuses = () => {
 
             {/* Заголовки списка статусов */}
             <div className={`order-statuses-header ${isEditingOrder ? 'editing' : ''}`}>
-                <div></div>
+                <div><img src={sortIcon} alt="Update" className="order-statuses-heade-icon" /></div>
                 <div>Название</div>
                 <div>Порядок</div>
                 <div>Тип статуса</div>
