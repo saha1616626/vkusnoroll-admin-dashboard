@@ -17,6 +17,7 @@ import {
     useSortable,
     arrayMove
 } from '@dnd-kit/sortable'; // «Cортируемое» перетаскивание элементов
+import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers'; // Настройка оси перемещения
 import { useNavigate } from 'react-router-dom';
 
 // Импорт стилей 
@@ -28,6 +29,7 @@ import addIcon from './../../assets/icons/add.png'
 import sortIcon from './../../assets/icons/sort.png'
 import editIcon from './../../assets/icons/edit.png'
 import deleteIcon from './../../assets/icons/delete.png'
+import dragIcon from './../../assets/icons/drag.png'
 
 
 // Импорт компонентов
@@ -138,7 +140,7 @@ const OrderStatuses = () => {
 
                 <div className="grouping-groups-elements">
                     {/* Обновить страницу */}
-                    <RefreshButton title="Обновить страницу" />
+                    {!isEditingOrder && (<RefreshButton title="Обновить страницу" />)}
 
                     {/* Заголовок страницы */}
                     <div className="page-name">
@@ -175,12 +177,12 @@ const OrderStatuses = () => {
                     // Режим изменения порядка
                     <div className="grouping-elements">
                         <button
-                            className="order-statuses-cancel-btn"
+                            className="button-control order-statuses-cancel-btn"
                             onClick={() => setIsEditingOrder(false)}
                         >
                             Отменить
                         </button>
-                        <button className="order-statuses-save-btn" onClick={handleSaveOrder}>
+                        <button className="button-control order-statuses-save-btn" onClick={handleSaveOrder}>
                             Сохранить
                         </button>
                     </div>
@@ -189,7 +191,8 @@ const OrderStatuses = () => {
             </div>
 
             {/* Заголовки списка статусов */}
-            <div className="order-statuses-header">
+            <div className={`order-statuses-header ${isEditingOrder ? 'editing' : ''}`}>
+                <div></div>
                 <div>Название</div>
                 <div>Порядок</div>
                 <div>Тип статуса</div>
@@ -201,7 +204,8 @@ const OrderStatuses = () => {
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}>
+                onDragEnd={handleDragEnd}
+                modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
                 <SortableContext
                     items={filteredStatuses}
                     strategy={verticalListSortingStrategy}
@@ -239,11 +243,23 @@ const OrderStatuses = () => {
 // Компонент сортируемого элемента
 const SortableItem = ({ status, isEditingOrder, handleDelete }) => {
 
-
+    /* 
+    ===========================
+     Константы и рефы
+    ===========================
+    */
 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: status.id,
+        disabled: !isEditingOrder // Блокировка перетаскивания
     });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        // cursor: isEditingOrder ? 'grab' : 'default'
+        touchAction: 'none'
+    };
 
     /* 
     ===========================
@@ -251,26 +267,29 @@ const SortableItem = ({ status, isEditingOrder, handleDelete }) => {
     ===========================
     */
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        cursor: isEditingOrder ? 'grab' : 'default'
-    };
-
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-            <div className={`order-statuses-item ${isDragging ? 'dragging' : ''}`}>
-                <div>{status.name}</div>
-                <div>{status.sequenceNumber}</div>
-                <div>
+        <div ref={setNodeRef} style={style}>
+            <div className={`order-statuses-item 
+                ${isDragging ? 'dragging' : ''} 
+                ${isEditingOrder ? 'editing' : ''}`}>
+                {/* Иконка для перетаскивания */}
+                {isEditingOrder && (
+                    <div className="drag-handle" {...attributes} {...listeners}> {/* Перетаскивание доступно только за иконку */}
+                        <img src={dragIcon} alt="drag" />
+                    </div>
+                )}
+                <div className="order-statuses-col name">{status.name}</div>
+                <div className="order-statuses-col type">
                     {status.isFinalResultPositive === null
                         ? 'Обычный'
                         : status.isFinalResultPositive
                             ? 'Успешный'
                             : 'Неудачный'}
                 </div>
-                <div>{status.isAvailableClient ? 'Да' : 'Нет'}</div>
-                <div className="order-statuses-actions">
+                <div className="order-statuses-col visibility">
+                    {status.isAvailableClient ? 'Да' : 'Нет'}
+                </div>
+                <div className="order-statuses-actions order-statuses-col visibility">
                     <button onClick={() => isEditingOrder(status)}>
                         <img src={editIcon} alt="Edit" />
                     </button>
