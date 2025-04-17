@@ -23,7 +23,7 @@ const SettingsMenuLayout = () => {
         <div style={{ display: 'flex' }}>
             {showSettingsMenu && <SettingsMenu />}
             <div style={{ 
-                marginLeft: showSettingsMenu ? '250px' : 0, 
+                marginLeft: showSettingsMenu ? 'calc(243px + 3em)' : 0, 
                 width: showSettingsMenu ? 'calc(100% - 250px)' : '100%', 
                 padding: showSettingsMenu ? '20px' : 0,
                 transition: 'margin-left 0.3s ease' // Добавляем анимацию

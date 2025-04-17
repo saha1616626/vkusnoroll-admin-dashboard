@@ -444,48 +444,52 @@ const News = () => {
             {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив*/}
             <div className="control-components">
 
-                {/* Обновить страницу */}
-                <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
+                <div className="refresh-title-group">
+                    {/* Обновить страницу */}
+                    <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
-                {/* Заголовок страницы */}
-                <div className="page-name">
-                    Новости сервиса
+                    {/* Заголовок страницы */}
+                    <div className="page-name">
+                        Новости сервиса
+                    </div>
                 </div>
 
-                <div className="add-filter-change-group">
-                    {/* Кнопка добавить */}
-                    <button className="button-control add" onClick={handleAddClick}>
-                        <img src={addIcon} alt="Update" className="icon-button" />
-                        Новость
-                    </button>
+                <div className="elements-group">
+                    <div className="add-filter-change-group">
+                        {/* Кнопка добавить */}
+                        <button className="button-control add" onClick={handleAddClick}>
+                            <img src={addIcon} alt="Update" className="icon-button" />
+                            Новость
+                        </button>
 
-                    {/* Кнопка фильтра */}
-                    <FilterButton
-                        isActive={filterState.isActive}
-                        toggleFilter={toggleFilter}
+                        {/* Кнопка фильтра */}
+                        <FilterButton
+                            isActive={filterState.isActive}
+                            toggleFilter={toggleFilter}
+                        />
+
+                        {/* Кнопка изменить с выпадающим списком */}
+                        <DropdownButtonChange
+                            IsArchived={isArchiveOpen}
+                            onDelete={() => handleActionConfirmation('delete')}
+                            onArchive={() => handleActionConfirmation('archive')}
+                            onUnarchive={() => handleActionConfirmation('unarchive')}
+                        />
+                    </div>
+
+                    {/* Поиск */}
+                    <SearchInput
+                        ref={searchInputRef}
+                        placeholder="Поиск новости"
+                        onSearch={handleSearch}
                     />
 
-                    {/* Кнопка изменить с выпадающим списком */}
-                    <DropdownButtonChange
-                        IsArchived={isArchiveOpen}
-                        onDelete={() => handleActionConfirmation('delete')}
-                        onArchive={() => handleActionConfirmation('archive')}
-                        onUnarchive={() => handleActionConfirmation('unarchive')}
+                    {/* Архив */}
+                    <ArchiveStorageButton
+                        onToggleArchive={handleArchiveToggle}
+                        pageId={pageId}
                     />
                 </div>
-
-                {/* Поиск */}
-                <SearchInput
-                    ref={searchInputRef}
-                    placeholder="Поиск новости"
-                    onSearch={handleSearch}
-                />
-
-                {/* Архив */}
-                <ArchiveStorageButton
-                    onToggleArchive={handleArchiveToggle}
-                    pageId={pageId}
-                />
 
             </div>
 
@@ -501,8 +505,8 @@ const News = () => {
                 />
             </div>
 
-            {/* Карточик постов */} 
-            {isLoading ? <Loader isWorking={isLoading} /> : <div className="news-grid-News"> {/* Отображение анимации загрузки при загрузке данных */} 
+            {/* Карточик постов */}
+            {isLoading ? <Loader isWorking={isLoading} /> : <div className="news-grid-News"> {/* Отображение анимации загрузки при загрузке данных */}
                 {filteredData.map(news => (
                     <NewsCard
                         key={news.id}

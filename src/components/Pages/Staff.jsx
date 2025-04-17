@@ -384,17 +384,19 @@ const Staff = () => {
     */
 
     return (
-        <div className="page" style={{ marginTop: '35px' }}>
+        <div className="page" style={{ marginTop: '35px', marginLeft: '1.5rem', marginRight: '1.5rem' }}>
 
             {/* Обновить страницу, название, добавить, фильтрация, поиcк, колонки */}
             <div className="control-components">
 
-                {/* Обновить страницу */}
-                <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
+                <div className="refresh-title-group">
+                    {/* Обновить страницу */}
+                    <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
-                {/* Заголовок страницы */}
-                <div className="page-name">
-                    Сотрудники
+                    {/* Заголовок страницы */}
+                    <div className="page-name">
+                        Сотрудники
+                    </div>
                 </div>
 
                 <div className="add-filter-search-column-group">

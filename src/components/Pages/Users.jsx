@@ -356,7 +356,7 @@ const Users = () => {
     */
 
     return (
-        <div className="page" style={{ marginTop: '35px' }}>
+        <div className="page" style={{ marginTop: '35px', marginLeft: '1.5rem', marginRight: '1.5rem' }}>
 
             {/* Обновить страницу, название, добавить, фильтрация, поиcк, колонки */}
             <div className="control-components">

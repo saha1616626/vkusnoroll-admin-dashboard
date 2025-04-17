@@ -37,6 +37,10 @@
     margin-left: 10px;
 }
 
+.logo:hover {
+    transform: translateY(-2px);
+}
+
 /* Кнопки навигационного меню */
 .nav-button {
     font-weight: bold;
@@ -47,8 +51,12 @@
     outline: none;
     transition: color 0.3s;
     font-size: 14px;
+
 }
 
+.nav-button:hover {
+    transform: translateY(-2px);
+}
 
 /* Кнопки иконки */
 .icons {
@@ -59,6 +67,10 @@
 
 .icons img {
     width: 40px;
+}
+
+.icons img:hover {
+    transform: translateY(-2px);
 }
 
 /* Контейнер информации о пользователе */

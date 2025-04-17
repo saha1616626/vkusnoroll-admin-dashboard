@@ -293,7 +293,7 @@ const Categories = () => {
                     </div>
                 </div>
 
-                <div className="add-change-search-archive-group">
+                <div className="elements-group">
 
                     <div className="add-change-group">
                         {/* Кнопка добавить */}

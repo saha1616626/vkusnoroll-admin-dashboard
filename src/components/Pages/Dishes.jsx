@@ -531,58 +531,62 @@ const Dishes = () => {
             {/* Обновить страницу, название, добавить, фильтрация, изменить, поиcк, архив и настройка колонок */}
             <div className="control-components">
 
-                {/* Обновить страницу */}
-                <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
+                <div className="refresh-title-group">
+                    {/* Обновить страницу */}
+                    <RefreshButton onRefresh={refreshData} title="Обновить страницу" />
 
-                {/* Заголовок страницы */}
-                <div className="page-name">
-                    Блюда
+                    {/* Заголовок страницы */}
+                    <div className="page-name">
+                        Блюда
+                    </div>
                 </div>
 
-                <div className="add-filter-change-group">
-                    {/* Кнопка добавить */}
-                    <button className="button-control add" onClick={handleAddClick}>
-                        <img src={addIcon} alt="Update" className="icon-button" />
-                        Блюдо
-                    </button>
+                <div className="elements-group">
+                    <div className="add-filter-change-group">
+                        {/* Кнопка добавить */}
+                        <button className="button-control add" onClick={handleAddClick}>
+                            <img src={addIcon} alt="Update" className="icon-button" />
+                            Блюдо
+                        </button>
 
-                    {/* Кнопка фильтра */}
-                    <FilterButton
-                        isActive={filterState.isActive}
-                        toggleFilter={toggleFilter}
+                        {/* Кнопка фильтра */}
+                        <FilterButton
+                            isActive={filterState.isActive}
+                            toggleFilter={toggleFilter}
+                        />
+
+                        {/* Кнопка изменить с выпадающим списком */}
+                        <DropdownButtonChange
+                            IsArchived={isArchiveOpen}
+                            onDelete={() => handleActionConfirmation('delete')}
+                            onArchive={() => handleActionConfirmation('archive')}
+                            onUnarchive={() => handleActionConfirmation('unarchive')}
+                        />
+                    </div>
+
+                    {/* Поиск */}
+                    <SearchInput
+                        ref={searchInputRef}
+                        placeholder="Поиск блюда"
+                        onSearch={handleSearch}
                     />
 
-                    {/* Кнопка изменить с выпадающим списком */}
-                    <DropdownButtonChange
-                        IsArchived={isArchiveOpen}
-                        onDelete={() => handleActionConfirmation('delete')}
-                        onArchive={() => handleActionConfirmation('archive')}
-                        onUnarchive={() => handleActionConfirmation('unarchive')}
-                    />
-                </div>
+                    <div className="archive-settings-group">
+                        {/* Архив */}
+                        <ArchiveStorageButton
+                            onToggleArchive={handleArchiveToggle}
+                            pageId={pageId}
+                        />
 
-                {/* Поиск */}
-                <SearchInput
-                    ref={searchInputRef}
-                    placeholder="Поиск блюда"
-                    onSearch={handleSearch}
-                />
-
-                <div className="archive-settings-group">
-                    {/* Архив */}
-                    <ArchiveStorageButton
-                        onToggleArchive={handleArchiveToggle}
-                        pageId={pageId}
-                    />
-
-                    {/* Настройка колонок */}
-                    <DropdownColumnSelection
-                        options={columnOptions}
-                        title="Колонки"
-                        defaultSelected={defaultColumns}
-                        setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
-                        pageId={pageId}
-                    />
+                        {/* Настройка колонок */}
+                        <DropdownColumnSelection
+                            options={columnOptions}
+                            title="Колонки"
+                            defaultSelected={defaultColumns}
+                            setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
+                            pageId={pageId}
+                        />
+                    </div>
                 </div>
 
             </div>
