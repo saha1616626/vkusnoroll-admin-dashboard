@@ -73,9 +73,16 @@ const apiMethods = {
 
     // Статусы заказов
     getOrderStatuses: () => api.get('/orderStatuses'),
+    getOrderStatusById: (id) => api.get(`/orderStatuses/${id}`), // Пользователь
     createOrderStatus: (data) => api.post('/orderStatuses', data),
     updateOrderStatus: (id, data) => api.put(`/orderStatuses/${id}`, data),
-    deleteOrderStatus: (id) => api.delete(`/orderStatuses/${id}`),
+    deleteOrderStatus: (id) => api.delete(`/orderStatuses/${id}`).then(res => res.data)
+        .catch(error => { 
+            if (error.response.status === 409) { // Статус используется в заказах
+                return error.response.data;
+            }
+            throw error;
+        }),
     updateOrderStatusesSequence: (sequence) => api.put('/orderStatuses/sequence', { sequence }),
 
 };

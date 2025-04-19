@@ -619,6 +619,7 @@ const Dishes = () => {
             <DeletionResultModal
                 isOpen={showDeletionModal}
                 title="Результат удаления блюд"
+                titleConflicts="Не удалось выполнить из-за наличия связанных заказов:"
                 conflicts={deletionResult.conflicts}
                 deleted={deletionResult.deleted}
                 onClose={() => setShowDeletionModal(false)}

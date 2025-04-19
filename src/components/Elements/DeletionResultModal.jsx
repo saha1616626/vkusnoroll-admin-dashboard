@@ -5,6 +5,7 @@ import './../../styles/elements/deletionResultModal.css';
 const DeletionResultModal = ({ 
     isOpen = false,
     title = "Результат операции",
+    titleConflicts = "Не удалось выполнить из-за наличия связанных объектов:",
     conflicts = [], 
     deleted = [], 
     onClose 
@@ -22,7 +23,7 @@ const DeletionResultModal = ({
                     {/* Конфликтные элементы */}
                     {conflicts.length > 0 && (
                         <div className="section">
-                            <h4>Не удалось выполнить из-за наличия связанных объектов:</h4> {/* Не удалось выполнить из-за наличия зависимостей: */}
+                            <h4>{titleConflicts}</h4> {/* Не удалось выполнить из-за наличия зависимостей: */}
                             <div className="scrollable-list conflict-list">
                                 {conflicts.map((item, index) => (
                                     <div key={index} className="list-item conflict">

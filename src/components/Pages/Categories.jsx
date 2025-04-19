@@ -342,6 +342,7 @@ const Categories = () => {
             <DeletionResultModal
                 isOpen={showDeletionModal}
                 title="Результат удаления категорий"
+                titleConflicts="Не удалось выполнить из-за наличия связанных блюд:"
                 conflicts={deletionResult.conflicts}
                 deleted={deletionResult.deleted}
                 onClose={() => setShowDeletionModal(false)}

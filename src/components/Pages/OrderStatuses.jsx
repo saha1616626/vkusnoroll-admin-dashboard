@@ -36,6 +36,8 @@ import dragIcon from './../../assets/icons/drag.png'
 import RefreshButton from "../Elements/RefreshButton"; // Кнопка обновления данных на странице
 import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import api from '../../utils/api'; // API сервера
+import ConfirmationModal from '../Elements/ConfirmationModal'; // Окно для подтверждения удаления
+import ErrorModal from "../Elements/ErrorModal"; //Модальное окно для отображения ошибок
 
 //  Основной компонент
 const OrderStatuses = () => {
@@ -46,11 +48,18 @@ const OrderStatuses = () => {
     ===========================
     */
 
-    const [statuses, setStatuses] = useState([]);
+    const [statuses, setStatuses] = useState([]); // Список статусов
     const [isEditingOrder, setIsEditingOrder] = useState(false); // Режим редактирования порядка статусов
     const [searchQuery, setSearchQuery] = useState(''); // Поиск статуса заказа
     const [showModal, setShowModal] = useState(false); // Отображение модального окна для редактирования и добавления
-    const [editingStatus, setEditingStatus] = useState(null);
+    const [editingStatus, setEditingStatus] = useState(null); // Передача стауса для редактирования
+    const [statusToDelete, setStatusToDelete] = useState(null); // Передача стауса для удаления
+
+    const [showConfirmation, setShowConfirmation] = useState(false); // Отображение модального окна для  подтверждения удаления
+
+    // Модальное окно для отображения ошибок: удаления и редактирования
+    const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
+    const [errorMessages, setErrorMessages] = useState([]); // Ошибки
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -94,22 +103,50 @@ const OrderStatuses = () => {
     // Сохранить новый порядок статусов
     const handleSaveOrder = async () => {
         try {
-            await api.updateOrderStatusesSequence(statuses);
+            // Формируем минимальный необходимый набор данных
+            const sequenceData = statuses.map(({ id, sequenceNumber }) => ({
+                id: Number(id),
+                sequenceNumber: Number(sequenceNumber)
+            }));
+
+            await api.updateOrderStatusesSequence(sequenceData);
             setIsEditingOrder(false);
         } catch (error) {
             console.error('Ошибка сохранения порядка:', error);
         }
     };
 
-    // Удалить статус
-    const handleDelete = async (id) => {
+    // Редактировать статус
+    const handleEditStatus = (status) => {
+        setEditingStatus(status);
+        setShowModal(true);
+    };
+
+    // Подтверждение удаления статуса
+    const handleConfirmDelete = async (id) => {
+        setStatusToDelete(id); // Передача id статуса
+        setShowConfirmation(true); // Отображаем модальное окно
+    };
+
+    // Удаление статуса
+    const handleDeleteClick = async () => {
         try {
-            await api.deleteOrderStatus(id);
-            fetchStatuses();
+            const response = await api.deleteOrderStatus(statusToDelete);
+            if (response.conflicts) { // Если есть конфликт удаления
+                setErrorMessages([response.conflicts]);
+                setShowErrorModal(true); // Запуск модального окна
+            } else {
+                // Локальное обновление списка
+                setStatuses(prev => prev.filter(s => s.id !== statusToDelete));
+            }
         } catch (error) {
             console.error('Ошибка удаления:', error);
+            await fetchStatuses(); // Обновление данных в случае сбоя
+        } finally {
+            setShowConfirmation(false);
+            setStatusToDelete(null);
         }
-    };
+    }
 
     // Фильтрация статусов через поиск
     const filteredStatuses = statuses.filter(status =>
@@ -216,7 +253,8 @@ const OrderStatuses = () => {
                                 key={status.id}
                                 status={status}
                                 isEditingOrder={isEditingOrder}
-                                handleDelete={handleDelete}
+                                onDelete={handleConfirmDelete}
+                                onEdit={handleEditStatus}
                             />
                         ))}
                     </div>
@@ -235,13 +273,30 @@ const OrderStatuses = () => {
                 />
             )}
 
+            {/* Модальное окно для отображения ошибок: удаления и редактирования */}
+            <ErrorModal
+                isOpen={showErrorModal}
+                title="Ошибка"
+                errors={errorMessages}
+                onClose={() => { setShowErrorModal(false); setErrorMessages(null) }}
+            />
+
+            {/* Подтверждение удаления */}
+            <ConfirmationModal
+                isOpen={showConfirmation}
+                title="Подтвердите удаление"
+                message="Вы уверены, что хотите удалить выбранный статус?"
+                onConfirm={handleDeleteClick}
+                onCancel={() => { setShowConfirmation(false); setStatusToDelete(null); }}
+            />
+
         </div>
     );
 
 };
 
 // Компонент сортируемого элемента
-const SortableItem = ({ status, isEditingOrder, handleDelete }) => {
+const SortableItem = ({ status, isEditingOrder, onDelete, onEdit }) => {
 
     /* 
     ===========================
@@ -257,7 +312,6 @@ const SortableItem = ({ status, isEditingOrder, handleDelete }) => {
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        // cursor: isEditingOrder ? 'grab' : 'default'
         touchAction: 'none'
     };
 
@@ -290,10 +344,10 @@ const SortableItem = ({ status, isEditingOrder, handleDelete }) => {
                     {status.isAvailableClient ? 'Да' : 'Нет'}
                 </div>
                 <div className="order-statuses-actions order-statuses-col visibility">
-                    <button onClick={() => isEditingOrder(status)}>
+                    <button onClick={() => onEdit(status)}>
                         <img src={editIcon} alt="Edit" />
                     </button>
-                    <button onClick={() => handleDelete(status.id)}>
+                    <button onClick={() => onDelete(status.id)}>
                         <img src={deleteIcon} alt="Delete" />
                     </button>
                 </div>
@@ -306,15 +360,37 @@ const SortableItem = ({ status, isEditingOrder, handleDelete }) => {
 // Компонент модального окна
 const OrderStatusModal = ({ status, onClose, onSave }) => {
     const [formData, setFormData] = useState({
-        name: status?.name || '',
-        isFinalResultPositive: status?.isFinalResultPositive ?? null,
-        isAvailableClient: status?.isAvailableClient || false,
+        name: '',
+        isFinalResultPositive: null,
+        isAvailableClient: false,
+        sequenceNumber: null
     });
 
+    // Загрузка выбранного статуса заказа из БД
+    useEffect(() => {
+        const loadStatusData = async () => {
+            if (status?.id) {
+                try {
+                    const response = await api.getOrderStatusById(status.id);
+                    setFormData({
+                        name: response.data.name,
+                        isFinalResultPositive: response.data.isFinalResultPositive,
+                        isAvailableClient: response.data.isAvailableClient,
+                        sequenceNumber: response.data.sequenceNumber
+                    });
+                } catch (error) {
+                    console.error('Ошибка загрузки статуса:', error);
+                }
+            }
+        };
+        loadStatusData();
+    }, [status]);
+
+    // Сохранить новый или обновить статус заказа
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (status) {
+            if (status) { // Если передан элемент в модальное окно, значит режим редактирования
                 await api.updateOrderStatus(status.id, formData);
             } else {
                 await api.createOrderStatus(formData);
