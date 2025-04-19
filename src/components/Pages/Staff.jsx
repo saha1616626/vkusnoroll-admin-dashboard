@@ -29,7 +29,7 @@ const Staff = () => {
     */
     const pageId = 'staff-page'; // Уникальный идентификатор страницы
     const timeOut = 500; // Задержка перед отключением анимации загрузки данных
-    const searchInputRef = React.useRef(); // Очистка поля поиска
+    const searchInputRef = React.useRef(); // Ссылка на поле поиска
     const defaultColumns = ['Имя', 'Фамилия', 'Отчество', 'Логин', 'Email', 'Номер телефона', 'Роль']; // Колонки для отображения по умолчанию
     const columnOptions = [...defaultColumns, 'Зарегистрирован', 'Заблокирован']; // Массив всех возможных колонок для отображения
 

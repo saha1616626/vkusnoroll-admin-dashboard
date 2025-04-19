@@ -37,7 +37,7 @@ const SettingsMenu = () => {
     // Навигация
     const handleNavigation = (path, buttonIndex) => {
         const checkNavigation = () => {
-            navigate(path);
+            navigate(path, { state: { forceReset: true } }); // forceReset - Сброс состояния страницы
             setSelectedButton(buttonIndex);
             localStorage.setItem('selectedSettingsButtonIndex', buttonIndex);
         };

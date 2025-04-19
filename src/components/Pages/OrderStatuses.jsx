@@ -18,7 +18,8 @@ import {
     arrayMove
 } from '@dnd-kit/sortable'; // «Cортируемое» перетаскивание элементов
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers'; // Настройка оси перемещения
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import isEqual from 'lodash/isEqual';  // Сравнивает два значения (обычно объекты или массивы) на глубокое равенство.
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
@@ -38,9 +39,21 @@ import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import api from '../../utils/api'; // API сервера
 import ConfirmationModal from '../Elements/ConfirmationModal'; // Окно для подтверждения удаления
 import ErrorModal from "../Elements/ErrorModal"; //Модальное окно для отображения ошибок
+import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
 
 //  Основной компонент
 const OrderStatuses = () => {
+
+    /* 
+    ===========================
+     Константы и рефы
+    ===========================
+    */
+
+    const navigate = useNavigate(); // Для управления маршрутом приложения
+    const location = useLocation();
+
+    const searchInputRef = React.useRef(); // Ссылка на поле поиска
 
     /* 
     ===========================
@@ -48,7 +61,9 @@ const OrderStatuses = () => {
     ===========================
     */
 
-    const [statuses, setStatuses] = useState([]); // Список статусов
+    const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
+    const [initialData, setInitialData] = useState(null); // Исходные данные о списке статусов, которые были получены при загрузке страницы (Если таковые имеются)
+    const [statuses, setStatuses] = useState([]); // Список статусов (отображаемые данные)
     const [isEditingOrder, setIsEditingOrder] = useState(false); // Режим редактирования порядка статусов
     const [searchQuery, setSearchQuery] = useState(''); // Поиск статуса заказа
     const [showModal, setShowModal] = useState(false); // Отображение модального окна для редактирования и добавления
@@ -60,6 +75,10 @@ const OrderStatuses = () => {
     // Модальное окно для отображения ошибок: удаления и редактирования
     const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
     const [errorMessages, setErrorMessages] = useState([]); // Ошибки
+
+    // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных через стрелку в браузере
+    const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
+    const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -78,7 +97,9 @@ const OrderStatuses = () => {
     const fetchStatuses = async () => {
         try {
             const response = await api.getOrderStatuses();
-            setStatuses(response.data.sort((a, b) => a.sequenceNumber - b.sequenceNumber)); // Сортировка по возрастанию номера положения в списке
+            const sortedData = response.data.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+            setInitialData({ ...response, data: sortedData });
+            setStatuses(sortedData); // Всегда показываем полные данные после загрузки
         } catch (error) {
             console.error('Ошибка загрузки статусов:', error);
         }
@@ -110,10 +131,44 @@ const OrderStatuses = () => {
             }));
 
             await api.updateOrderStatusesSequence(sequenceData);
+
+            // Обновляем начальные данные после успешного сохранения
+            setInitialData(prev => ({
+                ...prev,
+                data: [...statuses] // Сохраняем актуальный порядок
+            }));
+
             setIsEditingOrder(false);
+            setIsDirty(false); // Сбрасываем флаг изменений
         } catch (error) {
             console.error('Ошибка сохранения порядка:', error);
         }
+    };
+
+    // Обработка отмены изменений после выхода из режима для изменения порядка статусов
+    const handleCancelOrder = () => {
+
+        // Восстанавливаем исходный порядок и сбрасываем режим редактирования
+        const handleConfirmNavigation = () => {
+            if (initialData) {
+                setStatuses([...initialData.data].sort((a, b) => a.sequenceNumber - b.sequenceNumber)); // Восстанавливаем исходный порядок из initialData
+            }
+            setIsEditingOrder(false);
+            setIsDirty(false); // Сбрасываем флаг изменений
+        };
+
+        if (isDirty)  // Если есть несохраненные изменения
+        {
+            // Показываем модальное окно вместо confirm
+            setPendingNavigation(() => () => {
+                handleConfirmNavigation(); // Восстанавливаем исходный порядок и сбрасываем режим редактирования
+                setShowNavigationConfirmModal(false);
+            });
+            setShowNavigationConfirmModal(true);
+            return;
+        }
+
+        handleConfirmNavigation();
     };
 
     // Редактировать статус
@@ -136,8 +191,7 @@ const OrderStatuses = () => {
                 setErrorMessages([response.conflicts]);
                 setShowErrorModal(true); // Запуск модального окна
             } else {
-                // Локальное обновление списка
-                setStatuses(prev => prev.filter(s => s.id !== statusToDelete));
+                await fetchStatuses(); // Обновление данных
             }
         } catch (error) {
             console.error('Ошибка удаления:', error);
@@ -148,10 +202,33 @@ const OrderStatuses = () => {
         }
     }
 
-    // Фильтрация статусов через поиск
-    const filteredStatuses = statuses.filter(status =>
-        status.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Проверка изменений, требующих сохранения
+    const checkDirty = useCallback((currentData) => {
+        if (!initialData) return false;
+        const initialSequence = initialData.data
+            .map(({ id, sequenceNumber }) => ({ id, sequenceNumber })); // Нормализация данных
+        return !isEqual(initialSequence, currentData); // Проверка, изменились ли данные по отношению к первоначальным. Если да, то требуется сохранение изменения
+    }, [initialData]);
+
+    // Обработчик отмены перехода через стрелку браузера
+    const handleCancelNavigation = () => {
+        // Возвращаем исходный URL при отмене перехода назад через popstate браузера
+        window.history.pushState(null, null, window.location.pathname);
+        setShowNavigationConfirmModal(false);
+    };
+
+    // Поиск
+    const handleSearch = (term) => {
+        setSearchQuery(term.trim());
+    };
+
+    // Обновление данных на странице (Иконка)
+    const refreshData = () => {
+        fetchStatuses();
+        const searchQuery = searchInputRef.current.search();  // Получаем текущее введенное значение из поля поиска
+        // Применяем текущий поисковый запрос после обновления
+        setSearchQuery(searchQuery); // Обновление данных с учетом поиска
+    };
 
     /* 
     ===========================
@@ -163,6 +240,122 @@ const OrderStatuses = () => {
     useEffect(() => {
         fetchStatuses();
     }, []);
+
+    // Сохраняем состояние о наличии несохраненных данных на странице
+    useEffect(() => {
+        localStorage.setItem('isDirty', isDirty.toString());
+    }, [isDirty]);
+
+    // Обновляем состояние isDirty при изменении статусов
+    useEffect(() => {
+        if (initialData) {
+            const currentData = statuses.map(({ id, sequenceNumber }) => ({ id, sequenceNumber }));
+            const dirty = checkDirty(currentData);
+            setIsDirty(dirty);
+        }
+    }, [statuses, initialData, checkDirty]);
+
+    // Обработка нажатия кнопки "Назад" в браузере
+    useEffect(() => {
+        const handleBackButton = (e) => {
+            if (isDirty) {
+                e.preventDefault(); // Блокируем переход, если есть несохраненные изменения
+                setPendingNavigation(() => () => {
+                    handleConfirmNavigation(); // Вызываем функцию подтверждения перехода
+                });
+                setShowNavigationConfirmModal(true); // Показываем модальное окно подтверждения
+            } else if (isEditingOrder) {
+                handleConfirmNavigation(); // Никаких изменений, но в режиме редактирования
+            }
+        };
+
+        const handleConfirmNavigation = () => {
+            if (isEditingOrder && initialData) {
+                // Восстанавливаем исходный порядок и сбрасываем режим редактирования
+                setStatuses([...initialData.data].sort((a, b) => a.sequenceNumber - b.sequenceNumber));
+            }
+            setIsEditingOrder(false);
+            setIsDirty(false);
+            setShowNavigationConfirmModal(false);
+        };
+
+        // Добавляем новую запись в историю для корректного отслеживания переходов
+        window.history.pushState(null, null, window.location.pathname);
+        window.addEventListener("popstate", handleBackButton);
+
+        return () => {
+            window.removeEventListener("popstate", handleBackButton);
+        };
+    }, [isDirty, navigate, isEditingOrder, initialData]);
+
+    // Блокируем обноывление страницы, если есть несохраненные данные
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (isDirty) {
+                const confirmationMessage = 'Есть несохранённые изменения. Уйти?';
+                event.returnValue = confirmationMessage; // Для старых браузеров
+                return confirmationMessage; // Для современных браузеров
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isDirty]);
+
+    // Блокируем закрытие страницы, если есть несохраненные данные
+    useEffect(() => {
+        const handleBeforeUnload = (e) => { // Пользователь пытается покинуть страницу
+            if (isDirty) { // Есть несохраненные изменения
+                e.preventDefault(); // Предотвращает уход с текущей страницы
+                e.returnValue = ''; // Всплывающее окно, которое предупреждает пользователя
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload); // Обработчик handleBeforeUnload добавляется к объекту window всякий раз, когда пользователь пытается покинуть страницу
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload); // Функция очистки, которая удаляет обработчик события, когда компонент размонтируется или когда isDirty изменяется
+    }, [isDirty]); // Обработчик события будет добавляться каждый раз, когда isDirty изменяется
+
+    // Сбрасываем режим редактирования при изменении ключа location
+    useEffect(() => {
+        setIsEditingOrder(false);
+        setIsDirty(false);
+    }, [location.key]); // location.key меняется при каждом переходе (даже на тот же URL)
+
+    // Эффект для фильтраци
+    useEffect(() => {
+        if (initialData?.data) {
+            let filtered = [...initialData.data];
+
+            if (!isEditingOrder && searchQuery) {
+                filtered = filtered.filter(status =>
+                    status.name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+            }
+
+            setStatuses(filtered.sort((a, b) => a.sequenceNumber - b.sequenceNumber));
+        }
+    }, [searchQuery, initialData, isEditingOrder]);
+
+    // useEffect(() => {
+    //     if (searchQuery.trim()) {
+    //         const filtered = rawStatuses.filter(status =>
+    //             status.name.toLowerCase().includes(searchQuery.toLowerCase())
+    //         );
+    //         setStatuses(filtered);
+    //     } else {
+    //         setStatuses(rawStatuses);
+    //     }
+    // }, [searchQuery, rawStatuses]);
+
+    // // Очистка состояния о наличии несохраненных данных при размонтировании
+    // useEffect(() => {
+    //     return () => {
+    //         localStorage.removeItem('isDirty');
+    //     };
+    // }, []);
 
     /* 
     ===========================
@@ -177,7 +370,7 @@ const OrderStatuses = () => {
 
                 <div className="grouping-groups-elements">
                     {/* Обновить страницу */}
-                    {!isEditingOrder && (<RefreshButton title="Обновить страницу" />)}
+                    {!isEditingOrder && (<RefreshButton title="Обновить страницу" onRefresh={refreshData} />)}
 
                     {/* Заголовок страницы */}
                     <div className="page-name">
@@ -206,8 +399,9 @@ const OrderStatuses = () => {
 
                         {/* Поиск */}
                         <SearchInput
+                            ref={searchInputRef}
                             placeholder="Поиск статуса"
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onSearch={handleSearch}
                         />
                     </div>
                 ) : (
@@ -215,9 +409,9 @@ const OrderStatuses = () => {
                     <div className="grouping-elements">
                         <button
                             className="button-control order-statuses-cancel-btn"
-                            onClick={() => setIsEditingOrder(false)}
+                            onClick={() => handleCancelOrder()}
                         >
-                            Отменить
+                            Закрыть
                         </button>
                         <button className="button-control order-statuses-save-btn" onClick={handleSaveOrder}>
                             Сохранить
@@ -244,11 +438,11 @@ const OrderStatuses = () => {
                 onDragEnd={handleDragEnd}
                 modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
                 <SortableContext
-                    items={filteredStatuses}
+                    items={statuses}
                     strategy={verticalListSortingStrategy}
                 >
                     <div className="order-statuses-list">
-                        {filteredStatuses.map((status) => (
+                        {statuses.map((status) => (
                             <SortableItem
                                 key={status.id}
                                 status={status}
@@ -288,6 +482,13 @@ const OrderStatuses = () => {
                 message="Вы уверены, что хотите удалить выбранный статус?"
                 onConfirm={handleDeleteClick}
                 onCancel={() => { setShowConfirmation(false); setStatusToDelete(null); }}
+            />
+
+            {/* Модальное окно подтверждения ухода со страницы через стрелку */}
+            <NavigationConfirmModal
+                isOpen={showNavigationConfirmModal}
+                onConfirm={pendingNavigation}
+                onCancel={handleCancelNavigation}
             />
 
         </div>

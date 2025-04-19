@@ -44,7 +44,7 @@
 
  /* Режим редактирования */
  .order-statuses-header.editing {
-     grid-template-columns: 60px 2fr 1.5fr 1.5fr 90px;
+     grid-template-columns: 60px 2fr 1.5fr 1.5fr;
  }
 
  /* Обычный режим */
@@ -61,6 +61,12 @@
  .order-statuses-header div:nth-child(3) {
      display: none;
  }
+
+ /* Скрываем заголовок для кнопок управления в режиме редактирования */
+ .order-statuses-header.editing div:nth-child(6) {
+     display: none;
+ }
+
 
  /* Иконка в шапке */
  .order-statuses-heade-icon {
@@ -93,12 +99,17 @@
 
  /* Режим редактирования */
  .order-statuses-item.editing {
-     grid-template-columns: 60px 2fr 1.5fr 1.5fr 90px;
+     grid-template-columns: 60px 2fr 1.5fr 1.5fr;
  }
 
  /* Обычный режим */
  .order-statuses-item:not(.editing) {
      grid-template-columns: 2fr 1.5fr 1.5fr 120px;
+ }
+
+ /* Скрываем столбец для кнопок управления в режиме редактирования */
+ .order-statuses-item.editing div:nth-child(5) {
+     display: none;
  }
 
  /* Wентрируем все элементы */
