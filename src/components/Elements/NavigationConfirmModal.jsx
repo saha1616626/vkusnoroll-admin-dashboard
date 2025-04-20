@@ -27,6 +27,16 @@ const NavigationConfirmModal = ({
         };
     }, [isOpen, onCancel]);
 
+    // Обработчик нажатия на Escape
+    useEffect(() => {
+        const handleKeyPress = (e) => {
+            if (e.key === 'Escape') onCancel(); // Закрыть окно при нажатии кнопки "Escape"
+        };
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [onCancel]);
+
+
     if (!isOpen) return null; // Не рендерить, если isOpen=false
 
     return ReactDOM.createPortal(

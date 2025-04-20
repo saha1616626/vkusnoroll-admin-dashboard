@@ -1,15 +1,25 @@
 // Модальное окно результата удаления
-import React from 'react';
+import React, { useEffect } from 'react';
 import './../../styles/elements/deletionResultModal.css';
 
-const DeletionResultModal = ({ 
+const DeletionResultModal = ({
     isOpen = false,
     title = "Результат операции",
     titleConflicts = "Не удалось выполнить из-за наличия связанных объектов:",
-    conflicts = [], 
-    deleted = [], 
-    onClose 
+    conflicts = [],
+    deleted = [],
+    onClose
 }) => {
+
+    // Обработчик нажатия на Escape
+    useEffect(() => {
+        const handleKeyPress = (e) => {
+            if (e.key === 'Escape') onClose(); // Закрыть окно при нажатии кнопки "Escape"
+        };
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [onClose]);
+
     if (!isOpen) return null; // Не рендерить, если isOpen=false
 
     return (

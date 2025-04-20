@@ -1,6 +1,6 @@
 //  Модальное окно подтверждения действия
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import './../../styles/elements/confirmationModal.css';
 
 const ConfirmationModal = ({
@@ -10,6 +10,16 @@ const ConfirmationModal = ({
     onConfirm,
     onCancel
 }) => {
+
+    // Обработчик нажатия на Escape
+    useEffect(() => {
+        const handleKeyPress = (e) => {
+            if (e.key === 'Escape') onCancel(); // Закрыть окно при нажатии кнопки "Escape"
+        };
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [onCancel]);
+
     if (!isOpen) return null;
 
     return (

@@ -852,8 +852,7 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
                     </form>
                 </div>
 
-            </div> </>
-            }
+            </div> </>}
 
             {/* Модальное окно для отображения ошибок: удаления и редактирования */}
             <ErrorModal

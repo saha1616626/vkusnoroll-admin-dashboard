@@ -1,6 +1,6 @@
 // Модальное окно для вывода ошибок
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import './../../styles/elements/errorModal.css';
 
 const ErrorModal = ({
@@ -9,6 +9,16 @@ const ErrorModal = ({
     errors = [],
     onClose
 }) => {
+
+    // Обработчик нажатия на Escape
+    useEffect(() => {
+        const handleKeyPress = (e) => {
+            if (e.key === 'Escape') onClose(); // Закрыть окно при нажатии кнопки "Escape"
+        };
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [onClose]);
+
     if (!isOpen) return null;
 
     return (
