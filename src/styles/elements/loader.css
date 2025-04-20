@@ -1,5 +1,9 @@
 /* Стиль для анимации загрузки данных */
 
+/* Блокировка скролла */
+body.no-scroll {
+    overflow: hidden;
+}
 
 .loading {
     justify-content: center;

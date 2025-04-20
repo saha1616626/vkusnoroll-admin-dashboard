@@ -40,6 +40,7 @@ import api from '../../utils/api'; // API сервера
 import ConfirmationModal from '../Elements/ConfirmationModal'; // Окно для подтверждения удаления
 import ErrorModal from "../Elements/ErrorModal"; //Модальное окно для отображения ошибок
 import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
+import Loader from '../Elements/Loader'; // Анимация загрузки данных
 
 //  Основной компонент
 const OrderStatuses = () => {
@@ -52,7 +53,7 @@ const OrderStatuses = () => {
 
     const navigate = useNavigate(); // Для управления маршрутом приложения
     const location = useLocation();
-
+    const timeOut = 500; // Задержка перед отключением анимации загрузки данных
     const searchInputRef = React.useRef(); // Ссылка на поле поиска
 
     /* 
@@ -61,6 +62,7 @@ const OrderStatuses = () => {
     ===========================
     */
 
+    const [isLoading, setIsLoading] = useState(true); // Анимация загрузки данных
     const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
     const [initialData, setInitialData] = useState(null); // Исходные данные о списке статусов, которые были получены при загрузке страницы (Если таковые имеются)
 
@@ -99,6 +101,7 @@ const OrderStatuses = () => {
 
     // Загрузка статусов из БД
     const fetchStatuses = async () => {
+        setIsLoading(true); // Включаем анимацию загрузки данных
         try {
             const response = await api.getOrderStatuses();
             const sortedData = response.data.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
@@ -109,6 +112,8 @@ const OrderStatuses = () => {
             setInitialData({ ...response, data: sortedData });
         } catch (error) {
             console.error('Ошибка загрузки статусов:', error);
+        } finally { // Выключаем анимацию загрузки данных
+            setTimeout(() => setIsLoading(false), timeOut);
         }
     };
 
@@ -231,7 +236,12 @@ const OrderStatuses = () => {
 
     // Поиск
     const handleSearch = (term) => {
-        setSearchQuery(term.trim());
+        setIsLoading(true); // Включаем анимацию загрузки данных
+        try {
+            setSearchQuery(term.trim());
+        } finally { // Выключаем анимацию загрузки данных
+            setTimeout(() => setIsLoading(false), timeOut);
+        }
     };
 
     // Обновление данные на странице (Иконка)
@@ -301,7 +311,7 @@ const OrderStatuses = () => {
         };
     }, [isDirty, navigate, isEditingOrder, initialData]);
 
-    // Блокируем обноывление страницы, если есть несохраненные данные
+    // Блокируем обновление страницы, если есть несохраненные данные
     useEffect(() => {
         const handleBeforeUnload = (event) => {
             if (isDirty) {
@@ -338,6 +348,8 @@ const OrderStatuses = () => {
         // Сброс поиска
         setSearchQuery(null);
         searchInputRef.current?.clear();
+        // Обновляем данные на странице
+        fetchStatuses();
     }, [location.key]); // location.key меняется при каждом переходе (даже на тот же URL)
 
     // Эффект для фильтраци
@@ -425,39 +437,42 @@ const OrderStatuses = () => {
 
             </div>
 
-            {/* Заголовки списка статусов */}
-            <div className={`order-statuses-header ${isEditingOrder ? 'editing' : ''}`}>
-                <div><img src={sortIcon} alt="Update" className="order-statuses-heade-icon" /></div>
-                <div>Название</div>
-                <div>Порядок</div>
-                <div>Тип статуса</div>
-                <div>Доступен клиенту</div>
-                <div>Действия</div>
-            </div>
+            {/* Loader - Отображение анимации загрузки данных */}
+            {isLoading ? <Loader isWorking={isLoading} /> : <>
+                {/* Заголовки списка статусов */}
+                <div className={`order-statuses-header ${isEditingOrder ? 'editing' : ''}`}>
+                    <div><img src={sortIcon} alt="Update" className="order-statuses-heade-icon" /></div>
+                    <div>Название</div>
+                    <div>Порядок</div>
+                    <div>Тип статуса</div>
+                    <div>Доступен клиенту</div>
+                    <div>Действия</div>
+                </div>
 
-            {/* Список статусов */}
-            <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-                modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
-                <SortableContext
-                    items={editableStatuses}
-                    strategy={verticalListSortingStrategy}
-                >
-                    <div className="order-statuses-list">
-                        {filteredStatuses.map((status) => (
-                            <SortableItem
-                                key={status.id}
-                                status={status}
-                                isEditingOrder={isEditingOrder}
-                                onDelete={handleConfirmDelete}
-                                onEdit={handleEditStatus}
-                            />
-                        ))}
-                    </div>
-                </SortableContext>
-            </DndContext>
+                {/* Список статусов */}
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                    modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
+                    <SortableContext
+                        items={editableStatuses}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <div className="order-statuses-list">
+                            {filteredStatuses.map((status) => (
+                                <SortableItem
+                                    key={status.id}
+                                    status={status}
+                                    isEditingOrder={isEditingOrder}
+                                    onDelete={handleConfirmDelete}
+                                    onEdit={handleEditStatus}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
+            </>}
 
             {/* Модальное окно добавления и редактирования */}
             {showModal && (

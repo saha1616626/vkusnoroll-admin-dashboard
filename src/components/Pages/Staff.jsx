@@ -450,7 +450,7 @@ const Staff = () => {
 
             {/* Таблица */}
             <div className="table-page">
-                {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Отображение анимации загрузки при загрузке данных
+                {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Loader - Отображение анимации загрузки данных
                     columns={selectedColumns}
                     data={tableData}
                     onSelectionChange={handleSelectionChange}
