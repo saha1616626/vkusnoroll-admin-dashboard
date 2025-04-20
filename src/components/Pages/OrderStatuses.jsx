@@ -63,7 +63,11 @@ const OrderStatuses = () => {
 
     const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
     const [initialData, setInitialData] = useState(null); // Исходные данные о списке статусов, которые были получены при загрузке страницы (Если таковые имеются)
-    const [statuses, setStatuses] = useState([]); // Список статусов (отображаемые данные)
+
+    const [rawStatuses, setRawStatuses] = useState([]); // Оригинальные данные с сервера
+    const [filteredStatuses, setFilteredStatuses] = useState([]); // Отфильтрованные данные для отображения
+    const [editableStatuses, setEditableStatuses] = useState([]); // Данные в режиме редактирования
+
     const [isEditingOrder, setIsEditingOrder] = useState(false); // Режим редактирования порядка статусов
     const [searchQuery, setSearchQuery] = useState(''); // Поиск статуса заказа
     const [showModal, setShowModal] = useState(false); // Отображение модального окна для редактирования и добавления
@@ -98,8 +102,11 @@ const OrderStatuses = () => {
         try {
             const response = await api.getOrderStatuses();
             const sortedData = response.data.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+
+            setRawStatuses(sortedData);
+            setFilteredStatuses(sortedData);
+            setEditableStatuses(sortedData);
             setInitialData({ ...response, data: sortedData });
-            setStatuses(sortedData); // Всегда показываем полные данные после загрузки
         } catch (error) {
             console.error('Ошибка загрузки статусов:', error);
         }
@@ -107,12 +114,17 @@ const OrderStatuses = () => {
 
     // Окончание перетаскивания элемента
     const handleDragEnd = (event) => {
+        if (!isEditingOrder) return;
+
         const { active, over } = event;
         if (active.id !== over.id) {
-            setStatuses((items) => {
-                const oldIndex = items.findIndex((i) => i.id === active.id);
-                const newIndex = items.findIndex((i) => i.id === over.id);
-                const newItems = arrayMove(items, oldIndex, newIndex);
+            setEditableStatuses(items => {
+                const newItems = arrayMove(
+                    items,
+                    items.findIndex(i => i.id === active.id),
+                    items.findIndex(i => i.id === over.id)
+                );
+
                 return newItems.map((item, index) => ({
                     ...item,
                     sequenceNumber: index + 1,
@@ -125,7 +137,7 @@ const OrderStatuses = () => {
     const handleSaveOrder = async () => {
         try {
             // Формируем минимальный необходимый набор данных
-            const sequenceData = statuses.map(({ id, sequenceNumber }) => ({
+            const sequenceData = editableStatuses.map(({ id, sequenceNumber }) => ({
                 id: Number(id),
                 sequenceNumber: Number(sequenceNumber)
             }));
@@ -133,10 +145,11 @@ const OrderStatuses = () => {
             await api.updateOrderStatusesSequence(sequenceData);
 
             // Обновляем начальные данные после успешного сохранения
-            setInitialData(prev => ({
-                ...prev,
-                data: [...statuses] // Сохраняем актуальный порядок
-            }));
+            const updatedInitialData = {
+                ...initialData,
+                data: [...editableStatuses] // Сохраняем актуальный порядок
+            };
+            setInitialData(updatedInitialData);
 
             setIsEditingOrder(false);
             setIsDirty(false); // Сбрасываем флаг изменений
@@ -151,7 +164,7 @@ const OrderStatuses = () => {
         // Восстанавливаем исходный порядок и сбрасываем режим редактирования
         const handleConfirmNavigation = () => {
             if (initialData) {
-                setStatuses([...initialData.data].sort((a, b) => a.sequenceNumber - b.sequenceNumber)); // Восстанавливаем исходный порядок из initialData
+                setEditableStatuses([...initialData.data].sort((a, b) => a.sequenceNumber - b.sequenceNumber)); // Восстанавливаем исходный порядок из initialData
             }
             setIsEditingOrder(false);
             setIsDirty(false); // Сбрасываем флаг изменений
@@ -203,12 +216,15 @@ const OrderStatuses = () => {
     }
 
     // Проверка изменений, требующих сохранения
-    const checkDirty = useCallback((currentData) => {
+    const checkDirty = useCallback(() => {
         if (!initialData) return false;
-        const initialSequence = initialData.data
-            .map(({ id, sequenceNumber }) => ({ id, sequenceNumber })); // Нормализация данных
-        return !isEqual(initialSequence, currentData); // Проверка, изменились ли данные по отношению к первоначальным. Если да, то требуется сохранение изменения
-    }, [initialData]);
+
+        // Сравниваем только порядок ID
+        const initialIds = initialData.data.map(s => s.id);
+        const currentIds = editableStatuses.map(s => s.id);
+
+        return !isEqual(initialIds, currentIds);
+    }, [initialData, editableStatuses]);
 
     // Обработчик отмены перехода через стрелку браузера
     const handleCancelNavigation = () => {
@@ -222,12 +238,14 @@ const OrderStatuses = () => {
         setSearchQuery(term.trim());
     };
 
-    // Обновление данных на странице (Иконка)
+    // Обновление данные на странице (Иконка)
     const refreshData = () => {
-        fetchStatuses();
-        const searchQuery = searchInputRef.current.search();  // Получаем текущее введенное значение из поля поиска
-        // Применяем текущий поисковый запрос после обновления
-        setSearchQuery(searchQuery); // Обновление данных с учетом поиска
+        fetchStatuses().then(() => {
+            if (searchInputRef.current) {
+                const searchTerm = searchInputRef.current.search();
+                setSearchQuery(searchTerm); // Обновление данных с учетом ключевого значения
+            }
+        });
     };
 
     /* 
@@ -249,11 +267,10 @@ const OrderStatuses = () => {
     // Обновляем состояние isDirty при изменении статусов
     useEffect(() => {
         if (initialData) {
-            const currentData = statuses.map(({ id, sequenceNumber }) => ({ id, sequenceNumber }));
-            const dirty = checkDirty(currentData);
+            const dirty = checkDirty();
             setIsDirty(dirty);
         }
-    }, [statuses, initialData, checkDirty]);
+    }, [initialData, checkDirty]);
 
     // Обработка нажатия кнопки "Назад" в браузере
     useEffect(() => {
@@ -272,7 +289,7 @@ const OrderStatuses = () => {
         const handleConfirmNavigation = () => {
             if (isEditingOrder && initialData) {
                 // Восстанавливаем исходный порядок и сбрасываем режим редактирования
-                setStatuses([...initialData.data].sort((a, b) => a.sequenceNumber - b.sequenceNumber));
+                setEditableStatuses([...initialData.data].sort((a, b) => a.sequenceNumber - b.sequenceNumber));
             }
             setIsEditingOrder(false);
             setIsDirty(false);
@@ -318,44 +335,35 @@ const OrderStatuses = () => {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload); // Функция очистки, которая удаляет обработчик события, когда компонент размонтируется или когда isDirty изменяется
     }, [isDirty]); // Обработчик события будет добавляться каждый раз, когда isDirty изменяется
 
-    // Сбрасываем режим редактирования при изменении ключа location
+    // Сбрасываем страницы при изменении ключа location (Переход на текущую страниу)
     useEffect(() => {
         setIsEditingOrder(false);
         setIsDirty(false);
+        // Сброс поиска
+        setSearchQuery(null);
+        searchInputRef.current?.clear();
     }, [location.key]); // location.key меняется при каждом переходе (даже на тот же URL)
 
     // Эффект для фильтраци
     useEffect(() => {
-        if (initialData?.data) {
-            let filtered = [...initialData.data];
+        if (isEditingOrder) {
+            setFilteredStatuses(editableStatuses);
+        } else {
+            const filtered = searchQuery
+                ? rawStatuses.filter(s =>
+                    s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                : rawStatuses;
 
-            if (!isEditingOrder && searchQuery) {
-                filtered = filtered.filter(status =>
-                    status.name.toLowerCase().includes(searchQuery.toLowerCase())
-                );
-            }
-
-            setStatuses(filtered.sort((a, b) => a.sequenceNumber - b.sequenceNumber));
+            setFilteredStatuses(filtered);
         }
-    }, [searchQuery, initialData, isEditingOrder]);
+    }, [searchQuery, rawStatuses, isEditingOrder, editableStatuses]);
 
-    // useEffect(() => {
-    //     if (searchQuery.trim()) {
-    //         const filtered = rawStatuses.filter(status =>
-    //             status.name.toLowerCase().includes(searchQuery.toLowerCase())
-    //         );
-    //         setStatuses(filtered);
-    //     } else {
-    //         setStatuses(rawStatuses);
-    //     }
-    // }, [searchQuery, rawStatuses]);
-
-    // // Очистка состояния о наличии несохраненных данных при размонтировании
-    // useEffect(() => {
-    //     return () => {
-    //         localStorage.removeItem('isDirty');
-    //     };
-    // }, []);
+    // Очистка состояния о наличии несохраненных данных при размонтировании
+    useEffect(() => {
+        return () => {
+            localStorage.removeItem('isDirty');
+        };
+    }, []);
 
     /* 
     ===========================
@@ -390,7 +398,7 @@ const OrderStatuses = () => {
 
                             {/* Кнопка изменить порядок */}
                             <button className="button-control add"
-                                onClick={() => setIsEditingOrder(true)}>
+                                onClick={() => { setIsEditingOrder(true); }}>
                                 <img src={sortIcon} alt="Update" className="icon-button" />
                                 Изменить порядок
                             </button>
@@ -438,11 +446,11 @@ const OrderStatuses = () => {
                 onDragEnd={handleDragEnd}
                 modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
                 <SortableContext
-                    items={statuses}
+                    items={editableStatuses}
                     strategy={verticalListSortingStrategy}
                 >
                     <div className="order-statuses-list">
-                        {statuses.map((status) => (
+                        {filteredStatuses.map((status) => (
                             <SortableItem
                                 key={status.id}
                                 status={status}
@@ -497,7 +505,7 @@ const OrderStatuses = () => {
 };
 
 // Компонент сортируемого элемента
-const SortableItem = ({ status, isEditingOrder, onDelete, onEdit }) => {
+const SortableItem = React.memo(({ status, isEditingOrder, onDelete, onEdit }) => { // React.memo позволяет предотвратить ненужный повторный рендеринг компонентов
 
     /* 
     ===========================
@@ -556,7 +564,7 @@ const SortableItem = ({ status, isEditingOrder, onDelete, onEdit }) => {
         </div>
     );
 
-};
+});
 
 // Компонент модального окна
 const OrderStatusModal = ({ status, onClose, onSave }) => {
