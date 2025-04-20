@@ -606,6 +606,8 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
     const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
     const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
 
+    const [isClosingAnimation, setIsClosingAnimation] = useState(false); // Анимация закрытия модального окна
+
     /* 
     ===========================
      Эффекты
@@ -776,7 +778,7 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
         window.history.pushState(null, null, window.location.pathname);
         setShowNavigationConfirmModal(false);
     };
-
+    
     // Обработчик закрытия через кнопку "Закрыть"
     const handleClose = () => {
         if (isDirty) {
@@ -787,7 +789,13 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
             });
             setShowNavigationConfirmModal(true);
         } else {
-            onClose();
+
+            setIsClosingAnimation(true);
+            setTimeout(() => {
+                onClose(); // Закрытие модального окна
+                setIsClosingAnimation(false);
+            }, 300); // Длительность анимации
+
         }
     };
 
@@ -800,7 +808,7 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
     return (
         <>
             {/* Отображение формы */}
-            {showFormDisplay && <><div className="order-statuses-modal-overlay">
+            {showFormDisplay && <><div className={`order-statuses-modal-overlay ${isClosingAnimation ? 'closing' : ''}`}>
                 <div className="order-statuses-modal">
                     <form onSubmit={handleSubmit}>
 
