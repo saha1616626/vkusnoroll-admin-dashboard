@@ -171,26 +171,122 @@
      display: flex;
      justify-content: center;
      align-items: center;
-     z-index: 20;
+     z-index: 10;
+     backdrop-filter: blur(2px);
  }
 
  /* Модальное окно */
  .order-statuses-modal {
-     position: fixed;
-     top: 50%;
-     left: 50%;
-     transform: translate(-50%, -50%);
      background: white;
-     padding: 30px;
-     border-radius: 8px;
-     box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-     z-index: 1000;
+     border-radius: 16px;
+     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+     width: 100%;
+     max-width: 480px;
+     padding: 32px;
+     position: relative;
+     animation: modalAppear 0.3s ease;
  }
+
+ /* Анимация появления */
+ @keyframes modalAppear {
+     from {
+         transform: translateY(-20px);
+         opacity: 0;
+     }
+
+     to {
+         transform: translateY(0);
+         opacity: 1;
+     }
+ }
+
 
  /* Форма модального окна */
  .order-statuses-modal form {
      display: flex;
      flex-direction: column;
-     gap: 15px;
-     min-width: 400px;
+     gap: 8px;
+     font-size: 14px;
+     color: #4a4a4a;
+ }
+
+ /* Заголвок */
+ .order-statuses-model-title {
+    font-size: 24px;
+    font-weight: bold;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+ }
+
+ /* Группа поля и названия */
+ .order-statuses-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+ }
+
+ /* Поля */
+ .order-statuses-modal input[type="text"],
+ .order-statuses-modal select {
+     padding: 12px 16px;
+     border: 2px solid #e0e0e0;
+     border-radius: 8px;
+     font-size: 14px;
+     transition: all 0.3s;
+     background: #fff;
+ }
+
+ /* Фокус на поле */
+ .order-statuses-modal input[type="text"]:focus,
+ .order-statuses-modal select:focus {
+     border-color: #83D167;
+     box-shadow: 0 0 0 3px rgba(131, 209, 103, 0.2);
+     outline: none;
+ }
+
+ /* Чек-бокс */
+ .order-statuses-modal input[type="checkbox"] {
+     width: 20px;
+     height: 20px;
+     accent-color: #83D167;
+     margin-left: 8px;
+ }
+
+ /* Контейнер для кнопок */
+ .order-statuses-modal-actions {
+     display: flex;
+     gap: 16px;
+     margin-top: 2.0rem;
+     justify-content: flex-end;
+ }
+
+ /* Общие стили для кнопок */
+ .order-statuses-modal-actions button {
+     transition: all 0.3s;
+ }
+
+ /* Адаптивность */
+ @media (max-width: 480px) {
+
+     /* Модальное окно */
+
+     /* Контейнер формы */
+     .order-statuses-modal {
+         margin: 16px;
+         padding: 24px;
+     }
+
+     /* Контейнер для кнопок */
+     .order-statuses-modal-actions {
+         flex-direction: column;
+         gap: 12px;
+     }
+
+     /* Общие стили для кнопок */
+     .order-statuses-modal-actions button {
+         width: 100%;
+     }
  }

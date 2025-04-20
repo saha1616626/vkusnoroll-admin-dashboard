@@ -144,12 +144,8 @@ const OrderStatuses = () => {
 
             await api.updateOrderStatusesSequence(sequenceData);
 
-            // Обновляем начальные данные после успешного сохранения
-            const updatedInitialData = {
-                ...initialData,
-                data: [...editableStatuses] // Сохраняем актуальный порядок
-            };
-            setInitialData(updatedInitialData);
+            // Обновляем данные после успешного сохранения
+            await fetchStatuses();
 
             setIsEditingOrder(false);
             setIsDirty(false); // Сбрасываем флаг изменений
@@ -435,7 +431,7 @@ const OrderStatuses = () => {
                 <div>Название</div>
                 <div>Порядок</div>
                 <div>Тип статуса</div>
-                <div>Виден клиенту</div>
+                <div>Доступен клиенту</div>
                 <div>Действия</div>
             </div>
 
@@ -575,6 +571,10 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
         sequenceNumber: null
     });
 
+    // Модальное окно для отображения ошибок: удаления и редактирования
+    const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
+    const [errorMessages, setErrorMessages] = useState([]); // Ошибки
+
     // Загрузка выбранного статуса заказа из БД
     useEffect(() => {
         const loadStatusData = async () => {
@@ -600,14 +600,33 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
         e.preventDefault();
         try {
             if (status) { // Если передан элемент в модальное окно, значит режим редактирования
-                await api.updateOrderStatus(status.id, formData);
+                const response = await api.updateOrderStatus(status.id, formData);
+
+                // Если есть конфликт - показываем ошибку
+                if (response.error) {
+                    setErrorMessages(response.conflicts || [response.error]);
+                    setShowErrorModal(true);
+                    return; // Не закрываем модалку
+                }
             } else {
-                await api.createOrderStatus(formData);
+                const response = await api.createOrderStatus(formData);
+
+                // Если есть конфликт - показываем ошибку
+                if (response.error) {
+                    setErrorMessages(response.conflicts || [response.error]);
+                    setShowErrorModal(true);
+                    return; // Не закрываем модалку
+                }
             }
             onSave();
             onClose();
         } catch (error) {
-            console.error('Ошибка сохранения:', error);
+            if (error.response?.data?.error) {
+                setErrorMessages(error.response.data.conflicts || [error.response.data.error]);
+                setShowErrorModal(true);
+            } else {
+                console.error('Ошибка сохранения:', error);
+            }
         }
     };
 
@@ -615,46 +634,62 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
         <div className="order-statuses-modal-overlay">
             <div className="order-statuses-modal">
                 <form onSubmit={handleSubmit}>
-                    <label>
-                        Название:
+
+                    <div className="order-statuses-model-title">
+                        Добавить статус заказа
+                    </div>
+
+                    <div className="order-statuses-input-group">
+                        <label>Название</label>
                         <input
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             required
                         />
-                    </label>
+                    </div>
 
-                    <label>
-                        Тип статуса:
-                        <select
-                            value={formData.isFinalResultPositive ?? ''}
-                            onChange={(e) => setFormData({
-                                ...formData,
-                                isFinalResultPositive: e.target.value === '' ? null : e.target.value === 'true'
-                            })}
-                        >
-                            <option value="">Обычный</option>
-                            <option value="true">Успешный</option>
-                            <option value="false">Неудачный</option>
-                        </select>
-                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <div className="order-statuses-input-group" style={{ flex: '0 0 50%', paddingRight: '0px' }}>
+                            <label>Тип статуса</label>
+                            <select className="rder-statuses-modal"
+                                value={formData.isFinalResultPositive ?? ''}
+                                onChange={(e) => setFormData({
+                                    ...formData,
+                                    isFinalResultPositive: e.target.value === '' ? null : e.target.value === 'true'
+                                })}
+                                style={{ width: '100%' }}
+                            >
+                                <option value="">Обычный</option>
+                                <option value="true">Успешный</option>
+                                <option value="false">Неудачный</option>
+                            </select>
+                        </div>
 
-                    <label>
-                        Виден клиенту:
-                        <input
-                            type="checkbox"
-                            checked={formData.isAvailableClient}
-                            onChange={(e) => setFormData({ ...formData, isAvailableClient: e.target.checked })}
-                        />
-                    </label>
+                        <div className="order-statuses-input-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flex: '0 0 50%', paddingTop: '20px', paddingLeft: '0px' }}>
+                            <label style={{ marginRight: '8px' }}>Доступен клиенту</label>
+                            <input className="rder-statuses-modal"
+                                type="checkbox"
+                                checked={formData.isAvailableClient}
+                                onChange={(e) => setFormData({ ...formData, isAvailableClient: e.target.checked })}
+                            />
+                        </div>
+                    </div>
 
-                    <div className="modal-actions">
-                        <button type="submit">Сохранить</button>
-                        <button type="button" onClick={onClose}>Отмена</button>
+                    <div className="order-statuses-modal-actions">
+                        <button className="button-control close" type="button" onClick={onClose}>Закрыть</button>
+                        <button className="button-control save" type="submit">Сохранить</button>
                     </div>
                 </form>
             </div>
+
+            {/* Модальное окно для отображения ошибок: удаления и редактирования */}
+            <ErrorModal
+                isOpen={showErrorModal}
+                title="Ошибка"
+                errors={errorMessages}
+                onClose={() => { setShowErrorModal(false); setErrorMessages(null) }}
+            />
         </div>
     );
 };

@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import './../../styles/elements/navigationConfirmModal.css';
+import ReactDOM from 'react-dom';
 
 const NavigationConfirmModal = ({
     isOpen,
@@ -28,7 +29,7 @@ const NavigationConfirmModal = ({
 
     if (!isOpen) return null; // Не рендерить, если isOpen=false
 
-    return (
+    return ReactDOM.createPortal(
         <div className="navigation-modal-overlay">
             <div className="navigation-confirm-modal">
                 <div className="navigation-modal-header">
@@ -48,7 +49,8 @@ const NavigationConfirmModal = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body // Рендерим портал в body, чтобы избежать проблем со стилями
     );
 };
 

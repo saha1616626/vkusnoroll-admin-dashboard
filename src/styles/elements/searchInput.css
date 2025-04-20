@@ -4,7 +4,7 @@
     display: flex; /* flexbox для выравнивания */
     position: relative;
     justify-content: center; /* Центрируем по горизонтали */
-    align-items: center; /* Центрируем по вертикали */    
+    align-items: center; /* Центрируем по вертикали */ 
 }
 
 /* Поле поиска */
