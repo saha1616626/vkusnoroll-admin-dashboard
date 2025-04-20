@@ -82,7 +82,7 @@ const OrderStatuses = () => {
     const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
     const [errorMessages, setErrorMessages] = useState([]); // Ошибки
 
-    // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных через стрелку в браузере
+    // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
     const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
     const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
 
@@ -227,7 +227,7 @@ const OrderStatuses = () => {
         return !isEqual(initialIds, currentIds);
     }, [initialData, editableStatuses]);
 
-    // Обработчик отмены перехода через стрелку браузера
+    // Обработчик отмены перехода на другую страницу через модальное окно
     const handleCancelNavigation = () => {
         // Возвращаем исходный URL при отмене перехода назад через popstate браузера
         window.history.pushState(null, null, window.location.pathname);
@@ -503,7 +503,7 @@ const OrderStatuses = () => {
                 onCancel={() => { setShowConfirmation(false); setStatusToDelete(null); }}
             />
 
-            {/* Модальное окно подтверждения ухода со страницы через стрелку */}
+            {/* Модальное окно подтверждения ухода со страницы */}
             <NavigationConfirmModal
                 isOpen={showNavigationConfirmModal}
                 onConfirm={pendingNavigation}
@@ -579,16 +579,38 @@ const SortableItem = React.memo(({ status, isEditingOrder, onDelete, onEdit }) =
 
 // Компонент модального окна
 const OrderStatusModal = ({ status, onClose, onSave }) => {
-    const [formData, setFormData] = useState({
+
+    /* 
+    ===========================
+     Состояния
+    ===========================
+    */
+
+    const [formData, setFormData] = useState({ // Данные формы
         name: '',
         isFinalResultPositive: null,
         isAvailableClient: false,
         sequenceNumber: null
     });
 
+    const [showFormDisplay, setShowFormDisplay] = useState(true); // Отображение модальноего окна
+
+    const [initialFormData, setInitialFormData] = useState({}); // Начальные данные формы
+    const [isDirty, setIsDirty] = useState(false); // Наличие несохраненных данных
+
     // Модальное окно для отображения ошибок: удаления и редактирования
     const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
     const [errorMessages, setErrorMessages] = useState([]); // Ошибки
+
+    // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
+    const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
+    const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
+
+    /* 
+    ===========================
+     Эффекты
+    ===========================
+    */
 
     // Загрузка выбранного статуса заказа из БД
     useEffect(() => {
@@ -596,19 +618,121 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
             if (status?.id) {
                 try {
                     const response = await api.getOrderStatusById(status.id);
-                    setFormData({
+                    const data = {
                         name: response.data.name,
                         isFinalResultPositive: response.data.isFinalResultPositive,
                         isAvailableClient: response.data.isAvailableClient,
                         sequenceNumber: response.data.sequenceNumber
-                    });
+                    };
+                    setFormData(data);
+                    setInitialFormData(data);
                 } catch (error) {
                     console.error('Ошибка загрузки статуса:', error);
                 }
+            } else { // При добавлении
+                const emptyForm = {
+                    name: '',
+                    isFinalResultPositive: null,
+                    isAvailableClient: false,
+                    sequenceNumber: null
+                };
+                setFormData(emptyForm);
+                setInitialFormData(emptyForm);
             }
         };
         loadStatusData();
-    }, [status]);
+    }, [status]); // При запуске модального окна запускается данный эффект
+
+    // Проверка изменений в полях
+    useEffect(() => {
+        const dirty = !isEqual(formData, initialFormData);
+        setIsDirty(dirty);
+    }, [formData, initialFormData]); // Вызов при наличии изменений в полях или начальных данных
+
+    // Управление отображением модального окна формы, когда пользователь пытается совершить навигацию без сохранения изменений
+    useEffect(() => {
+        if (showNavigationConfirmModal) {
+            setShowFormDisplay(false); // При открытом модальном окне форма добавления/редактирования скрыта
+        }
+        else {
+            setShowFormDisplay(true);
+        }
+    }, [showNavigationConfirmModal]);
+
+    // Управление отображением модального окна формы, когда пользователь пытается сохранить 2 статуса с положительным финалом
+    useEffect(() => {
+        if (showErrorModal) {
+            setShowFormDisplay(false); // При открытом модальном окне форма добавления/редактирования скрыта
+        }
+        else {
+            setShowFormDisplay(true);
+        }
+    }, [showErrorModal]);
+
+    // Блокировка закрытия страницы
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
+
+    // Обработка нажатия кнопки "Назад" в браузере
+    useEffect(() => {
+        const handleBackButton = (e) => {
+            if (isDirty) {
+                e.preventDefault(); // Блокируем переход, если есть несохраненные изменения
+                setPendingNavigation(() => () => {
+                    handleConfirmNavigation(); // Вызываем функцию подтверждения перехода
+                });
+                setShowNavigationConfirmModal(true); // Показываем модальное окно подтверждения
+            }
+            else {
+                handleConfirmNavigation();
+            }
+        };
+
+        const handleConfirmNavigation = () => {
+            onClose(); // Вызываем функцию подтверждения перехода
+            setIsDirty(false); // Сбрасываем флаг после успешного сохранения
+        };
+
+        // Добавляем новую запись в историю для корректного отслеживания переходов
+        window.history.pushState(null, null, window.location.pathname);
+        window.addEventListener("popstate", handleBackButton);
+
+        return () => {
+            window.removeEventListener("popstate", handleBackButton);
+        };
+    }, [isDirty, onClose]);
+
+    // Блокируем обновление страницы, если есть несохраненные данные
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (isDirty) {
+                const confirmationMessage = 'Есть несохранённые изменения. Уйти?';
+                event.returnValue = confirmationMessage; // Для старых браузеров
+                return confirmationMessage; // Для современных браузеров
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isDirty]);
+
+    /* 
+    ===========================
+     Обработчики событий
+    ===========================
+    */
 
     // Сохранить новый или обновить статус заказа
     const handleSubmit = async (e) => {
@@ -635,6 +759,7 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
             }
             onSave();
             onClose();
+            setIsDirty(false); // Сбрасываем флаг после успешного сохранения
         } catch (error) {
             if (error.response?.data?.error) {
                 setErrorMessages(error.response.data.conflicts || [error.response.data.error]);
@@ -645,58 +770,90 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
         }
     };
 
+    // Обработчик отмены перехода на другую страницу через модальное окно
+    const handleCancelNavigation = () => {
+        // Возвращаем исходный URL при отмене перехода назад через popstate браузера
+        window.history.pushState(null, null, window.location.pathname);
+        setShowNavigationConfirmModal(false);
+    };
+
+    // Обработчик закрытия через кнопку "Закрыть"
+    const handleClose = () => {
+        if (isDirty) {
+            // Показываем модальное окно вместо confirm
+            setPendingNavigation(() => () => {
+                setShowNavigationConfirmModal(false);
+                onClose();
+            });
+            setShowNavigationConfirmModal(true);
+        } else {
+            onClose();
+        }
+    };
+
+    /* 
+    ===========================
+     Рендер
+    ===========================
+    */
+
     return (
-        <div className="order-statuses-modal-overlay">
-            <div className="order-statuses-modal">
-                <form onSubmit={handleSubmit}>
+        <>
+            {/* Отображение формы */}
+            {showFormDisplay && <><div className="order-statuses-modal-overlay">
+                <div className="order-statuses-modal">
+                    <form onSubmit={handleSubmit}>
 
-                    <div className="order-statuses-model-title">
-                        Добавить статус заказа
-                    </div>
-
-                    <div className="order-statuses-input-group">
-                        <label>Название</label>
-                        <input
-                            type="text"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <div className="order-statuses-input-group" style={{ flex: '0 0 50%', paddingRight: '0px' }}>
-                            <label>Тип статуса</label>
-                            <select className="rder-statuses-modal"
-                                value={formData.isFinalResultPositive ?? ''}
-                                onChange={(e) => setFormData({
-                                    ...formData,
-                                    isFinalResultPositive: e.target.value === '' ? null : e.target.value === 'true'
-                                })}
-                                style={{ width: '100%' }}
-                            >
-                                <option value="">Обычный</option>
-                                <option value="true">Успешный</option>
-                                <option value="false">Неудачный</option>
-                            </select>
+                        <div className="order-statuses-model-title">
+                            {status?.id ? 'Редактирование статуса заказа' : 'Добавить статус заказа'}
                         </div>
 
-                        <div className="order-statuses-input-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flex: '0 0 50%', paddingTop: '20px', paddingLeft: '0px' }}>
-                            <label style={{ marginRight: '8px' }}>Доступен клиенту</label>
-                            <input className="rder-statuses-modal"
-                                type="checkbox"
-                                checked={formData.isAvailableClient}
-                                onChange={(e) => setFormData({ ...formData, isAvailableClient: e.target.checked })}
+                        <div className="order-statuses-input-group">
+                            <label>Название</label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
                             />
                         </div>
-                    </div>
 
-                    <div className="order-statuses-modal-actions">
-                        <button className="button-control close" type="button" onClick={onClose}>Закрыть</button>
-                        <button className="button-control save" type="submit">Сохранить</button>
-                    </div>
-                </form>
-            </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                            <div className="order-statuses-input-group" style={{ flex: '0 0 50%', paddingRight: '0px' }}>
+                                <label>Тип статуса</label>
+                                <select className="rder-statuses-modal"
+                                    value={formData.isFinalResultPositive ?? ''}
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        isFinalResultPositive: e.target.value === '' ? null : e.target.value === 'true'
+                                    })}
+                                    style={{ width: '100%' }}
+                                >
+                                    <option value="">Обычный</option>
+                                    <option value="true">Успешный</option>
+                                    <option value="false">Неудачный</option>
+                                </select>
+                            </div>
+
+                            <div className="order-statuses-input-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flex: '0 0 50%', paddingTop: '20px', paddingLeft: '0px' }}>
+                                <label style={{ marginRight: '8px' }}>Доступен клиенту</label>
+                                <input className="rder-statuses-modal"
+                                    type="checkbox"
+                                    checked={formData.isAvailableClient}
+                                    onChange={(e) => setFormData({ ...formData, isAvailableClient: e.target.checked })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="order-statuses-modal-actions">
+                            <button className="button-control close" type="button" onClick={handleClose}>Закрыть</button>
+                            <button className="button-control save" type="submit">Сохранить</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div> </>
+            }
 
             {/* Модальное окно для отображения ошибок: удаления и редактирования */}
             <ErrorModal
@@ -705,7 +862,14 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
                 errors={errorMessages}
                 onClose={() => { setShowErrorModal(false); setErrorMessages(null) }}
             />
-        </div>
+
+            {/* Модальное окно подтверждения ухода со страницы */}
+            <NavigationConfirmModal
+                isOpen={showNavigationConfirmModal}
+                onConfirm={pendingNavigation}
+                onCancel={handleCancelNavigation}
+            />
+        </>
     );
 };
 
