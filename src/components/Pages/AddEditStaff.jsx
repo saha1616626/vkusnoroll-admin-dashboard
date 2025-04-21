@@ -164,24 +164,31 @@ const AddEditStaff = ({ mode }) => {
         }
 
         try {
-            const payload = { 
+            const payload = {
                 roleId: Number(formData.roleId),
-                name: formData.name.trim() || null,
-                surname: formData.surname.trim() || null,
+                name: formData.name.trim(),
+                surname: formData.surname.trim(),
                 patronymic: formData.patronymic.trim() || null,
-                email: formData.email.trim() || null,
-                numberPhone: formData.numberPhone.trim() || null,
-                login: formData.login.trim() || null,
-                password: formData.password.trim() || null,
+                email: formData.email.trim(),
+                numberPhone: formData.numberPhone.trim(),
+                login: formData.login.trim(),
+                password: formData.password.trim(),
                 isAccountTermination: Boolean(formData.isAccountTermination)
             };
-            if (mode === 'add') {
-                await api.createEmploye(payload);
+
+            const response = mode === 'add'
+                ? await api.createEmploye(payload)
+                : await api.updateStaff(id, payload);
+
+            if (response.error) {
+                setErrorMessages([response.error]);
+                setShowErrorModal(true);
             } else {
-                await api.updateStaff(id, payload);
+                navigate(`/settings/employees/edit/${response.data.id}`);
             }
         } catch (error) {
-            setErrorMessages([error.response?.data?.message || 'Ошибка сохранения']);
+            const message = error.response?.data?.error || 'Ошибка сохранения';
+            setErrorMessages([message]);
             setShowErrorModal(true);
         }
     };
@@ -208,6 +215,15 @@ const AddEditStaff = ({ mode }) => {
                 </h1>
 
                 <div className="addEditStaff-button-group">
+                    {mode === 'edit' && <button
+                        className="button-control addEditStaff-delete"
+                        disabled={formData.role === 'Администратор'}
+                        onClick={formData.role !== 'Администратор' ? handleClose : null}
+                        title={formData.role === 'Администратор' ? 'Нельзя удалить учетную запись администратора' : null}
+                    >
+                        Удалить сотрудника
+                    </button>
+                    }
                     <button className="button-control close" onClick={handleClose}>Закрыть</button>
                     <button className="button-control save" onClick={handleSave}>Сохранить</button>
                 </div>
@@ -316,16 +332,42 @@ const AddEditStaff = ({ mode }) => {
                             </select>
                         </div>
 
-                        <label className="addEditStaff-checkbox-label">
-                            <input
-                                type="checkbox"
-                                name="isAccountTermination"
-                                checked={formData.isAccountTermination}
-                                onChange={handleInputChange}
-                                disabled={formData.role === 'Администратор'}
-                            />
-                            <span className="addEditStaff-checkbox-caption">Заблокировать доступ</span>
-                        </label>
+                        <div className="form-column" style={{ marginTop: '40px' }}>
+
+                            <label className="addEditStaff-checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="isAccountTermination"
+                                    checked={formData.isAccountTermination}
+                                    onChange={handleInputChange}
+                                    disabled={formData.role === 'Администратор'}
+                                />
+                                <span className="addEditStaff-checkbox-caption">Доступ к учетной записи</span>
+                            </label>
+
+                            <label className="addEditStaff-checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="isAccountTermination"
+                                    checked={formData.isAccountTermination}
+                                    onChange={handleInputChange}
+                                    disabled={formData.role === 'Администратор'}
+                                />
+                                <span className="addEditStaff-checkbox-caption">Управление заказами</span>
+                            </label>
+
+                            <label className="addEditStaff-checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="isAccountTermination"
+                                    checked={formData.isAccountTermination}
+                                    onChange={handleInputChange}
+                                    disabled={formData.role === 'Администратор'}
+                                />
+                                <span className="addEditStaff-checkbox-caption">Доступ к центру сообщений</span>
+                            </label>
+                        </div>
+
                     </div>
                 </section>
             </div>

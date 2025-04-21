@@ -14,6 +14,23 @@
     gap: 15px;
 }
 
+/* Кнопка удалить в заголовке */
+.addEditStaff-delete {
+    margin-right: 15px;
+    background-color: #e74c3c;
+}
+
+.addEditStaff-delete:hover {
+    background-color: #c0392b;
+}
+
+.button-control:disabled {
+    opacity: 0.5;
+    /* Серый цвет фона для заблокированной кнопки */
+    cursor: not-allowed;
+    /* Изменение курсора для заблокированной кнопки */
+}
+
 /* Контейнер всех полей */
 .addEditStaff-content {
     display: flex;
@@ -38,13 +55,13 @@
 
 /* Чекбокс контейнер */
 .addEditStaff-checkbox-label {
-    margin-top: 40px;
+    margin-top: 10px;
     display: flex;
     gap: 10px;
     align-items: center;
-    justify-content: center;
+    justify-content: stretch;
     cursor: pointer;
-    padding: 10px 0px;
+    padding: 10px 9px;
     border-radius: 8px;
     transition: all 0.3s;
 }
@@ -64,6 +81,8 @@
 .addEditStaff-checkbox-caption {
     font-style: italic;
     align-content: center;
+    max-width: 220px;
+    flex-wrap: wrap;
 }
 
 /* Адаптивность */
