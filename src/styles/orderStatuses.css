@@ -100,6 +100,8 @@
  /* Режим редактирования */
  .order-statuses-item.editing {
      grid-template-columns: 60px 2fr 1.5fr 1.5fr;
+     /* Компенсируем высоту +5 ед. за скрытые кнопки управления */
+     padding: 17px;
  }
 
  /* Обычный режим */
@@ -112,7 +114,7 @@
      display: none;
  }
 
- /* Wентрируем все элементы */
+ /* Центрируем все элементы */
  .order-statuses-item div {
      display: flex;
      align-items: center;

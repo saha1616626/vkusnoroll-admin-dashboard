@@ -69,6 +69,7 @@ const apiMethods = {
     // Учетные записи
     getAccountById: (id) => api.get(`/accounts/user/${id}`), // Пользователь
     getEmployees: () => api.get('/accounts/employees'), // Сотрудники
+    createEmploye: (data) => api.post('/accounts/employees', data),
     getClients: () => api.get('/accounts/clients'), // Клиенты
 
     // Статусы заказов
