@@ -44,10 +44,10 @@ const Menu = () => {
     const handleButtonClick = (buttonIndex) => {
 
         // Проверка на несохраненные изменения
-        if (localStorage.getItem('isDirty') === 'true') {
+        if (sessionStorage.getItem('isDirty') === 'true') {
             // Сохраняем целевую навигацию и показываем модалку
             setPendingNavigation(() => () => { // Если пользователь подтвредит переход
-                localStorage.setItem('isDirty', 'false');
+                sessionStorage.setItem('isDirty', 'false');
                 performNavigation(buttonIndex); // Осуществляем навигацию по меню
             });
             setShowNavigationConfirmModal(true);

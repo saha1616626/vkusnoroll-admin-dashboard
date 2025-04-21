@@ -71,13 +71,13 @@ const AddEditCategoryPage = ({ mode }) => {
 
     // Сохраняем состояние о наличии несохраненных данных на странице
     useEffect(() => {
-        localStorage.setItem('isDirty', isDirty.toString());
+        sessionStorage.setItem('isDirty', isDirty.toString());
     }, [isDirty]);
 
     // Очистка состояния о наличии несохраненных данных при размонтировании
     useEffect(() => {
         return () => {
-            localStorage.removeItem('isDirty');
+            sessionStorage.removeItem('isDirty');
         };
     }, []);
 

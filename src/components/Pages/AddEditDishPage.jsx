@@ -37,13 +37,13 @@ const AddEditDishPage = ({ mode }) => {
     const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
     const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
 
-    // Модальное окно вывода ошибки ввода при сохранении данных
+    // Модальное окно ошибки ввода при сохранении данных
     const [validationErrors, setValidationErrors] = useState([]); // Ошибки
     const [showValidationModal, setShowValidationModal] = useState(false); // Отображение
 
     // Модальное окно для отображения прочих ошибок
     const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
-    const [errorMessages, setErrorMessages] = useState([]); // Ошибки
+    const [errorMessages, setErrorMessages] = useState([]);
 
     // Обработчик для кнопки "Назад" браузера
     useEffect(() => {
@@ -79,13 +79,13 @@ const AddEditDishPage = ({ mode }) => {
 
     // Сохраняем состояние о наличии несохраненных данных на странице
     useEffect(() => {
-        localStorage.setItem('isDirty', isDirty.toString());
+        sessionStorage.setItem('isDirty', isDirty.toString());
     }, [isDirty]);
 
     // Очистка состояния о наличии несохраненных данных при размонтировании
     useEffect(() => {
         return () => {
-            localStorage.removeItem('isDirty');
+            sessionStorage.removeItem('isDirty');
         };
     }, []);
 

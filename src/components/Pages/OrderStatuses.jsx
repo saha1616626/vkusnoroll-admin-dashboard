@@ -267,7 +267,7 @@ const OrderStatuses = () => {
 
     // Сохраняем состояние о наличии несохраненных данных на странице
     useEffect(() => {
-        localStorage.setItem('isDirty', isDirty.toString());
+        sessionStorage.setItem('isDirty', isDirty.toString());
     }, [isDirty]);
 
     // Обновляем состояние isDirty при изменении статусов
@@ -369,7 +369,7 @@ const OrderStatuses = () => {
     // Очистка состояния о наличии несохраненных данных при размонтировании
     useEffect(() => {
         return () => {
-            localStorage.removeItem('isDirty');
+            sessionStorage.removeItem('isDirty');
         };
     }, []);
 

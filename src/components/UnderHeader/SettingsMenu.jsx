@@ -43,7 +43,7 @@ const SettingsMenu = () => {
         };
 
         // Проверка на несохраненные изменения
-        if (localStorage.getItem('isDirty') === 'true') { // На false isDirty при выходе без сохранения менять не нужно, так как компонент размонтируется и удалит состоние isDirty в localStorage
+        if (sessionStorage.getItem('isDirty') === 'true') { // На false isDirty при выходе без сохранения менять не нужно, так как компонент размонтируется и удалит состоние isDirty в localStorage
             setPendingNavigation(() => checkNavigation);
             setShowNavigationConfirmModal(true);
         } else {

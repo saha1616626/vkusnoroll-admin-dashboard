@@ -29,16 +29,21 @@ const AddEditStaff = ({ mode }) => {
     const navigate = useNavigate();
 
     // Состояния для модальных окон
+
     // Модальное окно ошибки ввода при сохранении данных
     const [validationErrors, setValidationErrors] = useState([]); // Отображение 
-    const [showValidationModal, setShowValidationModal] = useState(false); // Отображение 
+    const [showValidationModal, setShowValidationModal] = useState(false); // Отображение
 
+    // Модальное окно для отображения любых ошибок с кастомным заголовком
+    const [errorMessages, setErrorMessages] = useState([]); // Ошибки
+    const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
 
     const [roles, setRoles] = useState([]); // Список ролей
     // Основные данные формы
     const [formData, setFormData] = useState({
         response: '',
         roleId: '',
+        role: '',
         name: '',
         surname: '',
         patronymic: '',
@@ -114,13 +119,13 @@ const AddEditStaff = ({ mode }) => {
 
     // Сохраняем состояние о наличии несохраненных данных на странице
     useEffect(() => {
-        localStorage.setItem('isDirty', isDirty.toString());
+        sessionStorage.setItem('isDirty', isDirty.toString());
     }, [isDirty]);
 
     // Очистка состояния о наличии несохраненных данных при размонтировании
     useEffect(() => {
         return () => {
-            localStorage.removeItem('isDirty');
+            sessionStorage.removeItem('isDirty');
         };
     }, []);
 
@@ -158,6 +163,27 @@ const AddEditStaff = ({ mode }) => {
             return;
         }
 
+        try {
+            const payload = { 
+                roleId: Number(formData.roleId),
+                name: formData.name.trim() || null,
+                surname: formData.surname.trim() || null,
+                patronymic: formData.patronymic.trim() || null,
+                email: formData.email.trim() || null,
+                numberPhone: formData.numberPhone.trim() || null,
+                login: formData.login.trim() || null,
+                password: formData.password.trim() || null,
+                isAccountTermination: Boolean(formData.isAccountTermination)
+            };
+            if (mode === 'add') {
+                await api.createEmploye(payload);
+            } else {
+                await api.updateStaff(id, payload);
+            }
+        } catch (error) {
+            setErrorMessages([error.response?.data?.message || 'Ошибка сохранения']);
+            setShowErrorModal(true);
+        }
     };
 
     // Обработчик закрытия страницы
@@ -192,7 +218,7 @@ const AddEditStaff = ({ mode }) => {
                 <section className="addEditStaff-section">
                     <h3 className="section-title">Личные данные</h3>
                     <div className="form-column">
-                        {[ 'Имя', 'Фамилия', 'Отчество'].map((field) => (
+                        {['Имя', 'Фамилия', 'Отчество'].map((field) => (
                             <div className="form-group" key={field}>
                                 <label className="input-label">
                                     {field}{field !== 'Отчество' && '*'}
@@ -279,6 +305,7 @@ const AddEditStaff = ({ mode }) => {
                                 name="roleId"
                                 value={formData.roleId || ''}
                                 onChange={handleInputChange}
+                                disabled={mode === 'edit'} // Блокирует выбор, если mode === 'add'
                             >
                                 <option value="">Выберите роль</option>
                                 {roles.map(role => (
@@ -295,6 +322,7 @@ const AddEditStaff = ({ mode }) => {
                                 name="isAccountTermination"
                                 checked={formData.isAccountTermination}
                                 onChange={handleInputChange}
+                                disabled={formData.role === 'Администратор'}
                             />
                             <span className="addEditStaff-checkbox-caption">Заблокировать доступ</span>
                         </label>
@@ -315,12 +343,12 @@ const AddEditStaff = ({ mode }) => {
                 onClose={() => setShowValidationModal(false)}
             />
 
-            {/* <ErrorModal
+            <ErrorModal
                 isOpen={showErrorModal}
                 title="Ошибка"
                 errors={errorMessages}
                 onClose={() => setShowErrorModal(false)}
-            /> */}
+            />
         </main>
     );
 };
