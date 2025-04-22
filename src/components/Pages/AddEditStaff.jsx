@@ -10,6 +10,7 @@ import api from '../../utils/api'; // API сервера
 import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
 import ValidationErrorModal from "../Elements/ValidationErrorModal"; // Модальное окно отображения ошибок ввода при сохранении данных
 import ErrorModal from "../Elements/ErrorModal"; // Модальное окно для отображения любых ошибок с кастомным заголовком
+import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения действия
 
 // Импорт стилей 
 import "./../../styles/addEditPage.css";  // Для всех страниц добавления или редактирования данных
@@ -17,6 +18,7 @@ import "./../../styles/addEditStaff.css"; // Стили только для да
 
 // Импорт иконок
 import resetIcon from './../../assets/icons/reset.png';
+import { replace } from "lodash";
 
 const AddEditStaff = ({ mode }) => {
 
@@ -60,6 +62,11 @@ const AddEditStaff = ({ mode }) => {
     // Модальное окно для отображения любых ошибок с кастомным заголовком
     const [errorMessages, setErrorMessages] = useState([]); // Ошибки
     const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
+    const [titleErrorModal, setTitleErrorModal] = useState('Ошибка'); // Заголвок окна
+
+    // Модальное окно для  подтверждения действия
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // Отображение 
+    const [confirmationMessage, setConfirmationMessage] = useState(''); // Ошибки
 
     const [roles, setRoles] = useState([]); // Список ролей
 
@@ -70,11 +77,8 @@ const AddEditStaff = ({ mode }) => {
     const [isTimerActive, setIsTimerActive] = useState(false); // Запуск таймера
     const [confirmationCode, setConfirmationCode] = useState('');
 
-    /* 
-    ===========================
-     Работа с данными
-    ===========================
-    */
+    // Отображение пароля
+    const [showPassword, setShowPassword] = useState(false);
 
     /* 
     ===========================
@@ -189,6 +193,16 @@ const AddEditStaff = ({ mode }) => {
         return regex.test(email);
     };
 
+    // Валидация Пароля
+    const validatePassword = (password) => {
+        const errors = [];
+        if (password.length < 8) errors.push('Минимум 8 символов');
+        if (!/[A-Za-z]/.test(password)) errors.push('Латиница обязательна');
+        if (!/[0-9]/.test(password)) errors.push('Хотя бы одна цифра');
+        if (!/[!@#$%^&*]/.test(password)) errors.push('Хотя бы один спецсимвол');
+        return errors;
+    };
+
     // Обработчик сохранения
     const handleSave = async () => {
 
@@ -196,7 +210,7 @@ const AddEditStaff = ({ mode }) => {
         if (!formData.surname.trim()) errors.push('Фамилия');
         if (!formData.name.trim()) errors.push('Имя');
         if (!formData.email.trim()) errors.push('Email');
-        if (!formData.numberPhone) errors.push('Телефон');
+        if (!formData.numberPhone || formData.numberPhone.length !== 11) errors.push('Телефон');
         if (!formData.login.trim()) errors.push('Логин');
         if (mode === 'add' && !formData.password.trim()) errors.push('Пароль');
         if (formData.password.trim() !== formData.confirmPassword.trim()) errors.push('Пароли не совпадают');
@@ -208,8 +222,18 @@ const AddEditStaff = ({ mode }) => {
             return;
         }
 
+        // Валидация Email
         if (!validateEmail(formData.email)) {
             setErrorMessages(['Неверный формат email']);
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Валидация пароля
+        const passwordErrors = validatePassword(formData.password);
+        if (passwordErrors.length > 0) {
+            setTitleErrorModal('Пароль некорректен');
+            setErrorMessages(passwordErrors);
             setShowErrorModal(true);
             return;
         }
@@ -246,6 +270,63 @@ const AddEditStaff = ({ mode }) => {
             setShowErrorModal(true);
         }
     };
+
+    // Обработчик вызова модального окна для подтверждения удаления пользователя
+    const handleDeleteInit = async () => {
+        try {
+            const response = await api.checkActiveChats(formData.id); // Проверка незавершенных чатов
+            const hasActiveChats = response.data.activeChats > 0; // Кол-во незавершенных чатов
+
+            setConfirmationMessage(
+                hasActiveChats
+                    ? `У сотрудника есть ${response.data.activeChats} ${getCorrectWordOne(response.data.activeChats)} ${getCorrectWordTwo(response.data.activeChats)}. После удаления они будут возвращены в центр сообщений как непринятые с сохранением истории переписки.`
+                    : null
+            );
+
+            setShowDeleteConfirm(true); // Запуск модального окна
+        } catch (error) {
+            console.error('Ошибка проверки зависимых чатов в центре сообщений:', error);
+        }
+    }
+
+    // Изменение окончания слова "незавершенный" в зависимости от кол-ва зависимостей
+    const getCorrectWordOne = (count) => {
+        if (count % 10 === 1 && count % 100 !== 11) {
+            return "незавершенный"; // 1 (н. ч.)
+        } else if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14)) {
+            return "незавершенных"; // 2, 3, 4 (н. ч.)
+        }
+        return "незавершенных"; // 0, 5-9, 11-14 (н. ч.)
+    };
+
+    // Изменение окончания слова "чата" в зависимости от кол-ва зависимостей
+    const getCorrectWordTwo = (count) => {
+        let chatWord = 'чата'; // По умолчанию используется форма "чата"
+
+        if (count % 10 === 1 && count % 100 !== 11) {
+            chatWord = 'чат'; // 1 чат
+        } else if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14)) {
+            chatWord = 'чата'; // 2-4 чата
+        } else {
+            chatWord = 'чатов'; // 0, 5-9, 11-14 чатов
+        }
+
+        return `${chatWord}`; // Возвращаем полное слово
+    };
+
+
+    // Обработчик удаления пользователя
+    const handleConfirmDelete = async () => {
+        try {
+            api.deleteEmployee(formData.id); // Удаление сотрудника
+            setShowDeleteConfirm(false); // Скрытие модального окна
+            navigate('/settings/employees/', {replace: true});
+        } catch (error) {
+            const message = error.response?.data?.error || 'Ошибка удаления';
+            setErrorMessages([message]);
+            setShowErrorModal(true);
+        }
+    }
 
     // Обработчик закрытия страницы
     const handleClose = () => navigate('/settings/employees');
@@ -317,11 +398,9 @@ const AddEditStaff = ({ mode }) => {
 
     /* 
     ===========================
-     Подтверждение Email
+     Рендер
     ===========================
     */
-
-
 
     return (
         <main className="addEditPage-container">
@@ -334,7 +413,7 @@ const AddEditStaff = ({ mode }) => {
                     {mode === 'edit' && <button
                         className="button-control addEditStaff-delete"
                         disabled={formData.role === 'Администратор'}
-                        onClick={formData.role !== 'Администратор' ? handleClose : null}
+                        onClick={formData.role !== 'Администратор' ? () => handleDeleteInit() : null}
                         title={formData.role === 'Администратор' ? 'Нельзя удалить учетную запись администратора' : null}
                     >
                         Удалить сотрудника
@@ -467,6 +546,7 @@ const AddEditStaff = ({ mode }) => {
                                 name="login"
                                 value={formData.login}
                                 onChange={handleInputChange}
+                                disabled={mode === 'edit' && formData.role !== 'Администратор'} // Блокирует выбор, если mode === 'add'
                             />
                         </div>
                     </div>
@@ -563,13 +643,25 @@ const AddEditStaff = ({ mode }) => {
 
             <ErrorModal
                 isOpen={showErrorModal}
-                title="Ошибка"
+                title={titleErrorModal || 'Ошибка'}
                 errors={errorMessages}
                 onClose={() => setShowErrorModal(false)}
+            />
+
+            {/* Подтверждение удаления */}
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                title="Подтвердите удаление"
+                message={
+                    confirmationMessage
+                        ? `${confirmationMessage}\nВы уверены, что хотите удалить учетную сотрудника?`
+                        : "Вы уверены, что хотите удалить учетную сотрудника?"
+                }
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setShowDeleteConfirm(false)}
             />
         </main>
     );
 };
 
 export default AddEditStaff;
-

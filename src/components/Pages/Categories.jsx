@@ -15,7 +15,7 @@ import ArchiveStorageButton from "../Elements/ArchiveStorageButton"; // Прос
 import CustomTable from "../Elements/CustomTable"; // Таблица
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
 import DeletionResultModal from '../Elements/DeletionResultModal'; // Модальное окно результата удаления
-import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения
+import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения действия
 
 import api from '../../utils/api';
 

@@ -70,7 +70,10 @@ const apiMethods = {
     getAccountById: (id) => api.get(`/accounts/user/${id}`), // Пользователь
     getEmployees: () => api.get('/accounts/employees'), // Сотрудники
     createEmploye: (data) => api.post('/accounts/employees', data),
+    checkActiveChats: (id) => api.get(`/accounts/employees/${id}/active-chats`), // Наличие открытых чатов
+    deleteEmployee: (id) => api.delete(`/accounts/employees/${id}`),
     getClients: () => api.get('/accounts/clients'), // Клиенты
+
 
     // Статусы заказов
     getOrderStatuses: () => api.get('/orderStatuses'),
@@ -86,9 +89,9 @@ const apiMethods = {
         }),
     updateOrderStatusesSequence: (sequence) => api.put('/orderStatuses/sequence', { sequence }),
 
-    // Подтверждение почты
+    // Подтверждение почты администратором
     sendEmployeeСonfirmationСodeEmail: (id) => api.post(`/accounts/employees/${id}/send-code`), // Отправка кода подтверждения на Email
-    verifyEmployeeСonfirmationСodeEmail: (id, code) => 
+    verifyEmployeeСonfirmationСodeEmail: (id, code) =>
         api.post(`/accounts/employees/${id}/verify-code`, { code: code.toString() }), // Проверка кода подтверждения
 
 };

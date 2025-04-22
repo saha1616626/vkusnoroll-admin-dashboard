@@ -30,7 +30,10 @@ const ConfirmationModal = ({
                 </div>
 
                 <div className="modal-body">
-                    <p>{message}</p>
+                    {/* Добавляем ручной перенос строки */}
+                    <p>{message.split('\n').map((line, index) => (
+                        <p key={index}>{line}</p>
+                    ))}</p>
                 </div>
 
                 <div className="modal-footer">
