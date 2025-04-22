@@ -50,6 +50,16 @@
 .addEditStaff-reset-email {
     margin-top: 15px;
     height: 41.6px;
+    text-wrap: nowrap;
+    align-items: center;
+    /* Таймер по центру */
+    justify-content: center;
+}
+
+/* Размер кнопки "Выслать код", таймера и "Подвредить" */
+.addEditStaff-confirm,
+.addEditStaff-verify {
+    width: 127.36px;
 }
 
 /* Контейнер кнопок "Сохранить" и "Сбросить" */
@@ -69,12 +79,12 @@
     padding: 10px;
     width: 21px;
     height: 21px;
-    object-fit: contain; /* Пропорция формы */
+    object-fit: contain;
+    /* Пропорция формы */
 }
 
 /* Контейнер поля для кода подтверждения */
 .addEditStaff-code-container {
-    margin-top: 15px;
     display: flex;
     gap: 15px;
     align-items: center;
@@ -85,18 +95,19 @@
     width: 200px;
 }
 
-/* Кнопка проверки кода подтверждения */
-.addEditStaff-verify {
-    margin-bottom: 8px;
-}
-
-/* Поле для ввода кода подтверждения email */
-/* .addEditStaff-confirmation-code input::-webkit-outer-spin-button,
+/* Убираем стрелки с поля */
+.addEditStaff-code-input input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
     display: none;
     -webkit-appearance: none;
     margin: 0;
-} */
+}
+
+/* Кнопка проверки кода подтверждения */
+.addEditStaff-verify {
+    margin-top: 15px;
+    height: 41.6px;
+}
 
 /* Контейнер всех полей */
 .addEditStaff-content {
