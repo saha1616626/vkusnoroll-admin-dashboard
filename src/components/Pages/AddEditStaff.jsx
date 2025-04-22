@@ -23,8 +23,26 @@ const AddEditStaff = ({ mode }) => {
     ==============================
     */
 
+    // Формат данных
+    const dataFormat = {
+        response: '',
+        roleId: '',
+        role: '',
+        name: '',
+        surname: '',
+        patronymic: '',
+        email: '',
+        numberPhone: '',
+        login: '',
+        password: '',
+        confirmPassword: '',
+        isAccountTermination: false,
+        isEmailConfirmed: false
+    }
+
     const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
-    const [initialData, setInitialData] = useState(null); // Исходные данные при загрузке страницы
+    const [formData, setFormData] = useState(dataFormat); // Основные данные формы
+    const [initialData, setInitialData] = useState(dataFormat); // Исходные данные при загрузке страницы
     const { id } = useParams(); // Переданный id пользователя в URL запроса
     const navigate = useNavigate();
 
@@ -39,21 +57,13 @@ const AddEditStaff = ({ mode }) => {
     const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
 
     const [roles, setRoles] = useState([]); // Список ролей
-    // Основные данные формы
-    const [formData, setFormData] = useState({
-        response: '',
-        roleId: '',
-        role: '',
-        name: '',
-        surname: '',
-        patronymic: '',
-        email: '',
-        numberPhone: '',
-        login: '',
-        password: '',
-        confirmPassword: '',
-        isAccountTermination: false
-    });
+
+    // Подтверждение Email
+    const [showCodeInput, setShowCodeInput] = useState(false);
+    const [tempEmail, setTempEmail] = useState('');
+    const [timer, setTimer] = useState(60);
+    const [isTimerActive, setIsTimerActive] = useState(false);
+    const [confirmationCode, setConfirmationCode] = useState('');
 
     /* 
     ===========================
@@ -129,6 +139,20 @@ const AddEditStaff = ({ mode }) => {
         };
     }, []);
 
+    // Эффект для таймера кода подтверждения
+    useEffect(() => {
+        let interval;
+        if (isTimerActive && timer > 0) {
+            interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
+        } else if (timer === 0) {
+            setIsTimerActive(false);
+            setTimer(60);
+        }
+        return () => clearInterval(interval);
+    }, [isTimerActive, timer]);
+
     /* 
     ===========================
      Обработчики событий
@@ -198,7 +222,7 @@ const AddEditStaff = ({ mode }) => {
 
     // Ввод номера телефона
     const handlePhoneChange = (value) => {
-        const cleanedValue = value.replace(/\D/g, ''); // Получаем введенные данные
+        const cleanedValue = value.replace(/\D/g, ''); // Получаем введенные данные. Убираем все пробелы
         if (cleanedValue.length <= 11) { // Не более 11 символов
             setFormData(prev => ({
                 ...prev,
@@ -206,6 +230,59 @@ const AddEditStaff = ({ mode }) => {
             }));
         }
     };
+
+    // Обработчик изменения поля email
+    const handleEmailChange = (e) => {
+        const value = e.target.value;
+
+        // Убираем все пробелы
+        const trimmedValue = value.replace(/\s/g, ''); // Заменяем все пробелы на пустую строку
+
+        setFormData(prev => ({
+            ...prev,
+            email: trimmedValue?.trim(),
+            isEmailConfirmed: false
+        }));
+
+        // TODO isEmailConfirmed нужно менять, если адрес сброшен
+    };
+
+    // Обработчик отправки кода подтверждения
+    const handleSendConfirmation = async () => {
+        try {
+            const response = await api.sendConfirmationCode(formData.email);
+            if (response.success) {
+                setShowCodeInput(true);
+                setIsTimerActive(true);
+                setTempEmail(formData.email);
+            }
+        } catch (error) {
+            setErrorMessages(['Ошибка отправки кода подтверждения']);
+            setShowErrorModal(true);
+        }
+    };
+
+    // Обработчик проверки кода
+    const handleVerifyCode = async () => {
+        try {
+            const response = await api.verifyConfirmationCode(formData.id, confirmationCode);
+            if (response.success) {
+                setShowCodeInput(false);
+                setFormData(prev => ({ ...prev, isEmailConfirmed: true }));
+            }
+        } catch (error) {
+            setErrorMessages(['Неверный код подтверждения']);
+            setShowErrorModal(true);
+        }
+    };
+
+    /* 
+    ===========================
+     Подтверждение Email
+    ===========================
+    */
+
+
 
     return (
         <main className="addEditPage-container">
@@ -252,16 +329,72 @@ const AddEditStaff = ({ mode }) => {
                     </div>
 
                     <div className="form-column">
-                        <div className="form-group">
-                            <label className="input-label">Email*</label>
-                            <input
-                                type="email"
-                                className="input-field"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleInputChange}
-                            />
+
+                        <div className="form-row" style={{ alignItems: 'center' }}>
+                            <div className="form-group addEditStaff-email-group" style={{ width: '100%' }}>
+                                <label className="input-label">Email*</label>
+                                <input
+                                    type="text"
+                                    className={`input-field ${showCodeInput ? 'addEditStaff-email-disabled' : ''}`}
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleEmailChange}
+                                    disabled={showCodeInput}
+                                />
+                            </div>
+
+                            {/* Подтверждение email */}
+                            {((!formData.isEmailConfirmed || formData.email !== initialData.email) && mode === 'edit') && (
+                                <div className="addEditStaff-email-buttons">
+                                    {formData.email !== initialData.email ? (
+                                        <>
+                                            <button
+                                                className="button-control addEditStaff-save-email"
+                                            // onClick={handleSaveEmail}
+                                            >
+                                                Сохранить
+                                            </button>
+                                            <button
+                                                className="button-control addEditStaff-reset-email"
+                                                onClick={() => setFormData(prev => ({ ...prev, email: initialData.email }))}
+                                            >
+                                                Сбросить
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            className="button-control addEditStaff-confirm"
+                                            onClick={handleSendConfirmation}
+                                            disabled={isTimerActive}
+                                        >
+                                            {isTimerActive ? `${timer} сек` : 'Подтвердить'}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
+
+                        {/* Поле ввода кода подтверждения */}
+                        {showCodeInput && (
+                            <div className="addEditStaff-code-container">
+                                <div className="form-group addEditStaff-code-group">
+                                    <label className="input-label">Код подтверждения</label>
+                                    <input
+                                        type="number"
+                                        className="input-field addEditStaff-code-input"
+                                        value={confirmationCode}
+                                        onChange={(e) => setConfirmationCode(e.target.value)}
+                                    />
+                                </div>
+                                <button
+                                    className="button-control addEditStaff-verify"
+                                    onClick={handleVerifyCode}
+                                >
+                                    Проверить код
+                                </button>
+                            </div>
+                        )}
+
                         <div className="form-group">
                             <label className="input-label">Телефон*</label>
                             <IMaskInput
