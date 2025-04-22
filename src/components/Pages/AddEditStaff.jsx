@@ -15,6 +15,9 @@ import ErrorModal from "../Elements/ErrorModal"; // Модальное окно 
 import "./../../styles/addEditPage.css";  // Для всех страниц добавления или редактирования данных
 import "./../../styles/addEditStaff.css"; // Стили только для данной страницы
 
+// Импорт иконок
+import resetIcon from './../../assets/icons/reset.png';
+
 const AddEditStaff = ({ mode }) => {
 
     /* 
@@ -37,7 +40,9 @@ const AddEditStaff = ({ mode }) => {
         password: '',
         confirmPassword: '',
         isAccountTermination: false,
-        isEmailConfirmed: false
+        isEmailConfirmed: false,
+        isOrderManagementAvailable: false,
+        isMessageCenterAvailable: false
     }
 
     const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
@@ -197,7 +202,10 @@ const AddEditStaff = ({ mode }) => {
                 numberPhone: formData.numberPhone.trim(),
                 login: formData.login.trim(),
                 password: formData.password.trim(),
-                isAccountTermination: Boolean(formData.isAccountTermination)
+                isAccountTermination: Boolean(formData.isAccountTermination),
+                isEmailConfirmed: Boolean(formData.isEmailConfirmed),
+                isOrderManagementAvailable: Boolean(formData.isOrderManagementAvailable),
+                isMessageCenterAvailable: Boolean(formData.isMessageCenterAvailable)
             };
 
             const response = mode === 'add'
@@ -349,16 +357,17 @@ const AddEditStaff = ({ mode }) => {
                                     {formData.email !== initialData.email ? (
                                         <>
                                             <button
+                                                className="button-control addEditStaff-reset-email"
+                                                onClick={() => setFormData(prev => ({ ...prev, email: initialData.email }))}
+                                                title="Сбросить изменения Email"
+                                            >
+                                                <img src={resetIcon} alt="Reset" className="addEditStaff-icon-reset" />
+                                            </button>
+                                            <button
                                                 className="button-control addEditStaff-save-email"
                                             // onClick={handleSaveEmail}
                                             >
                                                 Сохранить
-                                            </button>
-                                            <button
-                                                className="button-control addEditStaff-reset-email"
-                                                onClick={() => setFormData(prev => ({ ...prev, email: initialData.email }))}
-                                            >
-                                                Сбросить
                                             </button>
                                         </>
                                     ) : (
@@ -465,7 +474,7 @@ const AddEditStaff = ({ mode }) => {
                             </select>
                         </div>
 
-                        <div className="form-column" style={{ marginTop: '40px' }}>
+                        <div className="form-column" style={{ marginTop: '40px', display: formData.role === 'Администратор' ? 'none' : '' }}>
 
                             <label className="addEditStaff-checkbox-label">
                                 <input
@@ -473,18 +482,16 @@ const AddEditStaff = ({ mode }) => {
                                     name="isAccountTermination"
                                     checked={formData.isAccountTermination}
                                     onChange={handleInputChange}
-                                    disabled={formData.role === 'Администратор'}
                                 />
-                                <span className="addEditStaff-checkbox-caption">Доступ к учетной записи</span>
+                                <span className="addEditStaff-checkbox-caption">Ограничить доступ к учетной записи</span>
                             </label>
 
                             <label className="addEditStaff-checkbox-label">
                                 <input
                                     type="checkbox"
-                                    name="isAccountTermination"
-                                    checked={formData.isAccountTermination}
+                                    name="isOrderManagementAvailable"
+                                    checked={formData.isOrderManagementAvailable}
                                     onChange={handleInputChange}
-                                    disabled={formData.role === 'Администратор'}
                                 />
                                 <span className="addEditStaff-checkbox-caption">Управление заказами</span>
                             </label>
@@ -492,10 +499,9 @@ const AddEditStaff = ({ mode }) => {
                             <label className="addEditStaff-checkbox-label">
                                 <input
                                     type="checkbox"
-                                    name="isAccountTermination"
-                                    checked={formData.isAccountTermination}
+                                    name="isMessageCenterAvailable"
+                                    checked={formData.isMessageCenterAvailable}
                                     onChange={handleInputChange}
-                                    disabled={formData.role === 'Администратор'}
                                 />
                                 <span className="addEditStaff-checkbox-caption">Доступ к центру сообщений</span>
                             </label>

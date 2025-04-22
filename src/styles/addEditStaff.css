@@ -44,7 +44,7 @@
     cursor: not-allowed;
 }
 
-/* Подтверждение и сохранение email кнопки */
+/* Подтверждение, сброс и сохранение email. Кнопки */
 .addEditStaff-confirm,
 .addEditStaff-save-email,
 .addEditStaff-reset-email {
@@ -56,6 +56,20 @@
 .addEditStaff-email-buttons {
     display: flex;
     gap: 10px;
+}
+
+/* Кнопка сбросить */
+.addEditStaff-reset-email {
+
+    padding: 0;
+}
+
+/* Иконка сбросить */
+.addEditStaff-reset-email img {
+    padding: 10px;
+    width: 21px;
+    height: 21px;
+    object-fit: contain; /* Пропорция формы */
 }
 
 /* Контейнер поля для кода подтверждения */
