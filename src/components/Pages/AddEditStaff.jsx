@@ -158,6 +158,16 @@ const AddEditStaff = ({ mode }) => {
         return () => clearInterval(interval);
     }, [isTimerActive, timer]);
 
+    // Эффект для синхронизации статуса подтверждения
+    useEffect(() => {
+        if (formData.email === initialData.email) {
+            setFormData(prev => ({
+                ...prev,
+                isEmailConfirmed: initialData.isEmailConfirmed
+            }));
+        }
+    }, [formData.email, initialData.email, initialData.isEmailConfirmed]);
+
     /* 
     ===========================
      Обработчики событий
@@ -373,35 +383,41 @@ const AddEditStaff = ({ mode }) => {
                             </div>
 
                             {/* Подтверждение email */}
-                            {((!formData.isEmailConfirmed || formData.email !== initialData.email) && mode === 'edit') && (
-                                <div className="addEditStaff-email-buttons">
-                                    {formData.email !== initialData.email ? (
-                                        <>
+                            {((!formData.isEmailConfirmed && formData.email === initialData.email) ||
+                                formData.email !== initialData.email) &&
+                                mode === 'edit' && (
+                                    <div className="addEditStaff-email-buttons">
+                                        {formData.email !== initialData.email ? (
+                                            <>
+                                                <button
+                                                    className="button-control addEditStaff-reset-email"
+                                                    onClick={() => setFormData(prev => ({
+                                                        ...prev,
+                                                        email: initialData.email,
+                                                        isEmailConfirmed: initialData.isEmailConfirmed // Сбрасываем статус подтверждения
+                                                    }))}
+                                                    title="Сбросить изменения Email"
+                                                >
+                                                    <img src={resetIcon} alt="Reset" className="addEditStaff-icon-reset" />
+                                                </button>
+                                                <button
+                                                    className="button-control addEditStaff-save-email"
+                                                // onClick={handleSaveEmail}
+                                                >
+                                                    Сохранить
+                                                </button>
+                                            </>
+                                        ) : (
                                             <button
-                                                className="button-control addEditStaff-reset-email"
-                                                onClick={() => setFormData(prev => ({ ...prev, email: initialData.email }))}
-                                                title="Сбросить изменения Email"
+                                                className="button-control addEditStaff-confirm"
+                                                onClick={handleSendConfirmation}
+                                                disabled={isTimerActive}
                                             >
-                                                <img src={resetIcon} alt="Reset" className="addEditStaff-icon-reset" />
+                                                {isTimerActive ? `${timer} сек` : 'Выслать код'}
                                             </button>
-                                            <button
-                                                className="button-control addEditStaff-save-email"
-                                            // onClick={handleSaveEmail}
-                                            >
-                                                Сохранить
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <button
-                                            className="button-control addEditStaff-confirm"
-                                            onClick={handleSendConfirmation}
-                                            disabled={isTimerActive}
-                                        >
-                                            {isTimerActive ? `${timer} сек` : 'Выслать код'}
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+                                        )}
+                                    </div>
+                                )}
                         </div>
 
                         {/* Поле ввода кода подтверждения */}
