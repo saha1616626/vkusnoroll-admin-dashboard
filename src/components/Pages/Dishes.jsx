@@ -59,7 +59,8 @@ const Dishes = () => {
     */
 
     // Обновление страницы
-    const refreshData = (term) => {
+    const refreshData = async (term) => {
+        await fetchData(); // Синхронизация данных из БД. Обновление представления
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
             // Сохраняем значения полей фильтра после нажатия "Enter"

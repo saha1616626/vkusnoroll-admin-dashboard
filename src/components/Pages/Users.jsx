@@ -1,7 +1,7 @@
 // Список пользователей
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
@@ -42,6 +42,7 @@ const Users = () => {
     */
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Основные данные
     const [rawData, setRawData] = useState([]);
@@ -146,7 +147,8 @@ const Users = () => {
     */
 
     // Обновление страницы
-    const refreshData = (term) => {
+    const refreshData = async (term) => {
+        await fetchData(); // Синхронизация данных из БД. Обновление представления
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
             // Сохраняем значения полей фильтра после нажатия "Enter"
@@ -288,6 +290,18 @@ const Users = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // Хук useEffect для обработки переходов на текущую страницу.
+    // Этот эффект срабатывает каждый раз, когда меняется ключ местоположения (location.key), 
+    // что происходит при переходах внутри навигационного меню, даже если пользователь остается на том же URL.
+    // Это особенно важно при удалении сотрудника, так как данные на странице будут корректно обновляться
+    useEffect(() => {
+        // Сброс поиска
+        setSearchQuery(null);
+        searchInputRef.current?.clear();
+        // Обновляем данные на странице
+        fetchData();
+    }, [location.key, fetchData]); // location.key меняется при каждом переходе (даже на тот же URL)
 
     // Инициализация фильтров
     useEffect(() => {

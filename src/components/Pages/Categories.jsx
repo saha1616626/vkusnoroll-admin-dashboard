@@ -54,7 +54,8 @@ const Categories = () => {
     */
 
     // Обновление страницы
-    const refreshData = (term) => {
+    const refreshData = async (term) => {
+        await fetchData(); // Синхронизация данных из БД. Обновление представления
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
             // Применяем поисковый запрос
