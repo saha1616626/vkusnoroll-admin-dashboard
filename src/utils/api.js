@@ -97,6 +97,9 @@ const apiMethods = {
     verifyEmployeeСonfirmationСodeEmail: (id, code) =>
         api.post(`/accounts/employees/${id}/verify-code`, { code: code.toString() }), // Проверка кода подтверждения
 
+    // Рабочее время ресторана
+    getListRestaurantWorkingTime: () => api.get('/deliveryWork'),
+
 };
 
 // Экспортируем объект по умолчанию
