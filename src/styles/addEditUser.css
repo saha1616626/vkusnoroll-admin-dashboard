@@ -1,2 +1,74 @@
 /* Стили для страницы - управление пользователями */
 
+/* Элементы в заголовке старницы */
+.addEditUser-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+/* Группа кнопок в заголовке */
+.addEditUser-button-group {
+    display: flex;
+    gap: 15px;
+}
+
+/* Кнопка удалить в заголовке */
+.addEditUser-delete {
+    margin-right: 15px;
+    background-color: #e74c3c;
+}
+
+.addEditUser-delete:hover {
+    background-color: #c0392b;
+}
+
+/* Контейнер всех полей */
+.addEditUser-content {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+/* Секция страницы (колонна) */
+.addEditUser-section {
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 20%;
+}
+
+/* Чекбокс контейнер */
+.addEditUser-checkbox-label {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: stretch;
+    cursor: pointer;
+    padding: 10px 9px;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.addEditUser-checkbox-label:hover {
+    background: #f5f5f5;
+}
+
+/* Чекбокс */
+.addEditUser-checkbox-label input {
+    margin-right: 18px;
+    width: 20px;
+    height: 20px;
+}
+
+/* Текст для чекбокса */
+.addEditUser-checkbox-caption {
+    font-style: italic;
+    align-content: center;
+    max-width: 220px;
+    flex-wrap: wrap;
+}

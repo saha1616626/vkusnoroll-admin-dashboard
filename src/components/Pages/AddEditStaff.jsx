@@ -86,7 +86,7 @@ const AddEditStaff = ({ mode }) => {
     const [lastCodeSentTime, setLastCodeSentTime] = useState(null);
 
     const timeOut = 500; // Задержка перед отключением анимации загрузки данных
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Отображение анимации загрузки данных
 
     /* 
     ===========================
@@ -438,7 +438,7 @@ const AddEditStaff = ({ mode }) => {
     // Обработчик удаления пользователя
     const handleConfirmDelete = async () => {
         try {
-            api.deleteEmployee(formData.id); // Удаление сотрудника
+            api.deleteEmployee(id); // Удаление сотрудника
             setShowDeleteConfirm(false); // Скрытие модального окна
             navigate('/settings/employees/', { replace: true });
         } catch (error) {
@@ -712,6 +712,7 @@ const AddEditStaff = ({ mode }) => {
                     {/* Дополнительные настройки */}
                     <section className="addEditStaff-section">
                         <h3 className="section-title">Доступ</h3>
+
                         <div className="form-column">
                             <div className="form-group">
                                 <label className="input-label">Роль*</label>
@@ -794,8 +795,8 @@ const AddEditStaff = ({ mode }) => {
                     title="Подтвердите удаление"
                     message={
                         confirmationMessage
-                            ? `${confirmationMessage}\nВы уверены, что хотите удалить учетную сотрудника?`
-                            : "Вы уверены, что хотите удалить учетную сотрудника?"
+                            ? `${confirmationMessage}\nВы уверены, что хотите удалить учетную запись сотрудника?`
+                            : "Вы уверены, что хотите удалить учетную запись сотрудника?"
                     }
                     onConfirm={handleConfirmDelete}
                     onCancel={() => setShowDeleteConfirm(false)}
