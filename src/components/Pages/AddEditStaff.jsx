@@ -68,6 +68,10 @@ const AddEditStaff = ({ mode }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // Отображение 
     const [confirmationMessage, setConfirmationMessage] = useState(''); // Ошибки
 
+    // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
+    const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
+    const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
+
     const [roles, setRoles] = useState([]); // Список ролей
 
     // Подтверждение Email
@@ -79,6 +83,9 @@ const AddEditStaff = ({ mode }) => {
 
     // Отображение пароля
     const [showPassword, setShowPassword] = useState(false);
+
+    // Последнее время генерации кода
+    const [lastCodeSentTime, setLastCodeSentTime] = useState(null);
 
     /* 
     ===========================
@@ -119,6 +126,24 @@ const AddEditStaff = ({ mode }) => {
                 try {
                     const response = await api.getAccountById(id);
                     const staffData = response.data;
+
+                    // Сохраняем время последней генерации кода из серверных данных
+                    if (staffData.dateTimeСodeCreation) {
+                        const serverTime = new Date(staffData.dateTimeСodeCreation).getTime();
+                        setLastCodeSentTime(serverTime);
+
+                        // Рассчитываем оставшееся время до возможности запроса нового кода для подтверждения Email
+                        const now = Date.now();
+                        const timeDiff = now - serverTime;
+                        const remaining = Math.ceil((60 * 1000 - timeDiff) / 1000);
+
+                        if (remaining > 0) {
+                            setTimer(remaining);
+                            setIsTimerActive(true);
+                            setShowCodeInput(true);
+                        }
+                    }
+
                     setFormData(staffData);
                     setInitialData(staffData);
                 } catch (error) {
@@ -151,16 +176,23 @@ const AddEditStaff = ({ mode }) => {
     // Эффект для таймера кода подтверждения
     useEffect(() => {
         let interval;
-        if (isTimerActive && timer > 0) {
+        if (isTimerActive && lastCodeSentTime) {
             interval = setInterval(() => {
-                setTimer((prev) => prev - 1);
+                const now = Date.now();
+                const timePassed = now - lastCodeSentTime;
+                const remaining = Math.ceil((60 * 1000 - timePassed) / 1000);
+
+                if (remaining > 0) {
+                    setTimer(remaining);
+                } else {
+                    setIsTimerActive(false);
+                    setTimer(60);
+                    clearInterval(interval);
+                }
             }, 1000);
-        } else if (timer === 0) {
-            setIsTimerActive(false);
-            setTimer(60);
         }
         return () => clearInterval(interval);
-    }, [isTimerActive, timer]);
+    }, [isTimerActive, lastCodeSentTime]);
 
     // Эффект для синхронизации статуса подтверждения
     useEffect(() => {
@@ -171,6 +203,44 @@ const AddEditStaff = ({ mode }) => {
             }));
         }
     }, [formData.email, initialData.email, initialData.isEmailConfirmed]);
+
+    // Обработка нажатия кнопки "Назад" в браузере
+    useEffect(() => {
+        const handleBackButton = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                setPendingNavigation(() => () => { //  Подтверждение перехода
+                    window.history.replaceState(null, null, "/settings/employees");
+                    navigate("/settings/employees", { replace: true });
+                    setIsDirty(false);
+                });
+                setShowNavigationConfirmModal(true); // Показываем модальное окно подтверждения
+            }
+            else {
+                navigate("/settings/employees", { replace: true }); //  Подтверждение перехода
+            }
+        };
+
+        // Добавляем новую запись в историю вместо замены
+        window.history.pushState(null, null, window.location.pathname);
+        window.addEventListener("popstate", handleBackButton);
+
+        return () => {
+            window.removeEventListener("popstate", handleBackButton);
+        };
+    }, [isDirty, navigate]);
+
+    // Блокируем закрытие и обновление страницы, если есть несохраненные данные
+    useEffect(() => {
+        const handleBeforeUnload = (e) => { // Пользователь пытается покинуть страницу
+            if (isDirty) { // Есть несохраненные изменения
+                e.preventDefault(); // Предотвращает уход с текущей страницы
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload); // Обработчик handleBeforeUnload добавляется к объекту window всякий раз, когда пользователь пытается покинуть страницу
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload); // Функция очистки, которая удаляет обработчик события, когда компонент размонтируется или когда isDirty изменяется
+    }, [isDirty]); // Обработчик события будет добавляться каждый раз, когда isDirty изменяется
 
     /* 
     ===========================
@@ -213,7 +283,7 @@ const AddEditStaff = ({ mode }) => {
         if (!formData.numberPhone || formData.numberPhone.length !== 11) errors.push('Телефон');
         if (!formData.login.trim()) errors.push('Логин');
         if (mode === 'add' && !formData.password.trim()) errors.push('Пароль');
-        if (formData.password.trim() !== formData.confirmPassword.trim()) errors.push('Пароли не совпадают');
+        if (mode === 'add' && formData.password.trim() !== formData.confirmPassword.trim()) errors.push('Пароли не совпадают');
         if (!formData.roleId) errors.push('Роль');
 
         if (errors.length > 0) {
@@ -243,26 +313,29 @@ const AddEditStaff = ({ mode }) => {
                 roleId: Number(formData.roleId),
                 name: formData.name.trim(),
                 surname: formData.surname.trim(),
-                patronymic: formData.patronymic.trim() || null,
+                patronymic: formData.patronymic || null,
                 email: formData.email.trim(),
                 numberPhone: formData.numberPhone.trim(),
                 login: formData.login.trim(),
                 password: formData.password.trim(),
                 isAccountTermination: Boolean(formData.isAccountTermination),
-                isEmailConfirmed: Boolean(formData.isEmailConfirmed),
                 isOrderManagementAvailable: Boolean(formData.isOrderManagementAvailable),
                 isMessageCenterAvailable: Boolean(formData.isMessageCenterAvailable)
             };
 
             const response = mode === 'add'
                 ? await api.createEmploye(payload)
-                : await api.updateStaff(id, payload);
+                : await api.updateEmploye(id, payload);
 
             if (response.error) {
                 setErrorMessages([response.error]);
                 setShowErrorModal(true);
             } else {
-                navigate(`/settings/employees/edit/${response.data.id}`);
+                if (mode === 'add') {
+                    navigate(`/settings/employees/edit/${response.data.id}`);
+                } else {
+                    navigate('/settings/employees');
+                }
             }
         } catch (error) {
             const message = error.response?.data?.error || 'Ошибка сохранения';
@@ -270,6 +343,48 @@ const AddEditStaff = ({ mode }) => {
             setShowErrorModal(true);
         }
     };
+
+    // Сохранение измененной почты
+    const handleSaveEmail = async () => {
+        const errors = []; // Ошибки заполнения полей
+        if (!formData.email) errors.push('Email');
+
+        if (errors.length > 0) {
+            setValidationErrors(errors);
+            setShowValidationModal(true);
+            return;
+        }
+
+        // Валидация Email
+        if (!validateEmail(formData.email)) {
+            setErrorMessages(['Неверный формат email']);
+            setShowErrorModal(true);
+            return;
+        }
+
+        try {
+            const payload = {
+                email: formData.email.trim()
+            };
+
+            const response = await api.updateEmail(id, payload);
+
+            if (response.error) {
+                setErrorMessages([response.error]);
+                setShowErrorModal(true);
+            } else {
+                // Обновляем начальные данные
+                setInitialData(prev => ({
+                    ...prev,
+                    email: formData.email
+                }));
+            }
+        } catch (error) {
+            const message = error.response?.data?.error || 'Ошибка сохранения';
+            setErrorMessages([message]);
+            setShowErrorModal(true);
+        }
+    }
 
     // Обработчик вызова модального окна для подтверждения удаления пользователя
     const handleDeleteInit = async () => {
@@ -320,7 +435,7 @@ const AddEditStaff = ({ mode }) => {
         try {
             api.deleteEmployee(formData.id); // Удаление сотрудника
             setShowDeleteConfirm(false); // Скрытие модального окна
-            navigate('/settings/employees/', {replace: true});
+            navigate('/settings/employees/', { replace: true });
         } catch (error) {
             const message = error.response?.data?.error || 'Ошибка удаления';
             setErrorMessages([message]);
@@ -329,7 +444,17 @@ const AddEditStaff = ({ mode }) => {
     }
 
     // Обработчик закрытия страницы
-    const handleClose = () => navigate('/settings/employees');
+    const handleClose = () => { // Функция принимает аргумент forceClose, по умолчанию равный false. Аргумент позволяет при необходимости принудительно закрыть окно или перейти на другую страницу, минуя любые проверки
+        if (isDirty) { // Если есть несохраненные изменения
+            // Показываем модальное окно вместо confirm
+            setPendingNavigation(() => () => {
+                navigate('/settings/employees', { replace: true });
+            });
+            setShowNavigationConfirmModal(true);
+            return;
+        }
+        navigate('/settings/employees', { replace: true }); // Возврат пользователя на предыдущую страницу с удалением маршрута
+    };
 
     // Ввод номера телефона
     const handlePhoneChange = (value) => {
@@ -337,7 +462,7 @@ const AddEditStaff = ({ mode }) => {
         if (cleanedValue.length <= 11) { // Не более 11 символов
             setFormData(prev => ({
                 ...prev,
-                numberPhone: cleanedValue?.trim() || null
+                numberPhone: cleanedValue?.trim() || ''
             }));
         }
     };
@@ -359,8 +484,6 @@ const AddEditStaff = ({ mode }) => {
         if ((!formData.isEmailConfirmed || formData.email !== initialData.email) && mode === 'edit') {
             setShowCodeInput(false);
         }
-
-        // TODO isEmailConfirmed нужно менять, если адрес сброшен
     };
 
     // Обработчик отправки кода подтверждения
@@ -368,9 +491,17 @@ const AddEditStaff = ({ mode }) => {
         try {
             const response = await api.sendEmployeeСonfirmationСodeEmail(formData.id);
             if (response.data.success) {
+                // Получаем серверное время генерации кода
+                const serverTime = new Date(response.data.dateTimeСodeCreation).getTime();
+
+                setLastCodeSentTime(serverTime);
                 setShowCodeInput(true);
                 setIsTimerActive(true);
+                setTimer(60); // Сбрасываем таймер на полную минуту
                 setTempEmail(formData.email);
+
+                // Сохраняем в sessionStorage
+                sessionStorage.setItem('lastCodeSentTime', serverTime.toString());
             }
         } catch (error) {
             setErrorMessages(['Ошибка отправки кода подтверждения']);
@@ -386,7 +517,9 @@ const AddEditStaff = ({ mode }) => {
                 confirmationCode.toString() // Преобразуем код в строку
             );
             if (response.data.success) {
-                setShowCodeInput(false);
+                setShowCodeInput(false); // Скрываем поле для ввода кода
+                setIsTimerActive(false); // Сброс таймера
+                // Обновляем оба состояния
                 setFormData(prev => ({ ...prev, isEmailConfirmed: true }));
                 setInitialData(prev => ({ ...prev, isEmailConfirmed: true }));
             }
@@ -473,7 +606,8 @@ const AddEditStaff = ({ mode }) => {
                                                     onClick={() => setFormData(prev => ({
                                                         ...prev,
                                                         email: initialData.email,
-                                                        isEmailConfirmed: initialData.isEmailConfirmed // Сбрасываем статус подтверждения
+                                                        isEmailConfirmed: initialData.isEmailConfirmed, // Сбрасываем статус подтверждения
+
                                                     }))}
                                                     title="Сбросить изменения Email"
                                                 >
@@ -481,7 +615,7 @@ const AddEditStaff = ({ mode }) => {
                                                 </button>
                                                 <button
                                                     className="button-control addEditStaff-save-email"
-                                                // onClick={handleSaveEmail}
+                                                    onClick={handleSaveEmail}
                                                 >
                                                     Сохранить
                                                 </button>
@@ -629,11 +763,11 @@ const AddEditStaff = ({ mode }) => {
             </div>
 
             {/* Модальные окна */}
-            {/* <NavigationConfirmModal
+            <NavigationConfirmModal
                 isOpen={showNavigationConfirmModal}
                 onConfirm={pendingNavigation}
                 onCancel={() => setShowNavigationConfirmModal(false)}
-            /> */}
+            />
 
             <ValidationErrorModal
                 errors={validationErrors}

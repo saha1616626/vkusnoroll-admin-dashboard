@@ -68,12 +68,13 @@ const apiMethods = {
 
     // Учетные записи
     getAccountById: (id) => api.get(`/accounts/user/${id}`), // Пользователь
+    updateEmail: (id, data) => api.put(`/accounts/user/${id}`, data),
     getEmployees: () => api.get('/accounts/employees'), // Сотрудники
     createEmploye: (data) => api.post('/accounts/employees', data),
+    updateEmploye: (id, data) => api.put(`/accounts/employees/${id}`, data),
     checkActiveChats: (id) => api.get(`/accounts/employees/${id}/active-chats`), // Наличие открытых чатов
     deleteEmployee: (id) => api.delete(`/accounts/employees/${id}`),
     getClients: () => api.get('/accounts/clients'), // Клиенты
-
 
     // Статусы заказов
     getOrderStatuses: () => api.get('/orderStatuses'),

@@ -245,7 +245,7 @@ const OrderStatuses = () => {
     };
 
     // Обновление данные на странице (Иконка)
-    const refreshData = () => {
+    const refreshData = async () => {
         fetchStatuses().then(() => {
             if (searchInputRef.current) {
                 const searchTerm = searchInputRef.current.search();

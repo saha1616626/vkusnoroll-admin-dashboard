@@ -1,7 +1,7 @@
 // Список сотрудников
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
@@ -40,6 +40,7 @@ const Staff = () => {
     */
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Основные данные
     const [rawData, setRawData] = useState([]);
@@ -67,8 +68,8 @@ const Staff = () => {
      Навигация и CRUD операции
     ===========================
     */
-    const handleAddClick = () => navigate('/settings/employees/new'); // Переход на страницу добавления
-    const handleEditClick = (staff) => navigate(`/settings/employees/edit/${staff.id}`); // Переход на страницу редактирования
+    const handleAddClick = () => navigate('/settings/employees/new', { replace: true }); // Переход на страницу добавления
+    const handleEditClick = (staff) => navigate(`/settings/employees/edit/${staff.id}`, { replace: true }); // Переход на страницу редактирования
     const handleRowClick = (rowData) => { // Обработчик клика по строке в таблице
         const originalDish = rawData.find(dish => dish.id === rowData.id); // Получаем исходные данные по id из выбранной строки
         if (originalDish) handleEditClick(originalDish); // Передаем данные выбранной строки и запускаем страницу для редактирования
@@ -315,6 +316,18 @@ const Staff = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // Хук useEffect для обработки переходов на текущую страницу.
+    // Этот эффект срабатывает каждый раз, когда меняется ключ местоположения (location.key), 
+    // что происходит при переходах внутри навигационного меню, даже если пользователь остается на том же URL.
+    // Это особенно важно при удалении сотрудника, так как данные на странице будут корректно обновляться
+    useEffect(() => {
+        // Сброс поиска
+        setSearchQuery(null);
+        searchInputRef.current?.clear();
+        // Обновляем данные на странице
+        fetchData();
+    }, [location.key, fetchData]); // location.key меняется при каждом переходе (даже на тот же URL)
 
     // Загрузка ролей и инициализация фильтров
     useEffect(() => {
