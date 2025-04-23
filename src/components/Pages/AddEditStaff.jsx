@@ -11,6 +11,7 @@ import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Мо
 import ValidationErrorModal from "../Elements/ValidationErrorModal"; // Модальное окно отображения ошибок ввода при сохранении данных
 import ErrorModal from "../Elements/ErrorModal"; // Модальное окно для отображения любых ошибок с кастомным заголовком
 import ConfirmationModal from '../Elements/ConfirmationModal'; // Модальное окно подтверждения действия
+import Loader from '../Elements/Loader'; // Анимация загрузки данных
 
 // Импорт стилей 
 import "./../../styles/addEditPage.css";  // Для всех страниц добавления или редактирования данных
@@ -81,11 +82,11 @@ const AddEditStaff = ({ mode }) => {
     const [isTimerActive, setIsTimerActive] = useState(false); // Запуск таймера
     const [confirmationCode, setConfirmationCode] = useState('');
 
-    // Отображение пароля
-    const [showPassword, setShowPassword] = useState(false);
-
     // Последнее время генерации кода
     const [lastCodeSentTime, setLastCodeSentTime] = useState(null);
+
+    const timeOut = 500; // Задержка перед отключением анимации загрузки данных
+    const [isLoading, setIsLoading] = useState(false);
 
     /* 
     ===========================
@@ -270,6 +271,7 @@ const AddEditStaff = ({ mode }) => {
         if (!/[A-Za-z]/.test(password)) errors.push('Латиница обязательна');
         if (!/[0-9]/.test(password)) errors.push('Хотя бы одна цифра');
         if (!/[!@#$%^&*]/.test(password)) errors.push('Хотя бы один спецсимвол');
+        if (/[\u0400-\u04FF]/.test(password)) errors.push('Кириллица недопустима'); // Проверка на кириллицу
         return errors;
     };
 
@@ -332,6 +334,7 @@ const AddEditStaff = ({ mode }) => {
                 setShowErrorModal(true);
             } else {
                 if (mode === 'add') {
+                    setIsLoading(true); // Включаем анимацию загрузки данных
                     navigate(`/settings/employees/edit/${response.data.id}`);
                 } else {
                     navigate('/settings/employees');
@@ -341,6 +344,8 @@ const AddEditStaff = ({ mode }) => {
             const message = error.response?.data?.error || 'Ошибка сохранения';
             setErrorMessages([message]);
             setShowErrorModal(true);
+        } finally {
+            setTimeout(() => setIsLoading(false), timeOut);
         }
     };
 
@@ -537,263 +542,265 @@ const AddEditStaff = ({ mode }) => {
 
     return (
         <main className="addEditPage-container">
-            <div className="addEditStaff-controls">
-                <h1 className="page-name">
-                    {mode === 'add' ? 'Добавить сотрудника' : 'Сотрудник'}
-                </h1>
+            {isLoading ? <Loader isWorking={isLoading} /> : (<>
+                <div className="addEditStaff-controls">
+                    <h1 className="page-name">
+                        {mode === 'add' ? 'Добавить сотрудника' : 'Сотрудник'}
+                    </h1>
 
-                <div className="addEditStaff-button-group">
-                    {mode === 'edit' && <button
-                        className="button-control addEditStaff-delete"
-                        disabled={formData.role === 'Администратор'}
-                        onClick={formData.role !== 'Администратор' ? () => handleDeleteInit() : null}
-                        title={formData.role === 'Администратор' ? 'Нельзя удалить учетную запись администратора' : null}
-                    >
-                        Удалить сотрудника
-                    </button>
-                    }
-                    <button className="button-control close" onClick={handleClose}>Закрыть</button>
-                    <button className="button-control save" onClick={handleSave}>Сохранить</button>
+                    <div className="addEditStaff-button-group">
+                        {mode === 'edit' && <button
+                            className="button-control addEditStaff-delete"
+                            disabled={formData.role === 'Администратор'}
+                            onClick={formData.role !== 'Администратор' ? () => handleDeleteInit() : null}
+                            title={formData.role === 'Администратор' ? 'Нельзя удалить учетную запись администратора' : null}
+                        >
+                            Удалить сотрудника
+                        </button>
+                        }
+                        <button className="button-control close" onClick={handleClose}>Закрыть</button>
+                        <button className="button-control save" onClick={handleSave}>Сохранить</button>
+                    </div>
                 </div>
-            </div>
 
-            <div className="addEditStaff-content">
-                {/* Личные данные */}
-                <section className="addEditStaff-section">
-                    <h3 className="section-title">Личные данные</h3>
-                    <div className="form-column">
-                        {['Имя', 'Фамилия', 'Отчество'].map((field) => (
-                            <div className="form-group" key={field}>
-                                <label className="input-label">
-                                    {field}{field !== 'Отчество' && '*'}
-                                </label>
-                                <input
-                                    type="text"
-                                    className="input-field"
-                                    name={field === 'Фамилия' ? 'surname' : field === 'Имя' ? 'name' : 'patronymic'}
-                                    value={formData[field === 'Фамилия' ? 'surname' : field === 'Имя' ? 'name' : 'patronymic']}
-                                    onChange={handleInputChange}
-                                    required={field !== 'Отчество'}
-                                />
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="form-column">
-
-                        <div className="form-row" style={{ alignItems: 'center' }}>
-                            <div className="form-group addEditStaff-email-group" style={{ width: '100%' }}>
-                                <label className="input-label">Email*</label>
-                                <input
-                                    type="text"
-                                    className={`input-field ${isTimerActive ? 'addEditStaff-email-disabled' : ''}`}
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleEmailChange}
-                                    disabled={isTimerActive}
-                                />
-                            </div>
-
-                            {/* Подтверждение email */}
-                            {((!formData.isEmailConfirmed && formData.email === initialData.email) ||
-                                formData.email !== initialData.email) &&
-                                mode === 'edit' && (
-                                    <div className="addEditStaff-email-buttons">
-                                        {formData.email !== initialData.email ? (
-                                            <>
-                                                <button
-                                                    className="button-control addEditStaff-reset-email"
-                                                    onClick={() => setFormData(prev => ({
-                                                        ...prev,
-                                                        email: initialData.email,
-                                                        isEmailConfirmed: initialData.isEmailConfirmed, // Сбрасываем статус подтверждения
-
-                                                    }))}
-                                                    title="Сбросить изменения Email"
-                                                >
-                                                    <img src={resetIcon} alt="Reset" className="addEditStaff-icon-reset" />
-                                                </button>
-                                                <button
-                                                    className="button-control addEditStaff-save-email"
-                                                    onClick={handleSaveEmail}
-                                                >
-                                                    Сохранить
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button
-                                                className="button-control addEditStaff-confirm"
-                                                onClick={handleSendConfirmation}
-                                                disabled={isTimerActive}
-                                            >
-                                                {isTimerActive ? `${timer} сек` : 'Выслать код'}
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                        </div>
-
-                        {/* Поле ввода кода подтверждения */}
-                        {showCodeInput && (
-                            <div className="addEditStaff-code-container">
-                                <div className="form-group addEditStaff-code-group">
-                                    <label className="input-label">Код подтверждения</label>
-                                    <input
-                                        type="number"
-                                        className="input-field addEditStaff-code-input"
-                                        value={confirmationCode}
-                                        onChange={(e) => setConfirmationCode(e.target.value)}
-                                    />
-                                </div>
-                                <button
-                                    className="button-control addEditStaff-verify"
-                                    onClick={handleVerifyCode}
-                                >
-                                    Подтвердить
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="form-group">
-                            <label className="input-label">Телефон*</label>
-                            <IMaskInput
-                                name="numberPhone"
-                                mask="+7(000)000-00-00"
-                                value={formData.numberPhone}
-                                onAccept={handlePhoneChange}
-                                className="input-field"
-                                placeholder="+7(___) ___-__-__"
-                            />
-                        </div>
-                    </div>
-                </section>
-
-                {/* Учетные данные */}
-                <section className="addEditStaff-section">
-                    <h3 className="section-title">Учетные данные</h3>
-                    <div className="form-column">
-                        <div className="form-group">
-                            <label className="input-label">Логин*</label>
-                            <input
-                                type="text"
-                                className="input-field"
-                                name="login"
-                                value={formData.login}
-                                onChange={handleInputChange}
-                                disabled={mode === 'edit' && formData.role !== 'Администратор'} // Блокирует выбор, если mode === 'add'
-                            />
-                        </div>
-                    </div>
-
-                    {mode === 'add' && (
+                <div className="addEditStaff-content">
+                    {/* Личные данные */}
+                    <section className="addEditStaff-section">
+                        <h3 className="section-title">Личные данные</h3>
                         <div className="form-column">
-                            {['Пароль', 'Повтор пароля'].map((field, index) => (
+                            {['Имя', 'Фамилия', 'Отчество'].map((field) => (
                                 <div className="form-group" key={field}>
-                                    <label className="input-label">{field}*</label>
+                                    <label className="input-label">
+                                        {field}{field !== 'Отчество' && '*'}
+                                    </label>
                                     <input
-                                        type="password"
+                                        type="text"
                                         className="input-field"
-                                        name={index === 0 ? 'password' : 'confirmPassword'}
-                                        value={index === 0 ? formData.password : formData.confirmPassword}
+                                        name={field === 'Фамилия' ? 'surname' : field === 'Имя' ? 'name' : 'patronymic'}
+                                        value={formData[field === 'Фамилия' ? 'surname' : field === 'Имя' ? 'name' : 'patronymic']}
                                         onChange={handleInputChange}
+                                        required={field !== 'Отчество'}
                                     />
                                 </div>
                             ))}
                         </div>
-                    )}
-                </section>
 
-                {/* Дополнительные настройки */}
-                <section className="addEditStaff-section">
-                    <h3 className="section-title">Доступ</h3>
-                    <div className="form-column">
-                        <div className="form-group">
-                            <label className="input-label">Роль*</label>
-                            <select
-                                className="input-field"
-                                name="roleId"
-                                value={formData.roleId || ''}
-                                onChange={handleInputChange}
-                                disabled={mode === 'edit'} // Блокирует выбор, если mode === 'add'
-                            >
-                                <option value="">Выберите роль</option>
-                                {roles.map(role => (
-                                    <option key={role.id} value={role.id}>
-                                        {role.name}
-                                    </option>
+                        <div className="form-column">
+
+                            <div className="form-row" style={{ alignItems: 'center' }}>
+                                <div className="form-group addEditStaff-email-group" style={{ width: '100%' }}>
+                                    <label className="input-label">Email*</label>
+                                    <input
+                                        type="text"
+                                        className={`input-field ${isTimerActive ? 'addEditStaff-email-disabled' : ''}`}
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleEmailChange}
+                                        disabled={isTimerActive}
+                                    />
+                                </div>
+
+                                {/* Подтверждение email */}
+                                {((!formData.isEmailConfirmed && formData.email === initialData.email) ||
+                                    formData.email !== initialData.email) &&
+                                    mode === 'edit' && (
+                                        <div className="addEditStaff-email-buttons">
+                                            {formData.email !== initialData.email ? (
+                                                <>
+                                                    <button
+                                                        className="button-control addEditStaff-reset-email"
+                                                        onClick={() => setFormData(prev => ({
+                                                            ...prev,
+                                                            email: initialData.email,
+                                                            isEmailConfirmed: initialData.isEmailConfirmed, // Сбрасываем статус подтверждения
+
+                                                        }))}
+                                                        title="Сбросить изменения Email"
+                                                    >
+                                                        <img src={resetIcon} alt="Reset" className="addEditStaff-icon-reset" />
+                                                    </button>
+                                                    <button
+                                                        className="button-control addEditStaff-save-email"
+                                                        onClick={handleSaveEmail}
+                                                    >
+                                                        Сохранить
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    className="button-control addEditStaff-confirm"
+                                                    onClick={handleSendConfirmation}
+                                                    disabled={isTimerActive}
+                                                >
+                                                    {isTimerActive ? `${timer} сек` : 'Выслать код'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                            </div>
+
+                            {/* Поле ввода кода подтверждения */}
+                            {showCodeInput && (
+                                <div className="addEditStaff-code-container">
+                                    <div className="form-group addEditStaff-code-group">
+                                        <label className="input-label">Код подтверждения</label>
+                                        <input
+                                            type="number"
+                                            className="input-field addEditStaff-code-input"
+                                            value={confirmationCode}
+                                            onChange={(e) => setConfirmationCode(e.target.value)}
+                                        />
+                                    </div>
+                                    <button
+                                        className="button-control addEditStaff-verify"
+                                        onClick={handleVerifyCode}
+                                    >
+                                        Подтвердить
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label className="input-label">Телефон*</label>
+                                <IMaskInput
+                                    name="numberPhone"
+                                    mask="+7(000)000-00-00"
+                                    value={formData.numberPhone}
+                                    onAccept={handlePhoneChange}
+                                    className="input-field"
+                                    placeholder="+7(___) ___-__-__"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Учетные данные */}
+                    <section className="addEditStaff-section">
+                        <h3 className="section-title">Учетные данные</h3>
+                        <div className="form-column">
+                            <div className="form-group">
+                                <label className="input-label">Логин*</label>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    name="login"
+                                    value={formData.login}
+                                    onChange={handleInputChange}
+                                    disabled={mode === 'edit' && formData.role !== 'Администратор'} // Блокирует выбор, если mode === 'add'
+                                />
+                            </div>
+                        </div>
+
+                        {mode === 'add' && (
+                            <div className="form-column">
+                                {['Пароль', 'Повтор пароля'].map((field, index) => (
+                                    <div className="form-group" key={field}>
+                                        <label className="input-label">{field}*</label>
+                                        <input
+                                            type="password"
+                                            className="input-field"
+                                            name={index === 0 ? 'password' : 'confirmPassword'}
+                                            value={index === 0 ? formData.password : formData.confirmPassword}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
                                 ))}
-                            </select>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* Дополнительные настройки */}
+                    <section className="addEditStaff-section">
+                        <h3 className="section-title">Доступ</h3>
+                        <div className="form-column">
+                            <div className="form-group">
+                                <label className="input-label">Роль*</label>
+                                <select
+                                    className="input-field"
+                                    name="roleId"
+                                    value={formData.roleId || ''}
+                                    onChange={handleInputChange}
+                                    disabled={mode === 'edit'} // Блокирует выбор, если mode === 'add'
+                                >
+                                    <option value="">Выберите роль</option>
+                                    {roles.map(role => (
+                                        <option key={role.id} value={role.id}>
+                                            {role.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-column" style={{ marginTop: '40px', display: formData.role === 'Администратор' ? 'none' : '' }}>
+
+                                <label className="addEditStaff-checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        name="isAccountTermination"
+                                        checked={formData.isAccountTermination}
+                                        onChange={handleInputChange}
+                                    />
+                                    <span className="addEditStaff-checkbox-caption">Ограничить доступ к учетной записи</span>
+                                </label>
+
+                                <label className="addEditStaff-checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        name="isOrderManagementAvailable"
+                                        checked={formData.isOrderManagementAvailable}
+                                        onChange={handleInputChange}
+                                    />
+                                    <span className="addEditStaff-checkbox-caption">Управление заказами</span>
+                                </label>
+
+                                <label className="addEditStaff-checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        name="isMessageCenterAvailable"
+                                        checked={formData.isMessageCenterAvailable}
+                                        onChange={handleInputChange}
+                                    />
+                                    <span className="addEditStaff-checkbox-caption">Доступ к центру сообщений</span>
+                                </label>
+                            </div>
+
                         </div>
+                    </section>
+                </div>
 
-                        <div className="form-column" style={{ marginTop: '40px', display: formData.role === 'Администратор' ? 'none' : '' }}>
+                {/* Модальные окна */}
+                <NavigationConfirmModal
+                    isOpen={showNavigationConfirmModal}
+                    onConfirm={pendingNavigation}
+                    onCancel={() => setShowNavigationConfirmModal(false)}
+                />
 
-                            <label className="addEditStaff-checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    name="isAccountTermination"
-                                    checked={formData.isAccountTermination}
-                                    onChange={handleInputChange}
-                                />
-                                <span className="addEditStaff-checkbox-caption">Ограничить доступ к учетной записи</span>
-                            </label>
+                <ValidationErrorModal
+                    errors={validationErrors}
+                    isOpen={showValidationModal}
+                    onClose={() => setShowValidationModal(false)}
+                />
 
-                            <label className="addEditStaff-checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    name="isOrderManagementAvailable"
-                                    checked={formData.isOrderManagementAvailable}
-                                    onChange={handleInputChange}
-                                />
-                                <span className="addEditStaff-checkbox-caption">Управление заказами</span>
-                            </label>
+                <ErrorModal
+                    isOpen={showErrorModal}
+                    title={titleErrorModal || 'Ошибка'}
+                    errors={errorMessages}
+                    onClose={() => setShowErrorModal(false)}
+                />
 
-                            <label className="addEditStaff-checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    name="isMessageCenterAvailable"
-                                    checked={formData.isMessageCenterAvailable}
-                                    onChange={handleInputChange}
-                                />
-                                <span className="addEditStaff-checkbox-caption">Доступ к центру сообщений</span>
-                            </label>
-                        </div>
-
-                    </div>
-                </section>
-            </div>
-
-            {/* Модальные окна */}
-            <NavigationConfirmModal
-                isOpen={showNavigationConfirmModal}
-                onConfirm={pendingNavigation}
-                onCancel={() => setShowNavigationConfirmModal(false)}
-            />
-
-            <ValidationErrorModal
-                errors={validationErrors}
-                isOpen={showValidationModal}
-                onClose={() => setShowValidationModal(false)}
-            />
-
-            <ErrorModal
-                isOpen={showErrorModal}
-                title={titleErrorModal || 'Ошибка'}
-                errors={errorMessages}
-                onClose={() => setShowErrorModal(false)}
-            />
-
-            {/* Подтверждение удаления */}
-            <ConfirmationModal
-                isOpen={showDeleteConfirm}
-                title="Подтвердите удаление"
-                message={
-                    confirmationMessage
-                        ? `${confirmationMessage}\nВы уверены, что хотите удалить учетную сотрудника?`
-                        : "Вы уверены, что хотите удалить учетную сотрудника?"
-                }
-                onConfirm={handleConfirmDelete}
-                onCancel={() => setShowDeleteConfirm(false)}
-            />
+                {/* Подтверждение удаления */}
+                <ConfirmationModal
+                    isOpen={showDeleteConfirm}
+                    title="Подтвердите удаление"
+                    message={
+                        confirmationMessage
+                            ? `${confirmationMessage}\nВы уверены, что хотите удалить учетную сотрудника?`
+                            : "Вы уверены, что хотите удалить учетную сотрудника?"
+                    }
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setShowDeleteConfirm(false)}
+                />
+            </>)}
         </main>
     );
 };
