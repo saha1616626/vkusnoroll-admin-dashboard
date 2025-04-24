@@ -613,6 +613,7 @@ const Dishes = () => {
                     onSelectionChange={handleSelectionChange}
                     onRowClick={handleRowClick}
                     tableId={pageId}
+                    centeredColumns={['В архиве']}  // Cписок центрируемых колонок
                 />}
             </div>
 

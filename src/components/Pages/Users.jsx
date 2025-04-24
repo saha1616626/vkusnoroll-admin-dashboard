@@ -355,7 +355,7 @@ const Users = () => {
         }
     };
 
-    // Выбор строки в таблице
+    // Выбор строк(и) в таблице
     const handleSelectionChange = (selectedIndices) => {
         const selectedIds = selectedIndices
             .map(index => tableData[index]?.id)
@@ -415,7 +415,6 @@ const Users = () => {
 
             {/* Меню фильтра */}
             <div className="page-filter">
-
                 <FilterMenu
                     isOpen={filterState.isOpen}
                     filters={filters}
@@ -434,6 +433,7 @@ const Users = () => {
                     onSelectionChange={handleSelectionChange}
                     onRowClick={handleRowClick}
                     tableId={pageId}
+                    centeredColumns={['Заблокирован']}  // Cписок центрируемых колонок
                 />}
             </div>
 

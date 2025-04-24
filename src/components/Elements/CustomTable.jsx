@@ -10,7 +10,8 @@ const CustomTable = ({
     data,
     onSelectionChange,
     onRowClick,
-    tableId
+    tableId,
+    centeredColumns = [] // Cписок центрируемых колонок
 }) => {
     const [selectedRows, setSelectedRows] = useState(new Set()); // selectedRows - Текущее состояние выбранных строк. setSelectedRows - Позволяет изменять текущее состояние выбранных строк. Set - позволяем хранить уникальные значения (автоматически исключает дубликаты)
     const [columnWidths, setColumnWidths] = useState({}); // Ширина столбцов
@@ -148,8 +149,7 @@ const CustomTable = ({
                                     key={column}
                                     style={{
                                         width: column === 'select' ? '40px' : columnWidths[column],
-                                        textAlign: column === 'В архиве' ? "center"
-                                            : column === 'Заблокирован' ? "center" : "left"
+                                        textAlign: centeredColumns.includes(column) ? 'center' : 'left'
                                     }}
                                     // Останавливаем всплытие события onRowClick для всей ячейки с чекбоксом
                                     onClick={(e) => column === 'select' && e.stopPropagation()}

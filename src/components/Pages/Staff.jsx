@@ -470,6 +470,7 @@ const Staff = () => {
                     onSelectionChange={handleSelectionChange}
                     onRowClick={handleRowClick}
                     tableId={pageId}
+                    centeredColumns={['Заблокирован']}  // Cписок центрируемых колонок
                 />}
             </div>
 

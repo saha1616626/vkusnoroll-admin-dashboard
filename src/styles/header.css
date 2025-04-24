@@ -18,14 +18,24 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Переменные */
+:root {
+    --header-height: 60px; /* Высота шапки */
+}
+
 /* Основной контейнер шапки */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
+    padding: 0px 20px;
     background-color: #C1CFC4;
     color: white;
+    height: var(--header-height);
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
 }
 
 /* Логотип */

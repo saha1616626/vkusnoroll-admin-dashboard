@@ -17,10 +17,16 @@ const FilterMenu = ({
     onReset
 }) => {
 
-    // Инициализация полей дат
+    // Инициализация полей дат (со временем)
     const initialDateValues = {
         start: formData.date?.start || '',
         end: formData.date?.end || ''
+    };
+
+    // Инициализация для диапазона дат (без времени)
+    const initialSimpleDateValues = {
+        start: formData.simpleDate?.start || '',
+        end: formData.simpleDate?.end || ''
     };
 
     // Функция обработки изменения значения в поле
@@ -49,6 +55,16 @@ const FilterMenu = ({
         };
 
         onFormUpdate('date', newDate);
+    }
+
+    // Обработка для дат без времени
+    const handleSimpleDateChange = (e, type) => {
+        const value = e.target.value;
+        const newDate = {
+            ...formData.simpleDate,
+            [type]: value
+        };
+        onFormUpdate('simpleDate', newDate);
     }
 
     const handleBlur = (e, options) => {
@@ -128,6 +144,28 @@ const FilterMenu = ({
                             </div>
                         )}
 
+                        {filter.type === 'date-range-no-time' && (
+                            <div className="filter-input-date-container">
+                                <input
+                                    id={`${filter.name}_start_simple`}
+                                    type="date"
+                                    name="simpleDate"
+                                    value={initialSimpleDateValues.start || ''}
+                                    onChange={(e) => handleSimpleDateChange(e, 'start')}
+                                    className="filter-input-date"
+                                />
+                                -
+                                <input
+                                    id={`${filter.name}_end_simple`}
+                                    type="date"
+                                    name="simpleDate"
+                                    value={initialSimpleDateValues.end || ''}
+                                    onChange={(e) => handleSimpleDateChange(e, 'end')}
+                                    className="filter-input-date"
+                                />
+                            </div>
+                        )}
+
                         {filter.type === 'select' && (
                             <FilterSelect
                                 placeholder={filter.placeholder || 'Выберите значение'}
@@ -171,7 +209,7 @@ FilterMenu.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     filters: PropTypes.arrayOf(
         PropTypes.shape({
-            type: PropTypes.oneOf(['text', 'number', 'date-range', 'select', 'multi-select']).isRequired,
+            type: PropTypes.oneOf(['text', 'number', 'date-range', 'date-range-no-time', 'select', 'multi-select']).isRequired,
             name: PropTypes.string.isRequired,
             label: PropTypes.string.isRequired,
             placeholder: PropTypes.string,

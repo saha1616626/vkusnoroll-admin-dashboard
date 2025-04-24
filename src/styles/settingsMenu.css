@@ -3,13 +3,14 @@
 /* Контейнер меню */
 .settings-menu-container {
     width: 250px;
-    height: 100vh;
+    height: 100vh; /* Учитываем высоту шапки (замените 60px на актуальную) */
     background-color: #fff;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     padding: 20px;
-    position: fixed;
-    right: 1;
-    top: 1; /* Над хедером */
+    position: absolute; /* Меняем absolute на fixed */
+    left: 0; /* Размещаем слева */
+    top: var(--header-height); /* Отступ под шапку */
+    overflow-y: auto; /* Скролл внутри меню при необходимости */
 }
 
 /* Заголовок */
@@ -38,6 +39,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
 }
+
 .settings-nav-button:hover {
     background-color: #f8f9fa;
 }

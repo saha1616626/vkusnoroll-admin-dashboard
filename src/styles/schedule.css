@@ -1,1 +1,102 @@
  /* Стили для страницы "График работы" */
+
+ /* Контейнер управляющих элементов над списком */
+ .schedule-controls {
+     display: flex;
+     gap: 15px;
+ }
+
+ /* Группа колонок */
+ .schedule-column-group {
+     display: grid;
+     grid-template-columns: 60% 35%;
+     gap: 5%;
+     margin-top: 2.5em;
+ }
+
+ /* Секция стандартного времени */
+ .schedule-standard-time {
+     background: #f8f9fa;
+     border-radius: 12px;
+     padding: 2rem;
+     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+ }
+
+ /* Заголовок секции */
+ .schedule-standard-time-header {
+     font-size: 1.25rem;
+     font-weight: 600;
+     color: #2c3e50;
+     margin-bottom: 1.5rem;
+     border-bottom: 2px solid #e9ecef;
+     padding-bottom: 0.75rem;
+     text-align: left;
+ }
+
+ /* Группа полей времени */
+ .schedule-time-input-group {
+     display: flex;
+     gap: 1rem;
+     margin-bottom: 2rem;
+     align-items: center;
+     justify-content: space-between;
+ }
+
+ /* Заголовок поля ввода */
+ .schedule-time-input-label {
+     font-weight: 500;
+     color: #495057;
+     min-width: 120px;
+ }
+
+ /* Поле ввода */
+ .schedule-time-input {
+     width: 100%;
+     max-width: 120px;
+     min-width: 120px;
+     flex: 1;
+     padding: 0.75rem;
+     border: 1px solid #ced4da;
+     border-radius: 8px;
+     font-size: 1rem;
+     transition: border-color 0.3s ease;
+ }
+
+
+ /* Клик по полю */
+ .schedule-time-input:focus {
+     outline: none;
+     border-color: #80bdff;
+     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+ }
+
+ /* Кнопка сохранения */
+ .schedule-save-button {
+     background-color: #83D167;
+     color: white;
+     padding: 0.8rem 1.5rem;
+     border: 1px solid black;
+     border-radius: 8px;
+     font-weight: bold;
+     cursor: pointer;
+     transition: all 0.3s ease;
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+ }
+
+ /* Наводка на кнопку */
+ .schedule-save-button:hover {
+     background-color: #3e9b1d;
+     transform: translateY(-1px);
+ }
+
+ /* Адаптивный дизайн */
+ @media (max-width: 768px) {
+
+     /* Группа колонок */
+     .schedule-column-group {
+         grid-template-columns: 1fr;
+         gap: 2rem;
+     }
+ }
