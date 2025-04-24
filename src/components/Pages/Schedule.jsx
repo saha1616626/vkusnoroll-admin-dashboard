@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import isEqual from 'lodash/isEqual';  // Сравнивает два значения (обычно объекты или массивы) на глубокое равенство
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
@@ -43,14 +44,12 @@ const Schedule = () => {
     */
 
     const [isLoading, setIsLoading] = useState(true); // Анимация загрузки данных
-    const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
-    const [initialData, setInitialData] = useState(null); // Исходные данные о списке статусов, которые были получены при загрузке страницы (Если таковые имеются)
 
     const [rawData, setRawData] = useState([]); // Оригинальные данные с сервера
     const [filteredData, setFilteredData] = useState([]); // Отфильтрованные данные для отображения
-    const [editableData, setEditableData] = useState([]); // Данные в режиме редактирования
 
     const [showModal, setShowModal] = useState(false); // Отображение модального окна для редактирования и добавления
+    const [editingDeliveryWork, setDeliveryWork] = useState(null); // Передача элемента для редактирования
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // Отображение модального окна для подтверждения удаления
 
     // Модальное окно для отображения ошибок: удаления и редактирования
@@ -59,11 +58,9 @@ const Schedule = () => {
 
     const [restaurantWorkingTimeToDelete, setRestaurantWorkingTimeToDelete] = useState(null); // Передача объекта для удаления
 
-    // Состояние стандартного времени работы доставки
-    const [defaultTime, setDefaultTime] = useState({
-        start: '10:00',
-        end: '22:00'
-    });
+    const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
+    const [defaultTime, setDefaultTime] = useState({ start: null, end: null }); // Состояние стандартного времени работы доставки
+    const [initialData, setInitialData] = useState({ start: null, end: null }); // Исходные данные, которые были получены при загрузке страницы (Если таковые имеются)
 
     // Фильтрация
     const [filters, setFilters] = useState([]); // Функции фильтра
@@ -93,8 +90,6 @@ const Schedule = () => {
 
             setRawData(sortedData);
             setFilteredData(transformData(sortedData));
-            setEditableData(sortedData);
-            setInitialData({ ...response, data: sortedData });
         } catch (error) {
             console.error('Ошибка загрузки статусов:', error);
         } finally { // Выключаем анимацию загрузки данных
@@ -124,15 +119,25 @@ const Schedule = () => {
             }
         };
 
-        const formatTime = (timeString) => {
+        const formatTime = (startTime, endTime) => {
+            if (!startTime || !endTime) return '—';
 
+            const formatSingleTime = (timeString) => {
+                try {
+                    return timeString.split(':').slice(0, 2).join(':'); // Убираем миллисекунды
+                } catch (e) {
+                    return '—';
+                }
+            };
+
+            return `${formatSingleTime(startTime)} – ${formatSingleTime(endTime)}`;
         };
 
         return {
             id: item.id,
             'Дата': formatDate(item.date),
             'Тип дня': item.isWorking ? 'Рабочий' : 'Выходной',
-            'Время работы доставки': formatTime(item.registrationDate) || '—',
+            'Время работы доставки': formatTime(item.startDeliveryWorkTime, item.endDeliveryWorkTime)
         };
     });
 
@@ -140,7 +145,13 @@ const Schedule = () => {
     const refreshData = async () => {
         await fetchData().then(() => {
             // Обновление данных с применением фильтров
-
+            try {
+                // Сохраняем значения полей фильтра
+                setActiveFilters(filterState.formData);
+                saveFilterState({ ...filterState, formData: filterState.formData });
+            } catch (error) {
+                console.error('Refresh error:', error);
+            }
         });
     };
 
@@ -166,10 +177,11 @@ const Schedule = () => {
     // Обработчик сохранения стандартного времени
     const handleSaveDefaultTime = async () => {
         try {
-            // await api.saveDefaultDeliveryTime(defaultTime);
-            alert('Стандартное время сохранено!');
+            await api.updateDefaultWorkingTime(defaultTime);
+            setInitialData(defaultTime);
         } catch (error) {
-            setErrorMessages(['Ошибка сохранения времени']);
+            const message = error.response?.data?.error || 'Ошибка сохранения времени';
+            setErrorMessages([message]);
             setShowErrorModal(true);
         }
     };
@@ -211,12 +223,56 @@ const Schedule = () => {
         setFilters([
             {
                 type: 'date-range-no-time',
-                name: 'date',
+                name: 'simpleDate',
                 label: 'Период'
             },
             { type: 'select', name: 'isWorking', label: 'Тип дня', options: ['Выходной', 'Рабочий'] }
         ]);
     };
+
+    // Фильтрация данных по выставленным параметрам фильтра
+    const applyFilters = useCallback((data, filters) => {
+        let result = data;
+
+        // Применяем фильтры, только стоят две даты
+        if (filters.simpleDate?.start && filters.simpleDate?.end) {
+            result = result.filter(news => {
+                const postDate = new Date(news.date); // Преобразование в дату
+                const startDate = new Date(filters.simpleDate.start);
+                const endDate = new Date(filters.simpleDate.end);
+
+                return postDate >= startDate && postDate <= endDate; // Отбираем значения, которые входят в диапазон
+            });
+        }
+
+        // Применяем фильтры, только стоит start дата
+        if (filters.simpleDate?.start) {
+            result = result.filter(news => {
+                const postDate = new Date(news.date); // Преобразование в дату
+                const startDate = new Date(filters.simpleDate.start);
+
+                return postDate >= startDate; // Отбираем значения, которые входят в диапазон
+            });
+        }
+
+        // Применяем фильтры, только стоит end дата
+        if (filters.simpleDate?.end) {
+            result = result.filter(news => {
+                const postDate = new Date(news.date); // Преобразование в дату
+                const endDate = new Date(filters.simpleDate.end);
+
+                return postDate <= endDate; // Отбираем значения, которые входят в диапазон
+            });
+        }
+
+        // Фильтрация по типу дня
+        if (filters.isWorking) {
+            const isWorking = filters.isWorking === "Рабочий" ? true : false;
+            result = result.filter(client => client.isWorking === isWorking);
+        }
+
+        return result;
+    }, []);
 
     // Кнопка закрыть/открыть меню фильтра
     const toggleFilter = () => {
@@ -308,6 +364,53 @@ const Schedule = () => {
         };
         loadCategories();
     }, []);
+
+    // Загрузка стандартного времени
+    useEffect(() => {
+        const loadDefaultTime = async () => {
+            try {
+                const response = await api.getDefaultWorkingTime();
+                //  Проверка ответа
+                if (response.data?.start && response.data?.end) {
+                    // Устанавливаем оба состояния атомарно
+                    const serverData = {
+                        start: response.data.start.slice(0, 5), // Обрезаем секунды если есть
+                        end: response.data.end.slice(0, 5)
+                    };
+                    setDefaultTime(serverData);
+                    setInitialData(serverData);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки стандартного времени:', error);
+                setErrorMessages(['Не удалось загрузить настройки времени']);
+                setShowErrorModal(true);
+            }
+        };
+        loadDefaultTime();
+    }, []);
+
+    // Проверка изменений во временном интервале
+    useEffect(() => {
+        if (defaultTime && initialData) {
+            const dirty = !isEqual(defaultTime, initialData);
+            setIsDirty(dirty);
+        } else {
+            setIsDirty(false); // Пока данные не загружены - кнопка неактивна
+        }
+    }, [defaultTime, initialData]); // Вызов при наличии изменений в полях или начальных данных
+
+    // Применяем фильтр
+    useEffect(() => {
+        const applyFiltersData = () => {
+            let result = rawData;
+
+            if (Object.keys(activeFilters).length > 0) { // Применяем фильтры, только если они есть
+                result = applyFilters(result, activeFilters);
+            }
+            return transformData(result);
+        };
+        setFilteredData(applyFiltersData());
+    }, [rawData, activeFilters, applyFilters]);
 
     /* 
     ===========================
@@ -416,17 +519,347 @@ const Schedule = () => {
 
                     <div style={{ display: 'flex', width: '100%', justifyContent: 'center' }}>
                         <button
-                            className="schedule-save-button"
+                            className={`schedule-save-button ${isDirty ? 'active' : ''}`}
                             onClick={handleSaveDefaultTime}
+                            disabled={!isDirty}
                         >
-                            Сохранить
+                            {isDirty ? 'Сохранить' : 'Сохранено'}
                         </button>
                     </div>
 
                 </div>
             </div>
 
+            {/* Модальное окно для отображения ошибок: удаления и редактирования */}
+            <ErrorModal
+                isOpen={showErrorModal}
+                title="Ошибка"
+                errors={errorMessages}
+                onClose={() => { setShowErrorModal(false); setErrorMessages(null) }}
+            />
+
+            {/* Модальное окно добавления и редактирования */}
+            {showModal && (
+                <DeliveryWorkModal
+                    status={editingDeliveryWork}
+                    onClose={() => {
+                        setShowModal(false);
+                        setDeliveryWork(null);
+                    }}
+                    onSave={fetchData}
+                />
+            )}
+
         </div>
+    );
+};
+
+// Компонент модального окна
+const DeliveryWorkModal = ({ status, onClose, onSave }) => {
+
+    /* 
+    ===========================
+     Состояния
+    ===========================
+    */
+
+    const [formData, setFormData] = useState({ // Данные формы
+        name: '',
+        isFinalResultPositive: null,
+        isAvailableClient: false,
+        sequenceNumber: null
+    });
+
+    const [showFormDisplay, setShowFormDisplay] = useState(true); // Отображение модальноего окна
+
+    const [initialFormData, setInitialFormData] = useState({}); // Начальные данные формы
+    const [isDirty, setIsDirty] = useState(false); // Наличие несохраненных данных
+
+    // Модальное окно для отображения ошибок: удаления и редактирования
+    const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
+    const [errorMessages, setErrorMessages] = useState([]); // Ошибки
+
+    // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
+    const [showNavigationConfirmModal, setShowNavigationConfirmModal] = useState(false); // Отображение модального окна ухода со страницы
+    const [pendingNavigation, setPendingNavigation] = useState(null); // Подтверждение навигации
+
+    const [isClosingAnimation, setIsClosingAnimation] = useState(false); // Анимация закрытия модального окна
+
+    /* 
+    ===========================
+     Эффекты
+    ===========================
+    */
+
+    // Загрузка выбранного статуса заказа из БД
+    useEffect(() => {
+        const loadStatusData = async () => {
+            if (status?.id) {
+                try {
+                    const response = await api.getOrderStatusById(status.id);
+                    const data = {
+                        name: response.data.name,
+                        isFinalResultPositive: response.data.isFinalResultPositive,
+                        isAvailableClient: response.data.isAvailableClient,
+                        sequenceNumber: response.data.sequenceNumber
+                    };
+                    setFormData(data);
+                    setInitialFormData(data);
+                } catch (error) {
+                    console.error('Ошибка загрузки статуса:', error);
+                }
+            } else { // При добавлении
+                const emptyForm = {
+                    name: '',
+                    isFinalResultPositive: null,
+                    isAvailableClient: false,
+                    sequenceNumber: null
+                };
+                setFormData(emptyForm);
+                setInitialFormData(emptyForm);
+            }
+        };
+        loadStatusData();
+    }, [status]); // При запуске модального окна запускается данный эффект
+
+    // Проверка изменений в полях
+    useEffect(() => {
+        const dirty = !isEqual(formData, initialFormData);
+        setIsDirty(dirty);
+    }, [formData, initialFormData]); // Вызов при наличии изменений в полях или начальных данных
+
+    // Управление отображением модального окна формы, когда пользователь пытается совершить навигацию без сохранения изменений
+    useEffect(() => {
+        if (showNavigationConfirmModal) {
+            setShowFormDisplay(false); // При открытом модальном окне форма добавления/редактирования скрыта
+        }
+        else {
+            setShowFormDisplay(true);
+        }
+    }, [showNavigationConfirmModal]);
+
+    // Управление отображением модального окна формы, когда пользователь пытается сохранить 2 статуса с положительным финалом
+    useEffect(() => {
+        if (showErrorModal) {
+            setShowFormDisplay(false); // При открытом модальном окне форма добавления/редактирования скрыта
+        }
+        else {
+            setShowFormDisplay(true);
+        }
+    }, [showErrorModal]);
+
+    // Блокировка закрытия страницы
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
+
+    // Обработка нажатия кнопки "Назад" в браузере
+    useEffect(() => {
+        const handleBackButton = (e) => {
+            if (isDirty) {
+                e.preventDefault(); // Блокируем переход, если есть несохраненные изменения
+                setPendingNavigation(() => () => {
+                    handleConfirmNavigation(); // Вызываем функцию подтверждения перехода
+                });
+                setShowNavigationConfirmModal(true); // Показываем модальное окно подтверждения
+            }
+            else {
+                handleConfirmNavigation();
+            }
+        };
+
+        const handleConfirmNavigation = () => {
+            onClose(); // Вызываем функцию подтверждения перехода
+            setIsDirty(false); // Сбрасываем флаг после успешного сохранения
+        };
+
+        // Добавляем новую запись в историю для корректного отслеживания переходов
+        window.history.pushState(null, null, window.location.pathname);
+        window.addEventListener("popstate", handleBackButton);
+
+        return () => {
+            window.removeEventListener("popstate", handleBackButton);
+        };
+    }, [isDirty, onClose]);
+
+    // Блокируем обновление страницы, если есть несохраненные данные
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            if (isDirty) {
+                const confirmationMessage = 'Есть несохранённые изменения. Уйти?';
+                event.returnValue = confirmationMessage; // Для старых браузеров
+                return confirmationMessage; // Для современных браузеров
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isDirty]);
+
+    // Убираем скролл с перекрытой страницы при запуске модального окна
+    useEffect(() => {
+        document.body.classList.add('no-scroll');
+        return () => document.body.classList.remove('no-scroll');
+    }, [onClose]);
+
+    /* 
+    ===========================
+     Обработчики событий
+    ===========================
+    */
+
+    // Сохранить новый или обновить статус заказа
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (status) { // Если передан элемент в модальное окно, значит режим редактирования
+                const response = await api.updateOrderStatus(status.id, formData);
+
+                // Если есть конфликт - показываем ошибку
+                if (response.error) {
+                    setErrorMessages(response.conflicts || [response.error]);
+                    setShowErrorModal(true);
+                    return; // Не закрываем модалку
+                }
+            } else {
+                const response = await api.createOrderStatus(formData);
+
+                // Если есть конфликт - показываем ошибку
+                if (response.error) {
+                    setErrorMessages(response.conflicts || [response.error]);
+                    setShowErrorModal(true);
+                    return; // Не закрываем модалку
+                }
+            }
+            onSave();
+            onClose();
+            setIsDirty(false); // Сбрасываем флаг после успешного сохранения
+        } catch (error) {
+            if (error.response?.data?.error) {
+                setErrorMessages(error.response.data.conflicts || [error.response.data.error]);
+                setShowErrorModal(true);
+            } else {
+                console.error('Ошибка сохранения:', error);
+            }
+        }
+    };
+
+    // Обработчик отмены перехода на другую страницу через модальное окно
+    const handleCancelNavigation = () => {
+        // Возвращаем исходный URL при отмене перехода назад через popstate браузера
+        window.history.pushState(null, null, window.location.pathname);
+        setShowNavigationConfirmModal(false);
+    };
+
+    // Обработчик закрытия через кнопку "Закрыть"
+    const handleClose = () => {
+        if (isDirty) {
+            // Показываем модальное окно вместо confirm
+            setPendingNavigation(() => () => {
+                setShowNavigationConfirmModal(false);
+                onClose();
+            });
+            setShowNavigationConfirmModal(true);
+        } else {
+
+            setIsClosingAnimation(true);
+            setTimeout(() => {
+                onClose(); // Закрытие модального окна
+                setIsClosingAnimation(false);
+            }, 300); // Длительность анимации
+
+        }
+    };
+
+    /* 
+    ===========================
+     Рендер
+    ===========================
+    */
+
+    return (
+        <>
+            {/* Отображение формы */}
+            {showFormDisplay && <><div className={`schedule-modal-overlay ${isClosingAnimation ? 'closing' : ''}`}>
+                <div className="schedule-modal">
+                    <form onSubmit={handleSubmit}>
+
+                        <div className="schedule-model-title">
+                            {status?.id ? 'Редактирование расписания' : 'Добавить новое расписание'}
+                        </div>
+
+                        <div className="schedule-input-group">
+                            <label>Название</label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                            <div className="schedule-input-group" style={{ flex: '0 0 50%', paddingRight: '0px' }}>
+                                <label>Тип статуса</label>
+                                <select
+                                    value={formData.isFinalResultPositive ?? ''}
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        isFinalResultPositive: e.target.value === '' ? null : e.target.value === 'true'
+                                    })}
+                                    style={{ width: '100%' }}
+                                >
+                                    <option value="">Обычный</option>
+                                    <option value="true">Успешный</option>
+                                    <option value="false">Неудачный</option>
+                                </select>
+                            </div>
+
+                            <div className="schedule-input-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flex: '0 0 50%', paddingTop: '20px', paddingLeft: '0px' }}>
+                                <label style={{ marginRight: '8px' }}>Доступен клиенту</label>
+                                <input className="rder-statuses-modal"
+                                    type="checkbox"
+                                    checked={formData.isAvailableClient}
+                                    onChange={(e) => setFormData({ ...formData, isAvailableClient: e.target.checked })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="schedule-modal-actions">
+                            <button className="button-control close" type="button" onClick={handleClose}>Закрыть</button>
+                            <button className="button-control save" type="submit">Сохранить</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div> </>}
+
+            {/* Модальное окно для отображения ошибок: удаления и редактирования */}
+            <ErrorModal
+                isOpen={showErrorModal}
+                title="Ошибка"
+                errors={errorMessages}
+                onClose={() => { setShowErrorModal(false); setErrorMessages(null) }}
+            />
+
+            {/* Модальное окно подтверждения ухода со страницы */}
+            <NavigationConfirmModal
+                isOpen={showNavigationConfirmModal}
+                onConfirm={pendingNavigation}
+                onCancel={handleCancelNavigation}
+            />
+        </>
     );
 };
 

@@ -162,6 +162,11 @@
 
  /* Модальное окно для добавленияя и редактирования */
 
+ /* Блокировка скролла при запсуке модального окна*/
+ body.no-scroll {
+     overflow: hidden;
+ }
+
  /* Фон модального окна */
  .order-statuses-modal-overlay {
      position: fixed;
@@ -186,7 +191,7 @@
      pointer-events: none;
  }
 
-  /* Анимация закрытия */
+ /* Анимация закрытия */
  .order-statuses-modal-overlay.closing .order-statuses-modal {
      transform: translateY(-20px);
  }

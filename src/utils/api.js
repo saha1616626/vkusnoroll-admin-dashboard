@@ -102,6 +102,8 @@ const apiMethods = {
     createRestaurantWorkingTime: (data) => api.post('/deliveryWork', data),
     deleteRestaurantWorkingTime: (ids) => api.delete('/deliveryWork', { data: { ids } }), // Удаление
     updateRestaurantWorkingTime: (id, data) => api.put(`/deliveryWork/${id}`, data),
+    getDefaultWorkingTime: () => api.get('/deliveryWork/default-time'),
+    updateDefaultWorkingTime: (data) => api.post(`/deliveryWork/default-time`, data),
 
 };
 

@@ -730,6 +730,12 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
         };
     }, [isDirty]);
 
+    // Убираем скролл с перекрытой страницы при запуске модального окна
+    useEffect(() => {
+        document.body.classList.add('no-scroll');
+        return () => document.body.classList.remove('no-scroll');
+    }, [onClose]);
+
     /* 
     ===========================
      Обработчики событий
@@ -778,7 +784,7 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
         window.history.pushState(null, null, window.location.pathname);
         setShowNavigationConfirmModal(false);
     };
-    
+
     // Обработчик закрытия через кнопку "Закрыть"
     const handleClose = () => {
         if (isDirty) {
@@ -829,7 +835,7 @@ const OrderStatusModal = ({ status, onClose, onSave }) => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                             <div className="order-statuses-input-group" style={{ flex: '0 0 50%', paddingRight: '0px' }}>
                                 <label>Тип статуса</label>
-                                <select className="rder-statuses-modal"
+                                <select
                                     value={formData.isFinalResultPositive ?? ''}
                                     onChange={(e) => setFormData({
                                         ...formData,
