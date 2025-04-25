@@ -49,7 +49,7 @@ const Schedule = () => {
     const [filteredData, setFilteredData] = useState([]); // Отфильтрованные данные для отображения
 
     const [showModal, setShowModal] = useState(false); // Отображение модального окна для редактирования и добавления
-    const [editingDeliveryWork, setDeliveryWork] = useState(null); // Передача элемента для редактирования
+    const [editingSchedule, setEditingSchedule] = useState(null); // Передача элемента для редактирования
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); // Отображение модального окна для подтверждения удаления
 
     // Модальное окно для отображения ошибок: удаления и редактирования
@@ -157,16 +157,18 @@ const Schedule = () => {
 
     // Обработчик вызова модального окна для подтверждения удаления времени
     const handleDeleteInit = async () => {
-        setShowDeleteConfirm(true); // Запуск модального окна
+        if(selectedSchedulesIds && selectedSchedulesIds.length > 0){
+            setShowDeleteConfirm(true); // Запуск модального окна
+        }
     }
 
     // Обработчик удаления рабочего времени в модальном окне
     const handleConfirmDelete = async () => {
         try {
             // TODO 
-            // api.deleteRestaurantWorkingTime(); // Удаление
+            api.deleteRestaurantWorkingTime(selectedSchedulesIds); // Удаление
             setShowDeleteConfirm(false); // Скрытие модального окна
-            navigate('/settings/schedule', { replace: true });
+            navigate('/settings/schedule', { replace: true }); // Перезагрузка страницы с обновлением данных
         } catch (error) {
             const message = error.response?.data?.error || 'Ошибка удаления';
             setErrorMessages([message]);
@@ -200,10 +202,12 @@ const Schedule = () => {
         setSelectedSchedulesIds(selectedIds);
     };
 
+    // Обработчик клика по строке таблицы
     const handleRowClick = (rowData) => { // Обработчик клика по строке в таблице
-        const originalClient = rawData.find(client => client.id === rowData.id); // Получаем исходные данные по id из выбранной строки
-        if (originalClient) { // Передаем выбранный объект в модальное окно для редактирования
-
+        const original = rawData.find(item => item.id === rowData.id);
+        if (original) {
+            setEditingSchedule(original); // Передача элемента для редактирования
+            setShowModal(true); // Запуск модального окна
         }
     };
 
@@ -541,10 +545,10 @@ const Schedule = () => {
             {/* Модальное окно добавления и редактирования */}
             {showModal && (
                 <DeliveryWorkModal
-                    status={editingDeliveryWork}
+                    schedule={editingSchedule}
                     onClose={() => {
                         setShowModal(false);
-                        setDeliveryWork(null);
+                        setEditingSchedule(null);
                     }}
                     onSave={fetchData}
                 />
@@ -555,24 +559,26 @@ const Schedule = () => {
 };
 
 // Компонент модального окна
-const DeliveryWorkModal = ({ status, onClose, onSave }) => {
+const DeliveryWorkModal = ({ schedule, onClose, onSave }) => {
 
     /* 
     ===========================
      Состояния
     ===========================
     */
+    // Формат данных
+    const dataFormat = {
+        date: null,
+        isWorking: true,
+        startTime: null,
+        endTime: null
+    };
 
-    const [formData, setFormData] = useState({ // Данные формы
-        name: '',
-        isFinalResultPositive: null,
-        isAvailableClient: false,
-        sequenceNumber: null
-    });
+    const [formData, setFormData] = useState(dataFormat);
 
     const [showFormDisplay, setShowFormDisplay] = useState(true); // Отображение модальноего окна
 
-    const [initialFormData, setInitialFormData] = useState({}); // Начальные данные формы
+    const [initialFormData, setInitialFormData] = useState(dataFormat); // Начальные данные формы
     const [isDirty, setIsDirty] = useState(false); // Наличие несохраненных данных
 
     // Модальное окно для отображения ошибок: удаления и редактирования
@@ -591,36 +597,19 @@ const DeliveryWorkModal = ({ status, onClose, onSave }) => {
     ===========================
     */
 
-    // Загрузка выбранного статуса заказа из БД
+    // Загрузка данных при редактировании
     useEffect(() => {
-        const loadStatusData = async () => {
-            if (status?.id) {
-                try {
-                    const response = await api.getOrderStatusById(status.id);
-                    const data = {
-                        name: response.data.name,
-                        isFinalResultPositive: response.data.isFinalResultPositive,
-                        isAvailableClient: response.data.isAvailableClient,
-                        sequenceNumber: response.data.sequenceNumber
-                    };
-                    setFormData(data);
-                    setInitialFormData(data);
-                } catch (error) {
-                    console.error('Ошибка загрузки статуса:', error);
-                }
-            } else { // При добавлении
-                const emptyForm = {
-                    name: '',
-                    isFinalResultPositive: null,
-                    isAvailableClient: false,
-                    sequenceNumber: null
-                };
-                setFormData(emptyForm);
-                setInitialFormData(emptyForm);
-            }
-        };
-        loadStatusData();
-    }, [status]); // При запуске модального окна запускается данный эффект
+        if (schedule) {
+            const initialData = {
+                date: schedule.date.split('T')[0],
+                isWorking: schedule.isWorking,
+                startTime: schedule.startDeliveryWorkTime?.slice(0, 5) || null,
+                endTime: schedule.endDeliveryWorkTime?.slice(0, 5) || null
+            };
+            setFormData(initialData);
+            setInitialFormData(initialData);
+        }
+    }, [schedule]);
 
     // Проверка изменений в полях
     useEffect(() => {
@@ -723,35 +712,25 @@ const DeliveryWorkModal = ({ status, onClose, onSave }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (status) { // Если передан элемент в модальное окно, значит режим редактирования
-                const response = await api.updateOrderStatus(status.id, formData);
+            const data = {
+                date: new Date(formData.date).toISOString(),
+                isWorking: formData.isWorking,
+                startDeliveryWorkTime: formData.isWorking ? formData.startTime : null,
+                endDeliveryWorkTime: formData.isWorking ? formData.endTime : null
+            };
 
-                // Если есть конфликт - показываем ошибку
-                if (response.error) {
-                    setErrorMessages(response.conflicts || [response.error]);
-                    setShowErrorModal(true);
-                    return; // Не закрываем модалку
-                }
+            if (schedule) {
+                await api.updateRestaurantWorkingTime(schedule.id, data);
             } else {
-                const response = await api.createOrderStatus(formData);
-
-                // Если есть конфликт - показываем ошибку
-                if (response.error) {
-                    setErrorMessages(response.conflicts || [response.error]);
-                    setShowErrorModal(true);
-                    return; // Не закрываем модалку
-                }
+                await api.createRestaurantWorkingTime(data);
             }
+
             onSave();
             onClose();
-            setIsDirty(false); // Сбрасываем флаг после успешного сохранения
         } catch (error) {
-            if (error.response?.data?.error) {
-                setErrorMessages(error.response.data.conflicts || [error.response.data.error]);
-                setShowErrorModal(true);
-            } else {
-                console.error('Ошибка сохранения:', error);
-            }
+            console.error('Ошибка сохранения:', error);
+            setErrorMessages([error.response?.data?.error || 'Ошибка сохранения']);
+            setShowErrorModal(true);
         }
     };
 
@@ -794,57 +773,70 @@ const DeliveryWorkModal = ({ status, onClose, onSave }) => {
             {showFormDisplay && <><div className={`schedule-modal-overlay ${isClosingAnimation ? 'closing' : ''}`}>
                 <div className="schedule-modal">
                     <form onSubmit={handleSubmit}>
-
-                        <div className="schedule-model-title">
-                            {status?.id ? 'Редактирование расписания' : 'Добавить новое расписание'}
+                        <div className="schedule-modal-header">
+                            {schedule ? 'Редактирование расписания' : 'Новое расписание'}
                         </div>
 
-                        <div className="schedule-input-group">
-                            <label>Название</label>
+                        {/* Поле выбора даты */}
+                        <div className="schedule-modal-field-group">
+                            <label>Дата</label>
                             <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                type="date"
+                                className="schedule-modal-input"
+                                value={formData.date}
+                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 required
                             />
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <div className="schedule-input-group" style={{ flex: '0 0 50%', paddingRight: '0px' }}>
-                                <label>Тип статуса</label>
-                                <select
-                                    value={formData.isFinalResultPositive ?? ''}
-                                    onChange={(e) => setFormData({
-                                        ...formData,
-                                        isFinalResultPositive: e.target.value === '' ? null : e.target.value === 'true'
-                                    })}
-                                    style={{ width: '100%' }}
-                                >
-                                    <option value="">Обычный</option>
-                                    <option value="true">Успешный</option>
-                                    <option value="false">Неудачный</option>
-                                </select>
-                            </div>
-
-                            <div className="schedule-input-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flex: '0 0 50%', paddingTop: '20px', paddingLeft: '0px' }}>
-                                <label style={{ marginRight: '8px' }}>Доступен клиенту</label>
-                                <input className="rder-statuses-modal"
-                                    type="checkbox"
-                                    checked={formData.isAvailableClient}
-                                    onChange={(e) => setFormData({ ...formData, isAvailableClient: e.target.checked })}
-                                />
-                            </div>
+                        {/* Чекбокс рабочего дня */}
+                        <div className="schedule-modal-checkbox">
+                            <input
+                                type="checkbox"
+                                checked={formData.isWorking}
+                                onChange={(e) => setFormData({ ...formData, isWorking: e.target.checked })}
+                            />
+                            <label>Рабочий день</label>
                         </div>
 
+                        {/* Поля времени */}
+                        {formData.isWorking && (
+                            <div className="schedule-modal-time-group">
+                                <div className="schedule-modal-field-group">
+                                    <label>Начало работы</label>
+                                    <input
+                                        className="schedule-modal-input"
+                                        type="time"
+                                        value={formData.startTime}
+                                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="schedule-modal-field-group">
+                                    <label>Окончание работы</label>
+                                    <input
+                                        className="schedule-modal-input"
+                                        type="time"
+                                        value={formData.endTime}
+                                        onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         <div className="schedule-modal-actions">
-                            <button className="button-control close" type="button" onClick={handleClose}>Закрыть</button>
-                            <button className="button-control save" type="submit">Сохранить</button>
+                            <button type="button" className="button-control close" onClick={() => handleClose()}>
+                                Отмена
+                            </button>
+                            <button type="submit" className="button-control save">
+                                Сохранить
+                            </button>
                         </div>
                     </form>
                 </div>
-
-            </div> </>}
-
+            </div>  </>}
             {/* Модальное окно для отображения ошибок: удаления и редактирования */}
             <ErrorModal
                 isOpen={showErrorModal}

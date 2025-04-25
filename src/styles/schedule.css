@@ -122,6 +122,17 @@
      transition: opacity 0.3s ease;
  }
 
+ /* Модальное окно */
+ .schedule-modal {
+     background: #fff;
+     border-radius: 12px;
+     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+     width: 100%;
+     max-width: 440px;
+     padding: 24px;
+     position: relative;
+ }
+
  /* Анимация закрытия */
  .schedule-modal-overlay.closing {
      opacity: 0;
@@ -161,18 +172,8 @@
      }
  }
 
-
- /* Форма модального окна */
- .schedule-modal form {
-     display: flex;
-     flex-direction: column;
-     gap: 8px;
-     font-size: 14px;
-     color: #4a4a4a;
- }
-
  /* Заголвок */
- .schedule-model-title {
+ .schedule-modal-header {
      font-size: 24px;
      font-weight: bold;
      font-style: italic;
@@ -182,38 +183,56 @@
      margin-bottom: 1rem;
  }
 
- /* Группа поля и названия */
- .schedule-input-group {
-     display: flex;
-     flex-direction: column;
-     gap: 0.5rem;
+ /* Группы полей */
+ .schedule-modal-field-group {
+     margin-bottom: 1.5rem;
+     width: auto;
  }
 
- /* Поля */
- .schedule-modal input[type="text"],
- .schedule-modal select {
-     padding: 12px 16px;
-     border: 2px solid #e0e0e0;
+ .schedule-modal-field-group label {
+     display: block;
+     font-weight: 500;
+     color: #495057;
+     margin-bottom: 0.5rem;
+ }
+
+ /* Поля ввода */
+ .schedule-modal-input {
+     width: 150px;
+     padding: 0.75rem;
+     border: 1px solid #ced4da;
      border-radius: 8px;
-     font-size: 14px;
-     transition: all 0.3s;
-     background: #fff;
+     font-size: 1rem;
+     transition: all 0.3s ease;
  }
 
- /* Фокус на поле */
- .schedule-modal input[type="text"]:focus,
- .schedule-modal select:focus {
-     border-color: #83D167;
-     box-shadow: 0 0 0 3px rgba(131, 209, 103, 0.2);
-     outline: none;
+ .schedule-modal-input:focus {
+    border-color: #83D167;
+    box-shadow: 0 0 0 3px rgba(131, 209, 103, 0.2);
+    outline: none;
  }
 
- /* Чек-бокс */
- .schedule-modal input[type="checkbox"] {
+ /* Чекбокс */
+ .schedule-modal-checkbox {
+     display: flex;
+     align-items: center;
+     gap: 0.75rem;
+     margin: 1rem 0;
+ }
+
+ .schedule-modal-checkbox input {
      width: 20px;
      height: 20px;
      accent-color: #83D167;
-     margin-left: 8px;
+ }
+
+ /* Группа времени */
+ .schedule-modal-time-group {
+     display: flex;
+     width: 100%;
+     justify-content: left;
+     gap: 2rem;
+     margin-bottom: -1.0rem;
  }
 
  /* Контейнер для кнопок */
