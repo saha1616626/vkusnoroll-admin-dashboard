@@ -56,8 +56,6 @@ const Schedule = () => {
     const [showErrorModal, setShowErrorModal] = useState(false); // Отображение 
     const [errorMessages, setErrorMessages] = useState([]); // Ошибки
 
-    const [restaurantWorkingTimeToDelete, setRestaurantWorkingTimeToDelete] = useState(null); // Передача объекта для удаления
-
     const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
     const [defaultTime, setDefaultTime] = useState({ start: null, end: null }); // Состояние стандартного времени работы доставки
     const [initialData, setInitialData] = useState({ start: null, end: null }); // Исходные данные, которые были получены при загрузке страницы (Если таковые имеются)
@@ -157,7 +155,7 @@ const Schedule = () => {
 
     // Обработчик вызова модального окна для подтверждения удаления времени
     const handleDeleteInit = async () => {
-        if(selectedSchedulesIds && selectedSchedulesIds.length > 0){
+        if (selectedSchedulesIds && selectedSchedulesIds.length > 0) {
             setShowDeleteConfirm(true); // Запуск модального окна
         }
     }
@@ -477,7 +475,7 @@ const Schedule = () => {
                 title="Подтвердите удаление"
                 message="Вы уверены, что хотите удалить выбранный статус?"
                 onConfirm={handleConfirmDelete}
-                onCancel={() => { setShowDeleteConfirm(false); setRestaurantWorkingTimeToDelete(null); }}
+                onCancel={() => { setShowDeleteConfirm(false); }}
             />
 
             <div className="schedule-column-group">
@@ -600,8 +598,14 @@ const DeliveryWorkModal = ({ schedule, onClose, onSave }) => {
     // Загрузка данных при редактировании
     useEffect(() => {
         if (schedule) {
+            // Используем локальный часовой пояс для корректного отображения
+            const date = new Date(schedule.date);
+            const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                .toISOString()
+                .split('T')[0];
+
             const initialData = {
-                date: schedule.date.split('T')[0],
+                date: localDate,
                 isWorking: schedule.isWorking,
                 startTime: schedule.startDeliveryWorkTime?.slice(0, 5) || null,
                 endTime: schedule.endDeliveryWorkTime?.slice(0, 5) || null
