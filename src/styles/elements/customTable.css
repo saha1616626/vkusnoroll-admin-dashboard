@@ -53,26 +53,30 @@
 /* Обертка для содержимого ячейки */
 /* Настройка строки */
 .custom-table-cell-content {
-    max-height: 60px; /* Максимальная высота контейнера */
+    max-height: 60px;
+    /* Максимальная высота контейнера */
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 1; /* Количество строк до обрезки */
+    -webkit-line-clamp: 1;
+    /* Количество строк до обрезки */
     -webkit-box-orient: vertical;
-    line-height: 1.2; /* Межстрочный интервал */
+    line-height: 1.2;
+    /* Межстрочный интервал */
 }
 
 /* Для кроссбраузерности */
 @supports not (-webkit-line-clamp: 1) {
     .custom-table-cell-content {
-      position: relative;
-      padding-right: 1.2em;
+        position: relative;
+        padding-right: 1.2em;
     }
+
     .custom-table-cell-content::after {
-      content: '...';
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      background: white;
-      padding-left: 2px;
+        content: '...';
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        background: white;
+        padding-left: 2px;
     }
-  }
+}
