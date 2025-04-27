@@ -1,86 +1,333 @@
  /* Стили для страницы "Доставка" */
 
- .zone-control {
-     margin: 10px 0;
-     padding: 10px;
-     border: 1px solid #ddd;
-     border-radius: 4px;
-     position: relative;
-     transition: box-shadow 0.3s;
+ /* Основной контейнер страницы */
+ .delivery-page {
+     margin-top: 35px;
+     margin-left: 1.5rem;
+     margin-right: 1.5rem;
  }
 
- .zone-control:hover {
-     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+ /* Группа колонок. Содержимое страницы под заголовком */
+ .delivery-column-group {
+     display: grid;
+     grid-template-columns: 50% 45%;
+     gap: 5%;
+     margin-top: 40px;
  }
 
- .zone-control input {
-     margin-left: 10px;
-     width: 80px;
+ /* Секция с картой */
+ .delivery-map-section {
+     background: #fff;
+     border-radius: 12px;
+     padding: 1.5rem;
+     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
  }
 
- .zone-header {
+ /* Карта */
+ .delivery-map-container {
+     height: 400px;
+     border-radius: 8px;
+     overflow: hidden;
+     border: 1px solid #e0e0e0;
+ }
+
+ /* Секция настроек */
+ .delivery-settings-section {
+     background: #fff;
+     border-radius: 12px;
+     padding: 1.5rem;
+     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+ }
+
+ /* Панель управления */
+ .delivery-settings-header-wrapper {
      display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 2rem;
+ }
+
+ /* Секция со списком зон */
+ .delivery-zones-section {
+     margin-bottom: 2rem;
+     background: #f8f9fa;
+     border-radius: 12px;
+     padding: 1.5rem;
+ }
+
+ /* Секция настройки доставки */
+ .delivery-global-settings {
+     background: #f8f9fa;
+     border-radius: 12px;
+     padding: 1.5rem;
+     margin-bottom: 1.2rem;
+ }
+
+ /* Заголовок секции */
+ .delivery-settings-header {
+     font-size: 1.5rem;
+     font-weight: 600;
+     color: #2c3e50;
+     margin-bottom: 1.5rem;
+     padding-bottom: 1rem;
+     border-bottom: 2px solid #f0f0f0;
+ }
+
+ /* Кнопки управления зонами */
+ .delivery-control-buttons {
+     display: flex;
+     gap: 12px;
+     align-items: center;
+ }
+
+ /* Кнопки с иконками */
+ .delivery-icon-btn {
+     display: flex;
+     align-items: center;
+     gap: 8px;
+     padding: 10px 16px;
+     border-radius: 8px;
+     background: #f8f9fa;
+     border: 1px solid #e0e0e0;
+     cursor: pointer;
+     transition: all 0.3s;
+ }
+
+ .delivery-icon-btn:hover {
+     background: #83D167;
+     border-color: #6db356;
+     color: white;
+ }
+
+ .delivery-icon-btn img {
+     width: 18px;
+     height: 18px;
+ }
+
+ /* Стиль для активной кнопки создания */
+ .delivery-icon-btn.creating {
+     background: #ffd700;
+     border-color: #ffc400;
+     color: #2c3e50;
+ }
+
+ .delivery-icon-btn.creating:hover {
+     background: #ffdf40;
+ }
+
+ /* Анимация кнопок */
+ .delivery-icon-btn {
+     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+ }
+
+ .delivery-action-btn {
+     transition: transform 0.2s ease, background 0.3s;
+ }
+
+ .delivery-action-btn:hover {
+     transform: translateY(-1px);
+ }
+
+ /* Аккордеон */
+ .delivery-zones-accordion {
+     max-height: 400px;
+     overflow-y: auto;
+     margin-bottom: 2rem;
+ }
+
+ /* Элемент аккордеона */
+ .delivery-zone-item {
+     border: 1px solid #e0e0e0;
+     border-radius: 8px;
+     margin-bottom: 1rem;
+ }
+
+ /* Название зоны */
+ .delivery-zone-header {
+     padding: 1rem;
+     background: #f8f9fa;
+     cursor: pointer;
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+ }
+
+ /* Контейнер кнопок действий в аккордеоне */
+ .delivery-zone-actions {
+     display: flex;
+     align-items: center;
      gap: 10px;
-     margin-bottom: 5px;
  }
 
- .zone-header input[type="text"] {
-     flex: 1;
-     padding: 4px;
+ /* Кнопка действия */
+ .delivery-action-btn {
+     padding: 6px 12px;
+     border-radius: 6px;
+     font-size: 0.9em;
+     transition: all 0.3s;
  }
 
- .zone-header button {
+ /* Кнопка редактировать */
+ .delivery-action-btn.edit {
+     background: #e3f2fd;
+     border: 1px solid #90caf9;
+     color: #1976d2;
+ }
+
+ .delivery-action-btn.edit:hover {
+     background: #bbdefb;
+ }
+
+ /* Кнопка удалить */
+ .delivery-action-btn.delete {
+     background: #ffebee;
+     border: 1px solid #ffcdd2;
+     padding: 6px;
+ }
+
+ .delivery-action-btn.delete:hover {
+     background: #ffcdd2;
+ }
+
+ .delivery-action-btn.delete img {
+    width: 18px;
+    object-fit: cover;
+}
+
+ /* Поля в режиме редактирования: название зоны */
+ .delivery-zone-edit-input {
+     width: 200px;
      padding: 4px 8px;
-     background: #0066ff;
-     color: white;
-     border: none;
-     border-radius: 3px;
-     cursor: pointer;
- }
-
- .create-zone-btn {
-     margin-bottom: 20px;
-     padding: 8px 15px;
-     background: #28a745;
-     color: white;
-     border: none;
+     border: 2px solid #83D167;
      border-radius: 4px;
+     font-weight: 500;
+ }
+
+ /* Поля в режиме редактирования: стоимость доставки */
+ .delivery-disabled-field {
+     background: #f8f9fa;
+     color: #6c757d;
+     cursor: not-allowed;
+ }
+
+ /* Кнопка раскрытия элемента аккордеона */
+ .delivery-zone-toggle {
+     color: #666;
+     font-size: 0.9em;
+ }
+
+ /* Содержимое элемента аккордеона */
+ .delivery-zone-content {
+     padding: 1rem;
+     background: #fff;
+     border-top: 1px solid #eee;
+ }
+
+ /* Группа полей ввода */
+ .delivery-input-group {
+     margin-bottom: 1.5rem;
+     margin-bottom: 1.2rem;
+ }
+
+ /* Заголовок поля */
+ .delivery-input-group label {
+     display: block;
+     font-weight: 500;
+     color: #495057;
+     margin-bottom: 0.5rem;
+ }
+
+ /* Настройка полей */
+ .delivery-input-group input,
+ .delivery-input-group select {
+     width: 100%;
+     padding: 0.75rem;
+     border: 1px solid #ced4da;
+     border-radius: 6px;
+     font-size: 1rem;
+     transition: border-color 0.3s;
+ }
+
+ .delivery-input-group input:focus,
+ .delivery-input-group select:focus {
+     border-color: #83D167;
+     outline: none;
+     box-shadow: 0 0 0 2px rgba(131, 209, 103, 0.2);
+ }
+
+ /* Чекбокс (Бесплатная доставка) */
+ .delivery-checkbox-group {
+     margin: 1.5rem 0;
+ }
+
+ /* Заголовок чекбокса */
+ .delivery-checkbox-group label {
+     display: flex;
+     align-items: center;
+     gap: 0.75rem;
      cursor: pointer;
  }
 
- .create-zone-btn.active {
-    background: #dc3545;
-    border: 2px solid #ff0000;
-}
-
- .delete-btn {
-     background: #dc3545 !important;
-     margin-left: 10px;
+ /* Выпадающий список (Список времени) */
+ .delivery-input-group select {
+     background: white url("data:image/svg+xml;charset=UTF-8,%3Csvg...") no-repeat right 0.75rem center/16px 12px;
+     -webkit-appearance: none;
+     -moz-appearance: none;
+     appearance: none;
  }
 
- /* Скрыть дублированную карту */
-.yandex-map-container > ymaps {
-    display: block !important;
-    height: 600px !important;
-}
+ /* Кнопка сохранения */
+ .delivery-save-btn {
+     width: 100%;
+     padding: 1rem;
+     border: none;
+     border-radius: 8px;
+     background: #e9ecef;
+     color: #6c757d;
+     font-weight: 600;
+     cursor: not-allowed;
+     transition: all 0.3s;
+ }
 
-.import-btn {
-    padding: 10px;
-    background: #f0f0f0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: 10px 0;
-    display: inline-block;
-}
+ .delivery-save-btn.active {
+     background: #83D167;
+     color: #fff;
+     cursor: pointer;
+ }
 
-.error-message {
-    color: #ff4444;
-    margin-top: 5px;
-    font-size: 0.9em;
-}
+ .delivery-save-btn.active:hover {
+     background: #6db356;
+     transform: translateY(-1px);
+ }
 
-.zone-header input {
-    width: 120px;
-    margin-right: 10px;
-}
+ /* Адаптивность */
+ @media (max-width: 768px) {
+
+     /* Группа колонок. Содержимое страницы под заголовком */
+     .delivery-column-group {
+         grid-template-columns: 1fr;
+         gap: 1.5rem;
+     }
+
+     /* Карта */
+     .delivery-map-container {
+         height: 300px;
+     }
+
+     /* Кнопки управления зонами */
+     .delivery-control-buttons {
+         flex-direction: column;
+         width: 100%;
+     }
+
+     /* Кнопки с иконками */
+     .delivery-icon-btn {
+         width: 100%;
+         justify-content: center;
+     }
+
+     /* Контейнер кнопок действий в аккордеоне */
+     .delivery-zone-actions {
+         gap: 6px;
+     }
+ }

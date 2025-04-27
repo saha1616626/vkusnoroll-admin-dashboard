@@ -4,10 +4,17 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 // Импорт компонентов
 import { useYmaps } from './../Hooks/useYmaps'; // Кастомный хук для использования Яндекс карты
+import ErrorModal from "../Elements/ErrorModal"; //Модальное окно для отображения ошибок
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
 import "./../../styles/delivery.css"; // Стили только для данной страницы
+
+// Импорт иконок
+import addIcon from './../../assets/icons/add.png'
+import deleteIcon from './../../assets/icons/delete.png'
+import importIcon from './../../assets/icons/import.png'
+import exportIcon from './../../assets/icons/export.png'
 
 const Delivery = () => {
 
@@ -23,8 +30,17 @@ const Delivery = () => {
     const isMountedRef = useRef(false); // Защита от двойного рендера карты
     const isCreatingRef = useRef(false); // Для актуального состояния создания зоны
 
-    // Новое состояние для ошибок
-    const [importError, setImportError] = useState('');
+    const [openZone, setOpenZone] = useState(-1); // Для аккордеона (Список зон)
+    const [isFreeDelivery, setIsFreeDelivery] = useState(false); // Чекбокс бесплатной доставки
+    const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(0); // Сумма заказа для бесплатной доставки
+    const [deliveryInterval, setDeliveryInterval] = useState(30); // Стандартный интервал доставки
+    const [isDirty, setIsDirty] = useState(false); // Для отслеживания изменений в полях
+
+    // Модальное окно для отображения ошибок
+    const [showErrorModal, setShowErrorModal] = useState(false); // Отображение модального окна 
+    const [errorTitle, setErrorTitle] = useState(); // Заголовок ошибки
+    const [errorMessages, setErrorMessages] = useState([]); // Сообщение ошибки
+
 
     /* 
     ===========================
@@ -32,7 +48,7 @@ const Delivery = () => {
     ===========================
     */
 
-    // Экспорт
+    // Экспорт всех полигонов в JSON
     const handleExportZones = () => {
         const features = zones.map((zone, index) => ({
             type: "Feature",
@@ -74,7 +90,7 @@ const Delivery = () => {
         URL.revokeObjectURL(url);
     };
 
-    // Обработчик загрузки файла
+    // Импорт полигонов (один или много, JSON или GeoJSON)
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -121,23 +137,33 @@ const Delivery = () => {
                 }
 
                 setZones(convertedZones);
-                setImportError('');
 
                 // TODO в будущем можно цвет, описание и другие характеристики зоны установить
             } catch (error) {
-                setImportError('Ошибка загрузки JSON/GeoJSON: ' + error.message);
+                setErrorTitle('Ошибка импорта');
+                setErrorMessages(['Ошибка загрузки JSON/GeoJSON: ' + error.message]);
             }
         };
         reader.readAsText(file);
     };
 
-    // Стиль точек на карте
+    // Стиль меток на карте
     const POINT_STYLE = useMemo(() => ({
         preset: 'islands#blueCircleDotIcon',
         iconColor: '#0066FF',
         iconSize: [15, 15],
         strokeWidth: 2,
         draggable: true
+    }), []);
+
+    // Стиль полигона
+    const POLYGON_STYLE = useMemo(() => ({
+        fillColor: '#0066ff',
+        fillOpacity: 0.02,       // Прозрачность заливки
+        strokeColor: '#0066ff',
+        strokeWidth: 1,
+        hintContent: 'Зона доставки',
+        interactivityModel: 'default#transparent'
     }), []);
 
     // Инициализация карты
@@ -217,17 +243,6 @@ const Delivery = () => {
             isCreatingRef.current = false;
         };
     }, [ymaps, defaultPrice]); // Зависимости только от неизменяемых значений
-
-    const POLYGON_STYLE = useMemo(() => ({
-        // Основные стили
-        fillColor: '#0066ff',
-        fillOpacity: 0.02,       // Прозрачность заливки
-        strokeColor: '#0066ff',
-        strokeWidth: 1,
-        hintContent: 'Зона доставки',
-        interactivityModel: 'default#transparent'
-    }), []);
-
 
     // Отрисовка зон с возможностью редактирования
     useEffect(() => {
@@ -334,6 +349,51 @@ const Delivery = () => {
         });
     }, [zones, editingZoneIndex, POINT_STYLE, POLYGON_STYLE, isCreatingZone, ymaps]);
 
+    // Создание полигона
+    const toggleCreationMode = () => {
+        setIsCreatingZone(prev => {
+            if (!prev) {
+                // Начало создания - добавляем пустую зону
+                setZones(prevZones => [...prevZones, {
+                    coordinates: [],
+                    price: defaultPrice,
+                    completed: false,
+                    points: []
+                }]);
+            } else {
+                // Завершение создания - проверяем точки
+                finishZone();
+            }
+            return !prev;
+        });
+    };
+
+    // Завершение создания полигона (смыкание первой и последней метки)
+    const finishZone = () => {
+        setZones(prev => {
+            const lastZone = prev[prev.length - 1];
+
+            if (!lastZone || lastZone.completed) return prev;
+
+            // Проверка на минимальное количество точек
+            if (lastZone.coordinates.length < 3) {
+                setErrorTitle('Ошибка создания зоны');
+                setErrorMessages(['Для сохранения зоны необходимо минимум 3 точки']);
+                setShowErrorModal(true);
+                return prev.filter((_, i) => i !== prev.length - 1);
+            }
+
+            return [
+                ...prev.slice(0, -1),
+                {
+                    ...lastZone,
+                    completed: true,
+                    name: lastZone.name || `Зона ${prev.length}`
+                }
+            ];
+        });
+    };
+
     // Завершение редактирования полигона
     const stopEditing = () => {
         setEditingZoneIndex(-1);
@@ -345,33 +405,54 @@ const Delivery = () => {
         setEditingZoneIndex(-1);
     };
 
-    // Создание полигона
-    const toggleCreationMode = () => {
-        setIsCreatingZone(prev => {
-            isCreatingRef.current = !prev;
-            return !prev;
-        });
+    // Переключение аккордеона
+    const toggleZone = (index) => {
+        setOpenZone(prev => prev === index ? -1 : index);
     };
 
-    // Завершение полигона (смыкание первой и последней метки)
-    const finishZone = () => {
-        setZones(prev => {
-            const lastZone = prev[prev.length - 1];
-            if (!lastZone || lastZone.completed) return prev;
+    /* 
+    ===========================
+     Управление настройками доставки
+    ===========================
+    */
 
-            return [
-                ...prev.slice(0, -1),
-                {
-                    ...lastZone,
-                    completed: true
-                }
-            ];
-        });
-        setIsCreatingZone(false);
-        isCreatingRef.current = false;
+    // Обновление названия зоны
+    const handleZoneNameChange = (index, value) => {
+        setZones(prev => prev.map((zone, i) =>
+            i === index ? { ...zone, name: value } : zone
+        ));
+        setIsDirty(true);
     };
 
-    if (!ymaps) return <div>Загрузка карты...</div>;
+    // Сохранение всех настроек
+    const handleSaveSettings = () => {
+        // Проверка всех зон перед сохранением
+        const invalidZones = zones.filter(zone =>
+            !zone.completed || zone.coordinates.length < 3
+        );
+
+        if (invalidZones.length > 0) {
+            setErrorTitle('Ошибка сохранения');
+            setErrorMessages(['Некоторые зоны содержат ошибки']);
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Логика сохранения...
+        setIsDirty(false);
+    };
+
+    // const [editingZone, setEditingZone] = useState({});
+    // const [isCreatingZone, setIsCreatingZone] = useState(false);
+
+    // Обработчик режима редактирования
+    const toggleEditZone = (index) => {
+        setEditingZoneIndex(prev => ({
+            ...prev,
+            [index]: !prev[index]
+        }));
+        setIsDirty(true);
+    };
 
     /* 
     ===========================
@@ -379,106 +460,210 @@ const Delivery = () => {
     ===========================
     */
 
+    // Загрузка API карты
+    if (!ymaps) return <div>Загрузка карты...</div>;
+
     return (
-        <div className="delivery-settings" style={{ display: 'flex', justifyContent: 'space-between' }}>
-
-            {/* Карта */}
-            <div ref={mapContainerRef} style={{ width: '50%', height: '500px' }} />
-
-            <div className="controls">
-                <button
-                    className="create-zone-btn"
-                    onClick={isCreatingZone ? finishZone : toggleCreationMode}
-                >
-                    {isCreatingZone ? 'Завершить зону' : 'Новая зона'}
-                </button>
-                <label>
-                    Стандартная стоимость:
-                    <input
-                        type="number"
-                        value={defaultPrice}
-                        onChange={(e) => setDefaultPrice(e.target.value)}
-                    />
-                </label>
-
-                {zones.map((zone, index) => (
-                    <div key={index} className="zone-control"
-                        // Zoom
-                        onClick={() => {
-                            const zoneCoords = zone.coordinates;
-                            if (zoneCoords?.length > 0) {
-                                mapRef.current.setBounds(ymaps.util.bounds.fromPoints(zoneCoords), { checkZoomRange: true });
-                            }
-                        }}>
-                        <div className="zone-header">
-                            <input
-                                type="text"
-                                value={zone.name || `Зона ${index + 1}`}
-                                onChange={(e) => {
-                                    const newZones = [...zones];
-                                    newZones[index].name = e.target.value;
-                                    setZones(newZones);
-                                }}
-                            />
-                            <button
-                                onClick={() => {
-                                    if (isCreatingZone || !mapRef.current || !ymaps) return;  // Блокировать, если идет создание
-                                    if (editingZoneIndex === index) {
-                                        stopEditing();
-                                    } else {
-                                        stopEditing();
-                                        setEditingZoneIndex(index);
-                                        // Zoom
-                                        const zoneCoords = zone.coordinates;
-                                        if (zoneCoords?.length > 0) {
-                                            mapRef.current.setBounds(ymaps.util.bounds.fromPoints(zoneCoords), { checkZoomRange: true });
-                                        }
-                                    }
-
-                                }}
-                                disabled={isCreatingZone}
-                            >
-                                {editingZoneIndex === index ? 'Закончить' : 'Изменить форму'}
-                            </button>
-                            <button
-                                className="delete-btn"
-                                onClick={() => handleDeleteZone(index)}
-                            >
-                                Удалить
-                            </button>
-                        </div>
-                        <input
-                            type="number"
-                            value={zone.price}
-                            onChange={(e) => {
-                                const newZones = [...zones];
-                                newZones[index].price = Number(e.target.value);
-                                setZones(newZones);
-                            }}
-                        />
-                    </div>
-                ))}
-
-                <div className="import-section">
-                    <label className="import-btn">
-                        Загрузить зоны из файла
-                        <input
-                            type="file"
-                            accept=".json,.geojson"
-                            onChange={handleFileUpload}
-                            style={{ display: 'none' }}
-                        />
-                    </label>
-                    {importError && <div className="error-message">{importError}</div>}
-                </div>
-
-                <button onClick={handleExportZones} className="export-btn">
-                    Экспортировать зоны
-                </button>
-
+        <div className="delivery-page">
+            <div className="control-components">
+                <div className="page-name">Доставка</div>
             </div>
 
-        </div>
+            <div className="delivery-column-group">
+                {/* Левая колонка с картой */}
+                <div className="delivery-map-section">
+                    <div className="delivery-settings-header">Зоны доставки</div>
+                    <div ref={mapContainerRef} className="delivery-map-container" />
+                </div>
+
+                {/* Правая колонка с настройками */}
+                <div className="delivery-settings-section">
+                    <div className="delivery-settings-header">Настройка доставки</div>
+                    <div className="delivery-settings-header-wrapper">
+                        {/* Группа кнопок управления */}
+                        <div className="delivery-control-buttons">
+                            <button
+                                className={`delivery-icon-btn ${isCreatingZone ? 'creating' : ''}`}
+                                onClick={toggleCreationMode}
+                            >
+                                <img src={addIcon} alt="Создать" />
+                                {isCreatingZone ? 'Завершить создание' : 'Новая зона'}
+                            </button>
+
+                            <label className="delivery-icon-btn">
+                                <input type="file" onChange={handleFileUpload} hidden />
+                                <img src={importIcon} alt="Импорт" />
+                                Импорт
+                            </label>
+
+                            <button className="delivery-icon-btn" onClick={handleExportZones}>
+                                <img src={exportIcon} alt="Экспорт" />
+                                Экспорт
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Секция со списком зон */}
+                    <div className="delivery-zones-section">
+                        {/* Список зон с аккордеоном */}
+                        <div className="delivery-zones-accordion">
+                            {zones.map((zone, index) => (
+                                <div key={index} className="delivery-zone-item">
+                                    <div className="delivery-zone-header" onClick={() => toggleZone(index)}>
+                                        <div className="delivery-zone-title">
+                                            {editingZoneIndex[index] ? (
+                                                <input
+                                                    value={zone.name}
+                                                    onChange={(e) => handleZoneNameChange(index, e.target.value)}
+                                                    className="delivery-zone-edit-input"
+                                                />
+                                            ) : (
+                                                zone.name || `Зона ${index + 1}`
+                                            )}
+                                        </div>
+
+                                        <div className="delivery-zone-actions">
+                                            <button
+                                                className="delivery-action-btn edit"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleEditZone(index);
+                                                }}
+                                            >
+                                                {editingZoneIndex[index] ? 'Сохранить' : 'Изменить'}
+                                            </button>
+
+                                            <button
+                                                className="delivery-action-btn delete"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteZone(index);
+                                                }}
+                                            >
+                                                <img src={deleteIcon} alt="Удалить" />
+                                            </button>
+
+                                            <span className="delivery-zone-toggle">
+                                                {openZone === index ? '▼' : '▶'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {openZone === index && (
+                                        <div className="delivery-zone-content">
+
+                                            <div className="delivery-input-group">
+                                                <label>Стоимость доставки</label>
+                                                <input
+                                                    type="number"
+                                                    value={zone.price}
+                                                    // onChange={(e) => handlePriceChange(index, e.target.value)}
+                                                    disabled={!editingZoneIndex[index]}
+                                                    className={editingZoneIndex[index] ? '' : 'delivery-disabled-field'}
+                                                />
+                                            </div>
+
+                                            <div className="delivery-input-group">
+                                                <label>Название зоны</label>
+                                                <input
+                                                    type="text"
+                                                    value={zone.name || `Зона ${index + 1}`}
+                                                    onChange={(e) => handleZoneNameChange(index, e.target.value)}
+                                                />
+                                            </div>
+
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Секция настройки доставки */}
+                    <div className="delivery-global-settings">
+                        {/* Стандартная стоимость */}
+                        <div className="delivery-input-group">
+                            <label>Стандартная стоимость доставки</label>
+                            <input
+                                type="number"
+                                value={defaultPrice}
+                                onChange={(e) => {
+                                    setDefaultPrice(e.target.value);
+                                    setIsDirty(true);
+                                }}
+                            />
+                        </div>
+
+                        {/* Чекбокс бесплатной доставки */}
+                        <div className="delivery-checkbox-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={isFreeDelivery}
+                                    onChange={(e) => {
+                                        setIsFreeDelivery(e.target.checked);
+                                        setIsDirty(true);
+                                    }}
+                                />
+                                Бесплатная доставка
+                            </label>
+                        </div>
+
+                        {/* Условие бесплатной доставки */}
+                        {isFreeDelivery && (
+                            <div className="delivery-input-group">
+                                <label>Сумма покупки от</label>
+                                <input
+                                    type="number"
+                                    value={freeDeliveryThreshold}
+                                    onChange={(e) => {
+                                        setFreeDeliveryThreshold(e.target.value);
+                                        setIsDirty(true);
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        {/* Выбор интервала доставки */}
+                        <div className="delivery-input-group">
+                            <label>Стандартный интервал доставки</label>
+                            <select
+                                value={deliveryInterval}
+                                onChange={(e) => {
+                                    setDeliveryInterval(e.target.value);
+                                    setIsDirty(true);
+                                }}
+                            >
+                                {[...Array(30)].map((_, i) => (
+                                    <option key={i} value={(i + 1) * 10}>
+                                        {(i + 1) * 10} минут
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Кнопка сохранения */}
+                        <button
+                            className={`delivery-save-btn ${isDirty ? 'active' : ''}`}
+                            // onClick={handleSaveSettings}
+                            onClick={isCreatingZone ? finishZone : toggleCreationMode}
+                            disabled={!isDirty}
+                        >
+                            {isDirty ? 'Сохранить изменения' : 'Все изменения сохранены'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Модальное окно для отображения ошибок */}
+            <ErrorModal
+                isOpen={showErrorModal}
+                title={errorTitle || 'Ошибка'}
+                errors={errorMessages}
+                onClose={() => { setShowErrorModal(false); }}
+            />
+
+        </div >
     );
 };
 
