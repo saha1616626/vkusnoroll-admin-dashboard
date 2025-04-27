@@ -1,1 +1,86 @@
  /* Стили для страницы "Доставка" */
+
+ .zone-control {
+     margin: 10px 0;
+     padding: 10px;
+     border: 1px solid #ddd;
+     border-radius: 4px;
+     position: relative;
+     transition: box-shadow 0.3s;
+ }
+
+ .zone-control:hover {
+     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+ }
+
+ .zone-control input {
+     margin-left: 10px;
+     width: 80px;
+ }
+
+ .zone-header {
+     display: flex;
+     gap: 10px;
+     margin-bottom: 5px;
+ }
+
+ .zone-header input[type="text"] {
+     flex: 1;
+     padding: 4px;
+ }
+
+ .zone-header button {
+     padding: 4px 8px;
+     background: #0066ff;
+     color: white;
+     border: none;
+     border-radius: 3px;
+     cursor: pointer;
+ }
+
+ .create-zone-btn {
+     margin-bottom: 20px;
+     padding: 8px 15px;
+     background: #28a745;
+     color: white;
+     border: none;
+     border-radius: 4px;
+     cursor: pointer;
+ }
+
+ .create-zone-btn.active {
+    background: #dc3545;
+    border: 2px solid #ff0000;
+}
+
+ .delete-btn {
+     background: #dc3545 !important;
+     margin-left: 10px;
+ }
+
+ /* Скрыть дублированную карту */
+.yandex-map-container > ymaps {
+    display: block !important;
+    height: 600px !important;
+}
+
+.import-btn {
+    padding: 10px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 10px 0;
+    display: inline-block;
+}
+
+.error-message {
+    color: #ff4444;
+    margin-top: 5px;
+    font-size: 0.9em;
+}
+
+.zone-header input {
+    width: 120px;
+    margin-right: 10px;
+}

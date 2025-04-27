@@ -7,9 +7,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import "./../../styles/pages.css"; // Общие стили
 import "./../../styles/users.css"; // Стили только для данной страницы
 
-// Импорт иконок
-import addIcon from './../../assets/icons/add.png'
-
 // Импорт компонентов
 import RefreshButton from "../Elements/RefreshButton"; // Кнопка обновления данных на странице
 import FilterButton from "../Elements/FilterButton"; // Кнопка фильтра

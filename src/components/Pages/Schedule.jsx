@@ -57,8 +57,8 @@ const Schedule = () => {
     const [errorMessages, setErrorMessages] = useState([]); // Ошибки
 
     const [isDirty, setIsDirty] = useState(false); // Изменения на странице, требующие сохранения
-    const [defaultTime, setDefaultTime] = useState({ start: null, end: null }); // Состояние стандартного времени работы доставки
-    const [initialData, setInitialData] = useState({ start: null, end: null }); // Исходные данные, которые были получены при загрузке страницы (Если таковые имеются)
+    const [defaultTime, setDefaultTime] = useState({ start: '', end: '' }); // Состояние стандартного времени работы доставки
+    const [initialData, setInitialData] = useState({ start: '', end: '' }); // Исходные данные, которые были получены при загрузке страницы (Если таковые имеются)
 
     // Фильтрация
     const [filters, setFilters] = useState([]); // Функции фильтра
@@ -376,8 +376,8 @@ const Schedule = () => {
                 if (response.data?.start && response.data?.end) {
                     // Устанавливаем оба состояния атомарно
                     const serverData = {
-                        start: response.data.start.slice(0, 5), // Обрезаем секунды если есть
-                        end: response.data.end.slice(0, 5)
+                        start: response.data.start.slice(0, 5) || '', // Обрезаем секунды если есть
+                        end: response.data.end.slice(0, 5) || ''
                     };
                     setDefaultTime(serverData);
                     setInitialData(serverData);
@@ -504,7 +504,7 @@ const Schedule = () => {
                         <input
                             type="time"
                             className="schedule-time-input"
-                            value={defaultTime.start}
+                            value={defaultTime.start || ''}
                             onChange={(e) => setDefaultTime({ ...defaultTime, start: e.target.value })}
                         />
                     </div>
@@ -514,7 +514,7 @@ const Schedule = () => {
                         <input
                             type="time"
                             className="schedule-time-input"
-                            value={defaultTime.end}
+                            value={defaultTime.end || ''}
                             onChange={(e) => setDefaultTime({ ...defaultTime, end: e.target.value })}
                         />
                     </div>
@@ -564,18 +564,18 @@ const DeliveryWorkModal = ({ schedule, onClose, onSave }) => {
      Состояния
     ===========================
     */
+
+    const [showFormDisplay, setShowFormDisplay] = useState(true); // Отображение модальноего окна    const [showFormDisplay, setShowFormDisplay] = useState(true); // Отображение модальноего окна
+
     // Формат данных
     const dataFormat = {
-        date: null,
+        date: '',
         isWorking: true,
-        startTime: null,
-        endTime: null
+        startTime: '',
+        endTime: ''
     };
 
     const [formData, setFormData] = useState(dataFormat);
-
-    const [showFormDisplay, setShowFormDisplay] = useState(true); // Отображение модальноего окна
-
     const [initialFormData, setInitialFormData] = useState(dataFormat); // Начальные данные формы
     const [isDirty, setIsDirty] = useState(false); // Наличие несохраненных данных
 
@@ -607,8 +607,8 @@ const DeliveryWorkModal = ({ schedule, onClose, onSave }) => {
             const initialData = {
                 date: localDate,
                 isWorking: schedule.isWorking,
-                startTime: schedule.startDeliveryWorkTime?.slice(0, 5) || null,
-                endTime: schedule.endDeliveryWorkTime?.slice(0, 5) || null
+                startTime: schedule.startDeliveryWorkTime?.slice(0, 5) || '',
+                endTime: schedule.endDeliveryWorkTime?.slice(0, 5) || ''
             };
             setFormData(initialData);
             setInitialFormData(initialData);
@@ -787,7 +787,7 @@ const DeliveryWorkModal = ({ schedule, onClose, onSave }) => {
                             <input
                                 type="date"
                                 className="schedule-modal-input"
-                                value={formData.date}
+                                value={formData.date || ''}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                 required
                             />
@@ -811,7 +811,7 @@ const DeliveryWorkModal = ({ schedule, onClose, onSave }) => {
                                     <input
                                         className="schedule-modal-input"
                                         type="time"
-                                        value={formData.startTime}
+                                        value={formData.startTime || ''}
                                         onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                                         required
                                     />
@@ -822,7 +822,7 @@ const DeliveryWorkModal = ({ schedule, onClose, onSave }) => {
                                     <input
                                         className="schedule-modal-input"
                                         type="time"
-                                        value={formData.endTime}
+                                        value={formData.endTime || ''}
                                         onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                                         required
                                     />
