@@ -1,10 +1,11 @@
 // Настройка доставки
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
 // Импорт компонентов
 import { useYmaps } from './../Hooks/useYmaps'; // Кастомный хук для использования Яндекс карты
 import ErrorModal from "../Elements/ErrorModal"; //Модальное окно для отображения ошибок
+import isEqual from 'lodash/isEqual';  // Сравнивает два значения (обычно объекты или массивы) на глубокое равенство
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
@@ -15,137 +16,43 @@ import addIcon from './../../assets/icons/add.png'
 import deleteIcon from './../../assets/icons/delete.png'
 import importIcon from './../../assets/icons/import.png'
 import exportIcon from './../../assets/icons/export.png'
+import checkedIcon from './../../assets/icons/checked.png'
 
 const Delivery = () => {
 
     // Карта
     const ymaps = useYmaps(); // API янедкс карт
-    const [zones, setZones] = useState([]); // Массив полигонов
-    const [defaultPrice, setDefaultPrice] = useState(300); // Цена доставки в зоне
-    const [editingZoneIndex, setEditingZoneIndex] = useState(-1); // Режим редактирования полигона
-    const [isCreatingZone, setIsCreatingZone] = useState(false); // Режим создания полигона
     const mapContainerRef = useRef(null); // Ссылка на DOM-элемент
     const mapInstanceRef = useRef(null);  // Ссылка на экземпляр карты
     const mapRef = useRef(null); // Хранит экземпляр карты и DOM элемент после создания карты
     const isMountedRef = useRef(false); // Защита от двойного рендера карты
     const isCreatingRef = useRef(false); // Для актуального состояния создания зоны
 
+    // Состояния
     const [openZone, setOpenZone] = useState(-1); // Для аккордеона (Список зон)
-    const [isFreeDelivery, setIsFreeDelivery] = useState(false); // Чекбокс бесплатной доставки
-    const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(0); // Сумма заказа для бесплатной доставки
-    const [deliveryInterval, setDeliveryInterval] = useState(30); // Стандартный интервал доставки
-    const [isDirty, setIsDirty] = useState(false); // Для отслеживания изменений в полях
-
+    const [editingZoneIndex, setEditingZoneIndex] = useState(-1); // Режим редактирования полигона. (-1) - режим выключен
+    const [isCreatingZone, setIsCreatingZone] = useState(false); // Режим создания полигона
     // Модальное окно для отображения ошибок
     const [showErrorModal, setShowErrorModal] = useState(false); // Отображение модального окна 
     const [errorTitle, setErrorTitle] = useState(); // Заголовок ошибки
     const [errorMessages, setErrorMessages] = useState([]); // Сообщение ошибки
 
 
-    /* 
-    ===========================
-     Управление картой
-    ===========================
-    */
-
-    // Экспорт всех полигонов в JSON
-    const handleExportZones = () => {
-        const features = zones.map((zone, index) => ({
-            type: "Feature",
-            properties: {
-                name: zone.name,
-                price: zone.price,
-                fill: "#0066FF",
-                "fill-opacity": 0.1,
-                stroke: "#0066FF",
-                "stroke-width": 2
-            },
-            geometry: {
-                type: "Polygon",
-                coordinates: [
-                    zone.coordinates.map(coord => [coord[1], coord[0]]) // Конвертация обратно
-                ]
-            }
-        }));
-
-        const geoJsonData = {
-            type: "FeatureCollection",
-            metadata: {
-                name: "Экспорт зон доставки",
-                creator: "Delivery App"
-            },
-            features: features
-        };
-
-        const dataStr = JSON.stringify(geoJsonData, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'delivery_zones.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+    // Формат данных
+    const dataFormat = {
+        zones: [], // Массив зон доставки
+        defaultPrice: 300, // Стандартная стоимость
+        isFreeDelivery: false, // Бесплатная доставка
+        freeDeliveryThreshold: 0, // Сумма для бесплатной доставки
+        deliveryInterval: 30 // Интервал в минутах
     };
 
-    // Импорт полигонов (один или много, JSON или GeoJSON)
-    const handleFileUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    const [isDirty, setIsDirty] = useState(false); // Для отслеживания изменений в полях
+    const [draftZones, setDraftZones] = useState([]); // Отображение полигонов
+    const [formData, setFormData] = useState(dataFormat);
+    const [initialData, setInitialData] = useState(dataFormat); // Исходные данные, которые были получены при загрузке страницы (Если таковые имеются)
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const geoJsonData = JSON.parse(event.target.result);
-
-                if (geoJsonData.type !== 'FeatureCollection' || !Array.isArray(geoJsonData.features)) {
-                    throw new Error('Некорректный формат JSON/GeoJSON');
-                }
-
-                const convertedZones = geoJsonData.features
-                    .filter(feature =>
-                        feature.geometry.type === 'LineString' ||
-                        feature.geometry.type === 'Polygon'
-                    )
-                    .map((feature, index) => {
-                        // Обработка координат для Polygon и LineString
-                        let coordinates = [];
-                        if (feature.geometry.type === 'Polygon') {
-                            // Берем первый контур (игнорируем отверстия)
-                            coordinates = feature.geometry.coordinates[0]
-                                .map(coord => [coord[1], coord[0]]); // Конвертация координат
-                        } else {
-                            coordinates = feature.geometry.coordinates
-                                .map(coord => [coord[1], coord[0]]);
-                        }
-
-                        return {
-                            name: (feature.properties?.name || geoJsonData.metadata?.name) === 'Зона 1' ? `Зона ${index + 1}` : feature.properties?.name || geoJsonData.metadata?.name,
-                            coordinates: coordinates,
-                            price: feature.properties.price || defaultPrice,
-                            completed: true,
-                            points: coordinates.map(coord =>
-                                new ymaps.Placemark(coord, {}, POINT_STYLE)
-                            )
-                        };
-                    });
-
-                if (convertedZones.length === 0) {
-                    throw new Error('Файл не содержит подходящих объектов');
-                }
-
-                setZones(convertedZones);
-
-                // TODO в будущем можно цвет, описание и другие характеристики зоны установить
-            } catch (error) {
-                setErrorTitle('Ошибка импорта');
-                setErrorMessages(['Ошибка загрузки JSON/GeoJSON: ' + error.message]);
-            }
-        };
-        reader.readAsText(file);
-    };
+    // Стили
 
     // Стиль меток на карте
     const POINT_STYLE = useMemo(() => ({
@@ -166,16 +73,205 @@ const Delivery = () => {
         interactivityModel: 'default#transparent'
     }), []);
 
+
+    /* 
+    ===========================
+     Управление картой
+    ===========================
+    */
+
+    // Экспорт всех полигонов в JSON
+    const handleExportZones = async () => {
+        try {
+            const features = draftZones.map((zone, index) => ({
+                type: "Feature",
+                properties: {
+                    name: zone.name,
+                    price: zone.price,
+                    fill: "#0066FF",
+                    "fill-opacity": 0.1,
+                    stroke: "#0066FF",
+                    "stroke-width": 2
+                },
+                geometry: {
+                    type: "Polygon",
+                    coordinates: [
+                        zone.coordinates.map(coord => [coord[1], coord[0]]) // Конвертация координат обратно
+                    ]
+                }
+            }));
+
+            const geoJsonData = {
+                type: "FeatureCollection",
+                metadata: {
+                    name: "Экспорт зон доставки",
+                    creator: "Delivery App"
+                },
+                features: features
+            };
+
+            const dataStr = JSON.stringify(geoJsonData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+
+            // Запрос на выбор места сохранения
+            if ('showSaveFilePicker' in window) {
+                const handle = await window.showSaveFilePicker({
+                    types: [{
+                        description: 'JSON Files',
+                        accept: { 'application/json': ['.json'] },
+                    }],
+                    suggestedName: 'delivery_zones.json'
+                });
+
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+            } else {
+                // Фоллбек вариант для старых браузеров
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'delivery_zones.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                setErrorTitle('Ошибка экспорта');
+                setErrorMessages([err.message]);
+                setShowErrorModal(true);
+            }
+        }
+    };
+
+    // Импорт полигонов (один или много, JSON или GeoJSON)
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const geoJsonData = JSON.parse(event.target.result);
+
+                if (geoJsonData.type !== 'FeatureCollection' || !Array.isArray(geoJsonData.features)) {
+                    throw new Error('Некорректный формат JSON или GEOJSON');
+                }
+
+                const convertedZones = geoJsonData.features
+                    .filter(feature =>
+                        feature.geometry.type === 'LineString' ||
+                        feature.geometry.type === 'Polygon'
+                    )
+                    .map((feature, index) => {
+                        // Обработка координат для Polygon и LineString
+                        let coordinates = [];
+                        if (feature.geometry.type === 'Polygon') {
+                            // Берем первый контур (игнорируем отверстия)
+                            coordinates = feature.geometry.coordinates[0]
+                                .map(coord => [coord[1], coord[0]]); // Конвертация координат. Меняем местами широту и долготу. Под формат Яндекс Конструктор
+                        } else {
+                            coordinates = feature.geometry.coordinates
+                                .map(coord => [coord[1], coord[0]]);
+                        }
+
+                        return {
+                            name: feature.properties?.name || `Зона ${draftZones?.length + index + 1}` || `Зона ${index + 1}`,
+                            coordinates: coordinates,
+                            price: feature.properties?.price || formData.defaultPrice,
+                            completed: true,
+                            points: coordinates.map(coord =>
+                                new ymaps.Placemark(coord, {}, POINT_STYLE)
+                            )
+                        };
+                    });
+
+                if (convertedZones.length === 0) {
+                    throw new Error('Файл не содержит подходящих объектов');
+                }
+
+                // Обновляем draftZones
+                setDraftZones(prev => [
+                    ...prev,
+                    ...convertedZones.map(zone => ({
+                        ...zone,
+                        // Сбрасываем completed для новых зон, чтобы можно было их редактировать
+                        completed: true
+                    }))
+                ]);
+
+                // TODO в будущем можно цвет, описание и другие характеристики зоны установить
+            } catch (error) {
+                setErrorTitle('Ошибка импорта');
+                setErrorMessages(['Ошибка загрузки: ' + error.message]);
+                setShowErrorModal(true);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    // Валидация зоны
+    const validateZone = useCallback((zone) => {
+        const errors = [];
+        if (!zone) { // Если нет маркеров
+            errors.push('Для сохранения зоны необходимо минимум 3 точки');
+            return errors;
+        }
+        if (zone.coordinates.length < 3) {
+            errors.push('Для сохранения зоны необходимо минимум 3 точки');
+        }
+        if (!zone.name?.trim()) {
+            errors.push('Название зоны не может быть пустым');
+        }
+        if (isNaN(zone.price) || zone.price <= 0) {
+            errors.push('Стоимость доставки некорректна');
+        }
+
+        return errors;
+    }, []);
+
+    // Завершение создания полигона
+    const finishZone = useCallback(() => {
+        setDraftZones(prev => {
+            const lastZone = prev[prev.length - 1]; // Получаем последнюю зону из массива
+            if (!lastZone) return prev; // Если последняя зона не существует, возвращаем состояние prev без изменений
+
+            // Валидация зоны перед создаением полигона 
+            const errors = validateZone(lastZone);
+            if (errors.length > 0) {
+                setErrorTitle('Ошибка создания зоны');
+                setErrorMessages(errors);
+                setShowErrorModal(true);
+                return prev;
+            }
+
+            // Возвращаем карту в исходное положение
+            mapRef.current?.setCenter([56.129057, 40.406635]);
+            mapRef.current?.setZoom(12);
+
+            return prev.map((zone, index) =>
+                index === prev.length - 1
+                    ? { ...zone, completed: true }
+                    : zone // Если это последняя зона - помечаем как завершенную и создаем полигон, инчае зона возвращается без изменений
+            );
+        });
+
+        // Выключаем режим редактирования и создания
+        setIsCreatingZone(false);
+        isCreatingRef.current = false;
+        setEditingZoneIndex(-1);
+    }, [validateZone]);
+
     // Инициализация карты
     useEffect(() => {
         if (!ymaps || isMountedRef.current || !mapContainerRef.current) return; // Проверка API, повторного рендера
-        isMountedRef.current = true;
+        isMountedRef.current = true; // Устанавливаем флаг, что компонент cмонтирован и повторный рендер запрещен
 
         ymaps.ready(() => {
             // Уничтожаем предыдущую карту, если она существует
-            if (mapInstanceRef.current) {
-                mapInstanceRef.current.destroy();
-            }
+            if (mapInstanceRef.current) mapInstanceRef.current.destroy();
 
             // Создаем новую карту
             mapInstanceRef.current = new ymaps.Map(mapContainerRef.current, {
@@ -184,46 +280,51 @@ const Delivery = () => {
                 behaviors: ['default', 'scrollZoom']
             })
 
+            // Определяем параметры кнопки на карте для завершения создания полигона
             const finishButton = new ymaps.control.Button({
                 data: { content: 'Завершить зону' },
                 options: { maxWidth: 150 }
             });
 
+            // Событие на карте — нажатие кнопки для завершения создания полигона
             finishButton.events.add('press', () => {
                 finishZone();
-                setIsCreatingZone(false); // Явное обновление состояния
+                setIsCreatingZone(false); // Режим создания полигона выключен
                 isCreatingRef.current = false;
             });
 
+            // Устанавливаем на карту кнопку для завершения создания полигона
             mapInstanceRef.current.controls.add(finishButton);
 
-            // Обработчик клика для добавления точек
+            // Обработчик клика для добавления меток
             mapInstanceRef.current.events.add('click', (e) => {
                 // Разрешить клики только в режиме создания
-                if (!isCreatingRef.current) return;
+                if (!isCreatingRef.current) return; // Если режим создания полигона выключен, то функция дальше не выполняется
 
-                const coords = e.get('coords');
-                setZones(prev => {
-                    const lastZone = prev[prev.length - 1];
+                const coords = e.get('coords'); // Получаем координаты после клика по карте
+                // Сохраняем метку на для дальнейшего отображения на карте
+                setDraftZones(prev => {
+                    const lastZone = prev[prev.length - 1]; // Получаем последнюю зону из массива
+                    let newZones = [...prev]; // Создаём копию массива зон
 
-                    // Новая зона
-                    if (!lastZone || lastZone.completed) {
-                        return [...prev, {
-                            coordinates: [coords],
-                            price: defaultPrice,
-                            completed: false,
-                            points: [new ymaps.Placemark(coords, {})]
-                        }];
+                    if (!lastZone || lastZone.completed) { // Если нет последней зоны (undefined) или последняя зона завершена, то создается новая зона
+                        newZones.push({
+                            coordinates: [coords], // Координаты
+                            price: formData.defaultPrice, // Стоимость доставки
+                            completed: false, // Зона не завершена
+                            points: [new ymaps.Placemark(coords, {})], // Массив с новым маркером, который представляет первую точку новой зоны
+                            name: `Зона ${newZones.length + 1}` // Название зоны исходя из количества зон в массиве (с учетом новой добавленной зоны)
+                        });
+                    } else { // Если есть последняя зона и она не завершена, то в нее добавляется новый маркер с координатами
+                        const updatedZone = {
+                            ...lastZone,
+                            coordinates: [...lastZone.coordinates, coords], // Координаты нового маркера добавляются в конец
+                            points: [...lastZone.points, new ymaps.Placemark(coords, {})] // Новый маркер добавляется в конец
+                        };
+                        newZones[newZones.length - 1] = updatedZone; // Обновляем последнюю зону массива зон
                     }
 
-                    // Добавление точки в существующую зону
-                    const updatedZones = [...prev];
-                    updatedZones[prev.length - 1].coordinates.push(coords);
-                    updatedZones[prev.length - 1].points.push(
-                        new ymaps.Placemark(coords, {})
-                    );
-
-                    return updatedZones;
+                    return newZones; // Возврат нового массива newZones
                 });
             });
 
@@ -237,171 +338,205 @@ const Delivery = () => {
                 mapInstanceRef.current.destroy();
                 mapInstanceRef.current = null;
             }
-            isMountedRef.current = false;
-            setIsCreatingZone(false);
-            setEditingZoneIndex(-1);
-            isCreatingRef.current = false;
+            isMountedRef.current = false;  // Устанавливаем флаг, что компонент размонтирован
+            setIsCreatingZone(false); // Режим создания полигона выключен 
+            setEditingZoneIndex(-1); // Режим редактирования полигона выключен 
+            isCreatingRef.current = false; // Режим создания полигона выключен 
         };
-    }, [ymaps, defaultPrice]); // Зависимости только от неизменяемых значений
+    }, [ymaps, formData.defaultPrice, finishZone]); // Зависимости только от неизменяемых значений
 
     // Отрисовка зон с возможностью редактирования
     useEffect(() => {
         if (
             !mapRef.current || // Проверка на наличие карты
-            !ymaps ||
-            !mapRef.current.geoObjects ||  // Проверка на наличие geoObjects
-            typeof mapRef.current.geoObjects.removeAll !== 'function' // Проверка метода
+            !ymaps || //  Существует ли объект ymaps
+            !mapRef.current.geoObjects ||  // Проверка на наличие geoObjects в текущем объекте карты (является коллекцией всех геообъектов на карте)
+            typeof mapRef.current.geoObjects.removeAll !== 'function' // Проверка метода removeAll для объекта geoObjects 
         ) return;
 
-        const map = mapRef.current;
-        map.geoObjects.removeAll();
+        const map = mapRef.current; // Получаем объект карты
+        map.geoObjects.removeAll(); // Удаление всех геообъектов из коллекции
 
-        zones.forEach((zone, index) => {
+        draftZones.forEach((zone, index) => {
 
-            // Установка дизайна меток
+            // Создание массива маркеров для предоставленных координат
             const points = zone.coordinates.map(coord =>
-                new ymaps.Placemark(coord, {}, POINT_STYLE)
+                new ymaps.Placemark(coord, {}, POINT_STYLE) // Placemark - маркер
             );
 
+            // Прохождение всех маркеров по циклу
             points?.forEach((point, pointIndex) => {
 
-                // Показываем метки только при редактировании или создании полигона
-                if (editingZoneIndex === index || (isCreatingZone && index === zones.length - 1 && !zone.completed)) {
+                // Устанавливаем метки только при редактировании или создании полигона
+                if (editingZoneIndex === index || (isCreatingZone && index === draftZones.length - 1 && !zone.completed)) {
                     map.geoObjects.add(point);
-                } else {
+                } else { // В пассивном режиме отключаем маркеры
                     map.geoObjects.remove(point);
                 }
 
-                // Отображаем линии между метками
-                if (zone.coordinates.length > 1 && !zone.completed) {
-                    const polyline = new ymaps.Polyline(
+                // Устанавливаем линии между маркерами
+                if (zone.coordinates.length > 1 && !zone.completed) { // Координат больше 1, и зона не завершена
+                    const polyline = new ymaps.Polyline( // Polyline - линия. 
                         zone.coordinates
                     );
                     map.geoObjects.add(polyline);
                 }
 
-                // Добавляем возможность перетаскивания (для редактирования и добавления)
-                point.options.set('draggable', editingZoneIndex === index || (isCreatingZone && index === zones.length - 1));
+                // Перетаскивание маркера в режиме редактирования и добавления зоны
+                point.options.set('draggable',
+                    editingZoneIndex === index // Индекс текущей зоны в цикле совпадает с редактируемой
+                    || (isCreatingZone && index === draftZones.length - 1)); // Режим создания зоны и индекс последней зоны совпадают с текущей в цикле
 
-                // Удаляем старые обработчики
+                // Удаляем старые обработчики перед новым использованием
                 point.events.remove('dragend');
                 point.events.remove('contextmenu');
+                point.events.remove('dblclick');
 
-                // Обновляем координаты существующей метки (без создания новой)
+                // Режим перетаскивания. Обновляем координаты существующей метки
                 point.events.add('dragend', (e) => {
                     const newCoords = e.get('target').geometry.getCoordinates();
-                    setZones(prev => prev.map(z => {
-                        if (z === zone) {
-                            return {
-                                ...z,
-                                coordinates: z.coordinates.map((c, i) =>
-                                    i === pointIndex ? newCoords : c
+                    setDraftZones(prev =>
+                        prev.map(z =>
+                            z === zone ? { // Проверяем, является ли текущая зона той, что нужно обновить
+                                ...z, // Распаковываем старую зону
+                                coordinates: z.coordinates.map((c, i) => // Обновляем координаты
+                                    i === pointIndex ? newCoords : c // Заменяем только нужную координату
+                                ),
+                                points: z.points.map((point, i) => // Обновляем метку
+                                    i === pointIndex ? new ymaps.Placemark(newCoords, {}) : point // Заменяем только метку, соответствующую обновляемой координате
                                 )
-                            };
-                        }
-                        return z;
-                    }));
+                            } : z // Если не совпадает, возвращаем старую зону 
+                        )
+                    );
+
                 });
 
-                // Контекстное меню для удаления
+                // Режим удаления метки нажатием на правую кнопку мыши
                 point.events.add('contextmenu', (e) => {
                     e.preventDefault();
-
-                    setZones(prev => prev.map(z => {
-                        if (z === zone) {
-                            const newCoordinates = z.coordinates.filter((_, i) => i !== pointIndex);
-                            // Удаляем зону, если точек стало меньше 3
-                            if (newCoordinates.length < 3) return null;
-
-                            return {
+                    setDraftZones(prev =>
+                        prev.map(z =>
+                            z === zone ? {
                                 ...z,
-                                coordinates: newCoordinates,
-                                points: newCoordinates.map(c =>
-                                    new ymaps.Placemark(c, {}, POINT_STYLE)
-                                )
-                            };
+                                coordinates: z.coordinates.filter((_, i) => i !== pointIndex), // Удаляем координату по индексу
+                                points: z.points.filter((_, i) => i !== pointIndex) // Удаляем маркер по индексу
+                            } : z
+                        ).map(z => // Добавляем еще один map для проверки условия
+                            z.coordinates.length >= 3 ? z : null // Если в координатах меньше 3, возвращаем null (Все маркеры удалены)
+                        ).filter(Boolean) // Фильтруем null значения из результата
+                    );
+
+                    setDraftZones(prev => {
+                        // Обновляем зоны с фильтрацией координат и проверкой количества точек
+                        const updatedZones = prev.map(z => {
+                            if (z === zone) {
+                                const newCoordinates = zone.coordinates.filter((_, i) => i !== pointIndex);  // Удаляем координату по индексу
+                                const newPoints = zone.points.filter((_, i) => i !== pointIndex); // Удаляем маркер по индексу
+
+                                // Если осталось меньше 3 точек - помечаем зону к удалению
+                                return newCoordinates.length >= 3
+                                    ? { ...z, coordinates: newCoordinates, points: newPoints }
+                                    : null;
+                            }
+                            return z; // Обновленная зона
+                        }).filter(Boolean); // Фильтруем null значения из результата. Удаляются null элементы
+
+                        // Если текущая редактируемая зона была удалена - сбрасываем индекс (выключаем режим редактирования)
+                        if (!updatedZones.some(z => z !== zone)) { // Истина, если z === null
+                            setEditingZoneIndex(-1);
                         }
-                        return z;
-                    }).filter(Boolean)); // Фильтруем null'ы
+
+                        return updatedZones;
+                    });
+
+                });
+
+                // Режим добавления маркера при двойном клике
+                point.events.add('dblclick', (e) => {
+                    if (editingZoneIndex !== index) return; // Разрешаем только в режиме редактирования. В режиме редактирования будет приклеиваться последняя точка
+                    e.preventDefault(); // Блокируем стандартное поведение (зум карты)
+
+                    const coords = e.get('target').geometry.getCoordinates();
+
+                    setDraftZones(prev =>
+                        prev.map(zone =>
+                            zone === draftZones[index]
+                                ? {
+                                    ...zone,
+                                    coordinates: [...zone.coordinates, coords],
+                                    points: [...zone.points, new ymaps.Placemark(coords, {}, POINT_STYLE)]
+                                }
+                                : zone
+                        )
+                    );
                 });
 
                 // Проверяем завершение зоны и создаем полигон
-                if (zone.completed && zone.coordinates.length >= 3) {
-                    // Если полигон уже существует, просто обновляем координаты
+                if (zone.completed && zone.coordinates.length >= 3) { // Текущая зона завершена и имеет более 2 маркеров
+                    // Создается новый экземпляр полигона с использованием конструктора ymaps.Polygon
                     const polygon = new ymaps.Polygon(
-                        [zone.coordinates],
+                        [zone.coordinates], // Массив координат для полигона
                         {
-                            hintContent: `Зона ${index + 1} (${zone.price} руб)`
+                            hintContent: `${zone.name} (${zone.price} руб)`
                         },
                         {
                             ...POLYGON_STYLE,
-                            editorMaxPoints: Infinity,
-                            editorDrawOver: false,
-                            open: true,
-                            useMapMargin: false,
-                            editorMenuManager: () => []
+                            editorMaxPoints: Infinity, // Max количество точек в полигоне не ограничено
+                            editorDrawOver: false, // Отключаем возможность рисовать поверх данного полигона в режиме редактирования
+                            open: true, // Полигон открыт по умолчанию
+                            useMapMargin: false, //  Полигон не должен использовать границы карты
+                            editorMenuManager: () => [] // Отключаем контекстное меню редактирования для этого полигона
                         }
                     );
 
-                    map.geoObjects.add(polygon);
+                    map.geoObjects.add(polygon); // Добавление полигона на карту
                 }
             });
         });
-    }, [zones, editingZoneIndex, POINT_STYLE, POLYGON_STYLE, isCreatingZone, ymaps]);
+    }, [draftZones, editingZoneIndex, POINT_STYLE, POLYGON_STYLE, isCreatingZone, ymaps]);
 
-    // Создание полигона
+    // Создание новой зоны
     const toggleCreationMode = () => {
         setIsCreatingZone(prev => {
-            if (!prev) {
-                // Начало создания - добавляем пустую зону
-                setZones(prevZones => [...prevZones, {
-                    coordinates: [],
-                    price: defaultPrice,
-                    completed: false,
-                    points: []
-                }]);
+            if (!prev) { // Если режим создания выключен
+                // Открываем новую зону и активируем редактирование
+                const newIndex = draftZones.length;
+                setOpenZone(newIndex);
+
+                // Прокрутка к новой зоне
+                const zoneList = document.querySelector('.delivery-zones-accordion');
+                if (zoneList) setTimeout(() => zoneList.scrollTop = zoneList.scrollHeight, 100);
+
+                // Режим создания полигона включен 
+                isCreatingRef.current = true;
+                return true;
             } else {
-                // Завершение создания - проверяем точки
-                finishZone();
-            }
-            return !prev;
-        });
-    };
-
-    // Завершение создания полигона (смыкание первой и последней метки)
-    const finishZone = () => {
-        setZones(prev => {
-            const lastZone = prev[prev.length - 1];
-
-            if (!lastZone || lastZone.completed) return prev;
-
-            // Проверка на минимальное количество точек
-            if (lastZone.coordinates.length < 3) {
-                setErrorTitle('Ошибка создания зоны');
-                setErrorMessages(['Для сохранения зоны необходимо минимум 3 точки']);
-                setShowErrorModal(true);
-                return prev.filter((_, i) => i !== prev.length - 1);
-            }
-
-            return [
-                ...prev.slice(0, -1),
-                {
-                    ...lastZone,
-                    completed: true,
-                    name: lastZone.name || `Зона ${prev.length}`
+                // Валидация новой зоны перед выключением режима и завершения создания зоны
+                const lastZoneIndex = draftZones.length - 1;
+                const errors = validateZone(draftZones[lastZoneIndex]);
+                if (errors.length > 0) {
+                    setErrorTitle('Ошибка создания зоны');
+                    setErrorMessages(errors);
+                    setShowErrorModal(true);
+                    return true; // Есть ошибки в новой зоне, режим создания зоны все еще активен
                 }
-            ];
+                else { // Ошибок в новой  зоне нет, режим создания полигона выключен
+                    finishZone(); // Завершение зоны
+                    return false;
+                }
+            }
         });
-    };
-
-    // Завершение редактирования полигона
-    const stopEditing = () => {
-        setEditingZoneIndex(-1);
     };
 
     // Удаление полигона
     const handleDeleteZone = (index) => {
-        setZones(prev => prev.filter((_, i) => i !== index));
+        setDraftZones(prev =>
+            prev.filter((_, i) => i !== index)
+        );
+        setFormData(prev => ({
+            ...prev,
+            zones: prev.zones.filter((_, i) => i !== index)
+        }));
         setEditingZoneIndex(-1);
     };
 
@@ -416,43 +551,116 @@ const Delivery = () => {
     ===========================
     */
 
-    // Обновление названия зоны
-    const handleZoneNameChange = (index, value) => {
-        setZones(prev => prev.map((zone, i) =>
-            i === index ? { ...zone, name: value } : zone
-        ));
-        setIsDirty(true);
+    // Обработчик изменений в полях
+    const handleFieldChange = (field, value) => {
+        // setFormData(prev => ({
+        //     ...prev,
+        //     [field]: value
+        // }));
     };
 
-    // Сохранение всех настроек
-    const handleSaveSettings = () => {
-        // Проверка всех зон перед сохранением
-        const invalidZones = zones.filter(zone =>
-            !zone.completed || zone.coordinates.length < 3
-        );
+    // Обработчик режима редактирования зоны
+    const toggleEditZone = (index) => {
+        setEditingZoneIndex(prev => {
+            if (prev === index) return -1; // Если выбранная зона не соответствует изменяемой, режим редактирования выключен
+            // Центрируем зону на карте
+            const coords = draftZones[index].coordinates; // Получаем координаты выбранной зоны
+            mapRef.current.setBounds(ymaps.util.bounds.fromPoints(coords)); // Приближаем зум и положение к выбранному полигону
+            return index; // Возврат редактируемой зоны
+        });
+    };
 
-        if (invalidZones.length > 0) {
+    // Обработчик сохранения изменений в зоне
+    const handleSaveZoneChanges = (index) => {
+
+        // Проверка валидности индекса
+        if (index < 0 || index >= draftZones.length) {
             setErrorTitle('Ошибка сохранения');
-            setErrorMessages(['Некоторые зоны содержат ошибки']);
+            setErrorMessages(['Некорректная зона для сохранения']);
             setShowErrorModal(true);
             return;
         }
 
-        // Логика сохранения...
-        setIsDirty(false);
+        // Получаем текущую редактируемую зону
+        const editedZone = draftZones[index];
+
+        // Валидация зоны перед сохранением изменений
+        const errors = validateZone(editedZone);
+
+        if (errors.length > 0) {
+            setErrorTitle('Ошибка сохранения зоны');
+            setErrorMessages(errors);
+            setShowErrorModal(true);
+            return;
+        }
+
+        // Сбрасываем редактирование
+        setEditingZoneIndex(-1);
+
+        // Возвращаем карту в исходное положение
+        mapRef.current?.setCenter([56.129057, 40.406635]);
+        mapRef.current?.setZoom(12);
     };
 
-    // const [editingZone, setEditingZone] = useState({});
-    // const [isCreatingZone, setIsCreatingZone] = useState(false);
-
-    // Обработчик режима редактирования
-    const toggleEditZone = (index) => {
-        setEditingZoneIndex(prev => ({
-            ...prev,
-            [index]: !prev[index]
-        }));
-        setIsDirty(true);
+    // Обновление названия зоны
+    const handleZoneNameChange = (index, value) => {
+        setDraftZones(prev =>
+            prev.map((zone, i) =>
+                i === index ? { ...zone, name: value } : zone
+            )
+        );
     };
+
+    // Обновление цены зоны
+    const handleZonePriceChange = (index, value) => {
+        const numericValue = Number(value);
+        setDraftZones(prev =>
+            prev.map((zone, i) =>
+                i === index ? { ...zone, price: numericValue } : zone
+            )
+        );
+    };
+
+    // Сохранение всех настроек
+    const handleSaveSettings = () => {
+        // if (!isDirty) return;
+
+        // const hasEmptyNames = formData.zones.some(z => !z.name?.trim());
+        // if (hasEmptyNames) {
+        //     setErrorMessages(['Все зоны должны иметь название']);
+        //     setShowErrorModal(true);
+        //     return;
+        // }
+
+        // // Проверка зон
+        // const invalidZones = formData.zones.some(zone =>
+        //     zone.coordinates.length < 3 || !zone.completed
+        // );
+        // if (invalidZones) {
+        //     setErrorTitle('Ошибка сохранения');
+        //     setErrorMessages(['Завершите создание зоны']);
+        //     setShowErrorModal(true);
+        //     return;
+        // }
+
+        // // Обновление исходных данных
+        // setInitialData(formData);
+        // setIsDirty(false);
+
+        // TODO доп логика сохранения
+    };
+
+    /* 
+    ===========================
+     Эффекты для работы с данными
+    ===========================
+    */
+
+    // Проверка изменений в полях
+    useEffect(() => {
+        const formDirty = !isEqual(formData, initialData);
+        setIsDirty(formDirty);
+    }, [formData, initialData]); // Вызов при наличии изменений в полях или начальных данных
 
     /* 
     ===========================
@@ -479,24 +687,37 @@ const Delivery = () => {
                 {/* Правая колонка с настройками */}
                 <div className="delivery-settings-section">
                     <div className="delivery-settings-header">Настройка доставки</div>
+
+                    {/* Кнопка сохранения */}
+                    <button
+                        className={`delivery-save-btn ${isDirty ? 'active' : ''}`}
+                        onClick={handleSaveSettings}
+                        disabled={!isDirty}
+                        style={{ marginBottom: '1.5rem' }}
+                    >
+                        {isDirty ? 'Сохранить изменения' : 'Все изменения сохранены'}
+                    </button>
+
                     <div className="delivery-settings-header-wrapper">
                         {/* Группа кнопок управления */}
-                        <div className="delivery-control-buttons">
+                        <div className="delivery-control-buttons" style={{ justifyContent: isCreatingZone ? 'space-between' : '' }}>
                             <button
-                                className={`delivery-icon-btn ${isCreatingZone ? 'creating' : ''}`}
+                                className={`delivery-icon-btn ${isCreatingZone ? 'creating' : ''} ${editingZoneIndex !== -1 ? 'blocking' : ''}`}
                                 onClick={toggleCreationMode}
+                                style={{ fontWeight: isCreatingZone ? '500' : '' }}
+                                disabled={editingZoneIndex !== -1}
                             >
-                                <img src={addIcon} alt="Создать" />
+                                <img src={isCreatingZone ? checkedIcon : addIcon} alt="Создать" />
                                 {isCreatingZone ? 'Завершить создание' : 'Новая зона'}
                             </button>
 
                             <label className="delivery-icon-btn">
-                                <input type="file" onChange={handleFileUpload} hidden />
+                                <input type="file" onChange={handleFileUpload} hidden accept=".json,.geojson" />
                                 <img src={importIcon} alt="Импорт" />
                                 Импорт
                             </label>
 
-                            <button className="delivery-icon-btn" onClick={handleExportZones}>
+                            <button className="delivery-icon-btn" onClick={() => handleExportZones()}>
                                 <img src={exportIcon} alt="Экспорт" />
                                 Экспорт
                             </button>
@@ -504,22 +725,14 @@ const Delivery = () => {
                     </div>
 
                     {/* Секция со списком зон */}
-                    <div className="delivery-zones-section">
+                    <div className="delivery-zones-section" style={{ display: draftZones.length < 1 ? 'none' : '' }}>
                         {/* Список зон с аккордеоном */}
                         <div className="delivery-zones-accordion">
-                            {zones.map((zone, index) => (
+                            {draftZones.map((zone, index) => (
                                 <div key={index} className="delivery-zone-item">
                                     <div className="delivery-zone-header" onClick={() => toggleZone(index)}>
                                         <div className="delivery-zone-title">
-                                            {editingZoneIndex[index] ? (
-                                                <input
-                                                    value={zone.name}
-                                                    onChange={(e) => handleZoneNameChange(index, e.target.value)}
-                                                    className="delivery-zone-edit-input"
-                                                />
-                                            ) : (
-                                                zone.name || `Зона ${index + 1}`
-                                            )}
+                                            {zone.name?.slice(0, 22)}{zone.name?.length > 22 && '...'}
                                         </div>
 
                                         <div className="delivery-zone-actions">
@@ -527,10 +740,17 @@ const Delivery = () => {
                                                 className="delivery-action-btn edit"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    toggleEditZone(index);
+                                                    if (editingZoneIndex === index) {
+                                                        handleSaveZoneChanges(index);
+                                                    } else {
+                                                        toggleEditZone(index);
+                                                    }
                                                 }}
+                                                // Кнопка не работает в другой зоне при редактировании или создании зоны
+                                                disabled={isCreatingZone ||
+                                                    (editingZoneIndex !== -1 && editingZoneIndex !== index)}
                                             >
-                                                {editingZoneIndex[index] ? 'Сохранить' : 'Изменить'}
+                                                {editingZoneIndex === index ? 'Сохранить' : 'Изменить'}
                                             </button>
 
                                             <button
@@ -544,22 +764,25 @@ const Delivery = () => {
                                             </button>
 
                                             <span className="delivery-zone-toggle">
-                                                {openZone === index ? '▼' : '▶'}
+                                                {(openZone === index) ? '▼' : '▶'}
                                             </span>
                                         </div>
                                     </div>
 
-                                    {openZone === index && (
+                                    {(openZone === index) && (
                                         <div className="delivery-zone-content">
-
                                             <div className="delivery-input-group">
                                                 <label>Стоимость доставки</label>
                                                 <input
                                                     type="number"
-                                                    value={zone.price}
-                                                    // onChange={(e) => handlePriceChange(index, e.target.value)}
-                                                    disabled={!editingZoneIndex[index]}
-                                                    className={editingZoneIndex[index] ? '' : 'delivery-disabled-field'}
+                                                    value={
+                                                        zone.price || ''
+                                                    }
+                                                    onChange={(e) => handleZonePriceChange(index, e.target.value)}
+                                                    disabled={!(
+                                                        (isCreatingZone && index === draftZones.length - 1) ||
+                                                        (editingZoneIndex === index)
+                                                    )}
                                                 />
                                             </div>
 
@@ -567,11 +790,16 @@ const Delivery = () => {
                                                 <label>Название зоны</label>
                                                 <input
                                                     type="text"
-                                                    value={zone.name || `Зона ${index + 1}`}
+                                                    value={draftZones[index]?.name ?? zone.name}
                                                     onChange={(e) => handleZoneNameChange(index, e.target.value)}
+                                                    disabled={!(
+                                                        // Разрешаем редактирование только последней зоне в режиме создания
+                                                        (isCreatingZone && index === draftZones.length - 1) ||
+                                                        // Разрешаем редактирование только выбранной зоне
+                                                        (editingZoneIndex === index)
+                                                    )}
                                                 />
                                             </div>
-
                                         </div>
                                     )}
                                 </div>
@@ -586,11 +814,8 @@ const Delivery = () => {
                             <label>Стандартная стоимость доставки</label>
                             <input
                                 type="number"
-                                value={defaultPrice}
-                                onChange={(e) => {
-                                    setDefaultPrice(e.target.value);
-                                    setIsDirty(true);
-                                }}
+                                value={formData.defaultPrice}
+                                onChange={(e) => handleFieldChange('defaultPrice', Number(e.target.value))}
                             />
                         </div>
 
@@ -599,27 +824,21 @@ const Delivery = () => {
                             <label>
                                 <input
                                     type="checkbox"
-                                    checked={isFreeDelivery}
-                                    onChange={(e) => {
-                                        setIsFreeDelivery(e.target.checked);
-                                        setIsDirty(true);
-                                    }}
+                                    checked={formData.isFreeDelivery}
+                                    onChange={(e) => handleFieldChange('isFreeDelivery', e.target.checked)}
                                 />
                                 Бесплатная доставка
                             </label>
                         </div>
 
                         {/* Условие бесплатной доставки */}
-                        {isFreeDelivery && (
+                        {formData.isFreeDelivery && (
                             <div className="delivery-input-group">
                                 <label>Сумма покупки от</label>
                                 <input
                                     type="number"
-                                    value={freeDeliveryThreshold}
-                                    onChange={(e) => {
-                                        setFreeDeliveryThreshold(e.target.value);
-                                        setIsDirty(true);
-                                    }}
+                                    value={formData.freeDeliveryThreshold}
+                                    onChange={(e) => handleFieldChange('freeDeliveryThreshold', Number(e.target.value))}
                                 />
                             </div>
                         )}
@@ -628,11 +847,8 @@ const Delivery = () => {
                         <div className="delivery-input-group">
                             <label>Стандартный интервал доставки</label>
                             <select
-                                value={deliveryInterval}
-                                onChange={(e) => {
-                                    setDeliveryInterval(e.target.value);
-                                    setIsDirty(true);
-                                }}
+                                value={formData.deliveryInterval}
+                                onChange={(e) => handleFieldChange('deliveryInterval', Number(e.target.value))}
                             >
                                 {[...Array(30)].map((_, i) => (
                                     <option key={i} value={(i + 1) * 10}>
@@ -641,16 +857,6 @@ const Delivery = () => {
                                 ))}
                             </select>
                         </div>
-
-                        {/* Кнопка сохранения */}
-                        <button
-                            className={`delivery-save-btn ${isDirty ? 'active' : ''}`}
-                            // onClick={handleSaveSettings}
-                            onClick={isCreatingZone ? finishZone : toggleCreationMode}
-                            disabled={!isDirty}
-                        >
-                            {isDirty ? 'Сохранить изменения' : 'Все изменения сохранены'}
-                        </button>
                     </div>
                 </div>
             </div>

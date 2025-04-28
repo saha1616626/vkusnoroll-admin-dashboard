@@ -78,6 +78,7 @@
      display: flex;
      gap: 12px;
      align-items: center;
+     width: 100%;
  }
 
  /* Кнопки с иконками */
@@ -91,6 +92,7 @@
      border: 1px solid #e0e0e0;
      cursor: pointer;
      transition: all 0.3s;
+     font-size: 13.5px;
  }
 
  .delivery-icon-btn:hover {
@@ -102,6 +104,10 @@
  .delivery-icon-btn img {
      width: 18px;
      height: 18px;
+     margin-left: 0px;
+     margin-right: 7px;
+     object-fit: contain;
+     /* Пропорция формы */
  }
 
  /* Стиль для активной кнопки создания */
@@ -114,6 +120,18 @@
  .delivery-icon-btn.creating:hover {
      background: #ffdf40;
  }
+
+ /* Кнопка добавелния зоны заблокирована */
+ .delivery-icon-btn.blocking img {
+    opacity: 0.4;
+ }
+
+ .delivery-icon-btn.blocking:hover {
+    border-color: gray;
+    background: #f8f9fa;
+    color: #2c3e50;
+    cursor:not-allowed;
+}
 
  /* Анимация кнопок */
  .delivery-icon-btn {
@@ -132,7 +150,7 @@
  .delivery-zones-accordion {
      max-height: 400px;
      overflow-y: auto;
-     margin-bottom: 2rem;
+     margin-bottom: -1rem;
  }
 
  /* Элемент аккордеона */
@@ -156,7 +174,7 @@
  .delivery-zone-actions {
      display: flex;
      align-items: center;
-     gap: 10px;
+     gap: 15px;
  }
 
  /* Кнопка действия */
@@ -182,7 +200,7 @@
  .delivery-action-btn.delete {
      background: #ffebee;
      border: 1px solid #ffcdd2;
-     padding: 6px;
+     padding: 3.5px 6px;
  }
 
  .delivery-action-btn.delete:hover {
@@ -190,9 +208,10 @@
  }
 
  .delivery-action-btn.delete img {
-    width: 18px;
-    object-fit: cover;
-}
+    margin-top: 3px;
+     width: 18px;
+     object-fit: cover;
+ }
 
  /* Поля в режиме редактирования: название зоны */
  .delivery-zone-edit-input {
@@ -225,8 +244,7 @@
 
  /* Группа полей ввода */
  .delivery-input-group {
-     margin-bottom: 1.5rem;
-     margin-bottom: 1.2rem;
+     margin-bottom: 0.7rem;
  }
 
  /* Заголовок поля */
@@ -248,6 +266,11 @@
      transition: border-color 0.3s;
  }
 
+ .delivery-input-group input {
+     /* Настройка ширины поля для ввода с учетом всех отступов и границ */
+     width: calc(100% - 1.5rem - 1.6px);
+ }
+
  .delivery-input-group input:focus,
  .delivery-input-group select:focus {
      border-color: #83D167;
@@ -258,6 +281,12 @@
  /* Чекбокс (Бесплатная доставка) */
  .delivery-checkbox-group {
      margin: 1.5rem 0;
+ }
+
+ .delivery-checkbox-group input {
+     width: 20px;
+     height: 20px;
+     accent-color: #83D167;
  }
 
  /* Заголовок чекбокса */
