@@ -105,6 +105,10 @@ const apiMethods = {
     getDefaultWorkingTime: () => api.get('/deliveryWork/default-time'),
     updateDefaultWorkingTime: (data) => api.post(`/deliveryWork/default-time`, data),
 
+    // Настройки доставки ресторана
+    getSettings: () => api.get('/deliverySettings'), // Получить все настройки доставки
+    saveSettings: (data) => api.post('/deliverySettings', data), // Обновить все настройки доставки
+
 };
 
 // Экспортируем объект по умолчанию

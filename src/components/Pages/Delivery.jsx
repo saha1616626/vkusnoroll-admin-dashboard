@@ -1,11 +1,14 @@
 // Настройка доставки
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 
 // Импорт компонентов
 import { useYmaps } from './../Hooks/useYmaps'; // Кастомный хук для использования Яндекс карты
 import ErrorModal from "../Elements/ErrorModal"; //Модальное окно для отображения ошибок
 import isEqual from 'lodash/isEqual';  // Сравнивает два значения (обычно объекты или массивы) на глубокое равенство
+import Loader from '../Elements/Loader'; // Анимация загрузки данных
+import api from '../../utils/api'; // API сервера
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
@@ -37,20 +40,23 @@ const Delivery = () => {
     const [errorTitle, setErrorTitle] = useState(); // Заголовок ошибки
     const [errorMessages, setErrorMessages] = useState([]); // Сообщение ошибки
 
-
-    // Формат данных
+    // Формат данных (Для инициализации страницы без ошибок
     const dataFormat = {
         zones: [], // Массив зон доставки
-        defaultPrice: 300, // Стандартная стоимость
-        isFreeDelivery: false, // Бесплатная доставка
-        freeDeliveryThreshold: 0, // Сумма для бесплатной доставки
-        deliveryInterval: 30 // Интервал в минутах
+        defaultPrice: '', // Стандартная стоимость
+        isFreeDelivery: null, // Бесплатная доставка
+        freeDeliveryThreshold: '', // Сумма для бесплатной доставки
+        deliveryInterval: '' // Интервал в минутах
     };
 
     const [isDirty, setIsDirty] = useState(false); // Для отслеживания изменений в полях
     const [draftZones, setDraftZones] = useState([]); // Отображение полигонов
     const [formData, setFormData] = useState(dataFormat);
     const [initialData, setInitialData] = useState(dataFormat); // Исходные данные, которые были получены при загрузке страницы (Если таковые имеются)
+
+    const [isLoading, setIsLoading] = useState(true); // Анимация загрузки данных
+    const timeOut = 500; // Задержка перед отключением анимации загрузки данных
+    const location = useLocation();
 
     // Стили
 
@@ -73,6 +79,52 @@ const Delivery = () => {
         interactivityModel: 'default#transparent'
     }), []);
 
+    /* 
+    ===========================
+     Управление данными
+    ===========================
+    */
+
+    // Функция загрузки данных из БД
+    const fetchData = useCallback(async () => {
+        try {
+            const response = await api.getSettings();
+            const sortedData = response.data;
+
+            if (sortedData) {
+                // Обрабатываем полученные данные
+                const serverDataSettings = {
+                    zones: sortedData.zones, // Массив зон доставки
+                    defaultPrice: sortedData.defaultPrice, // Стандартная стоимость
+                    isFreeDelivery: sortedData.isFreeDelivery, // Бесплатная доставка
+                    freeDeliveryThreshold: sortedData.freeDeliveryThreshold, // Сумма для бесплатной доставки
+                    deliveryInterval: sortedData.deliveryInterval // Интервал в минутах
+                }
+
+                setFormData(serverDataSettings);
+                setInitialData(serverDataSettings);
+
+                // Устанавливаем список зон
+                setDraftZones(sortedData.zones.map(zone => {
+                    if (!ymaps) return zone; // Защита от отсутствия API
+                    return {
+                        ...zone,
+                        completed: true, // Помечаем зоны как завершенные
+                        points: zone.coordinates.map(coord =>
+                            new ymaps.Placemark(coord, {}, POINT_STYLE)
+                        )
+                    };
+                }));
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки данных:', error);
+            setErrorTitle('Ошибка загрузки');
+            setErrorMessages(['Не удалось получить данные']);
+            setShowErrorModal(true);
+        } finally { // Выключаем анимацию загрузки данных
+            setIsLoading(false); // Задержка недопустима, иначе карта не прогрузится
+        }
+    }, [POINT_STYLE, ymaps]);
 
     /* 
     ===========================
@@ -193,14 +245,27 @@ const Delivery = () => {
                 }
 
                 // Обновляем draftZones
-                setDraftZones(prev => [
-                    ...prev,
-                    ...convertedZones.map(zone => ({
-                        ...zone,
-                        // Сбрасываем completed для новых зон, чтобы можно было их редактировать
-                        completed: true
-                    }))
-                ]);
+                setDraftZones(prev => {
+                    const updatedZones = [
+                        ...prev,
+                        ...convertedZones.map(zone => ({
+                            ...zone,
+                            completed: true
+                        }))
+                    ];
+
+                    // Синхронизируем formData с новыми зонами
+                    setFormData(formPrev => ({
+                        ...formPrev,
+                        zones: updatedZones.map(zone => ({
+                            name: zone.name,
+                            coordinates: zone.coordinates,
+                            price: zone.price
+                        }))
+                    }));
+
+                    return updatedZones;
+                });
 
                 // TODO в будущем можно цвет, описание и другие характеристики зоны установить
             } catch (error) {
@@ -280,22 +345,6 @@ const Delivery = () => {
                 behaviors: ['default', 'scrollZoom']
             })
 
-            // Определяем параметры кнопки на карте для завершения создания полигона
-            const finishButton = new ymaps.control.Button({
-                data: { content: 'Завершить зону' },
-                options: { maxWidth: 150 }
-            });
-
-            // Событие на карте — нажатие кнопки для завершения создания полигона
-            finishButton.events.add('press', () => {
-                finishZone();
-                setIsCreatingZone(false); // Режим создания полигона выключен
-                isCreatingRef.current = false;
-            });
-
-            // Устанавливаем на карту кнопку для завершения создания полигона
-            mapInstanceRef.current.controls.add(finishButton);
-
             // Обработчик клика для добавления меток
             mapInstanceRef.current.events.add('click', (e) => {
                 // Разрешить клики только в режиме создания
@@ -330,19 +379,6 @@ const Delivery = () => {
 
             mapRef.current = mapInstanceRef.current; // Сохраняем экземпляр карты
         });
-
-        return () => {
-            if (mapInstanceRef.current) {
-                // Полная очистка всех объектов
-                mapInstanceRef.current.geoObjects.removeAll();
-                mapInstanceRef.current.destroy();
-                mapInstanceRef.current = null;
-            }
-            isMountedRef.current = false;  // Устанавливаем флаг, что компонент размонтирован
-            setIsCreatingZone(false); // Режим создания полигона выключен 
-            setEditingZoneIndex(-1); // Режим редактирования полигона выключен 
-            isCreatingRef.current = false; // Режим создания полигона выключен 
-        };
     }, [ymaps, formData.defaultPrice, finishZone]); // Зависимости только от неизменяемых значений
 
     // Отрисовка зон с возможностью редактирования
@@ -443,6 +479,11 @@ const Delivery = () => {
 
                         // Если текущая редактируемая зона была удалена - сбрасываем индекс (выключаем режим редактирования)
                         if (!updatedZones.some(z => z !== zone)) { // Истина, если z === null
+                            // Обновляем данные в formData
+                            setFormData(prev => ({
+                                ...prev,
+                                zones: prev.zones.filter((_, i) => i !== index)
+                            }));
                             setEditingZoneIndex(-1);
                         }
 
@@ -522,6 +563,17 @@ const Delivery = () => {
                 }
                 else { // Ошибок в новой  зоне нет, режим создания полигона выключен
                     finishZone(); // Завершение зоны
+
+                    // Сохраняем данные в formData
+                    setFormData(prev => ({
+                        ...prev, // Сохраняем остальные поля формы
+                        zones: draftZones.map(zone => ({
+                            name: zone.name,
+                            coordinates: zone.coordinates,
+                            price: zone.price
+                        }))
+                    }));
+
                     return false;
                 }
             }
@@ -553,10 +605,10 @@ const Delivery = () => {
 
     // Обработчик изменений в полях
     const handleFieldChange = (field, value) => {
-        // setFormData(prev => ({
-        //     ...prev,
-        //     [field]: value
-        // }));
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
     };
 
     // Обработчик режима редактирования зоны
@@ -594,6 +646,16 @@ const Delivery = () => {
             return;
         }
 
+        // Сохраняем данные в formData
+        setFormData(prev => ({
+            ...prev, // Сохраняем остальные поля формы
+            zones: draftZones.map(zone => ({
+                name: zone.name,
+                coordinates: zone.coordinates,
+                price: zone.price
+            }))
+        }));
+
         // Сбрасываем редактирование
         setEditingZoneIndex(-1);
 
@@ -621,33 +683,58 @@ const Delivery = () => {
         );
     };
 
-    // Сохранение всех настроек
-    const handleSaveSettings = () => {
-        // if (!isDirty) return;
+    // Валидация настроек
+    const validateSettings = () => {
+        const errors = [];
+        if (isNaN(formData.defaultPrice) || formData.defaultPrice <= 0) {
+            errors.push('Стандартная стоимость доставки некорректна');
+        }
+        if (formData.isFreeDelivery && (isNaN(formData.freeDeliveryThreshold) || formData.freeDeliveryThreshold <= 0)) {
+            errors.push('Сумма покупки для предоставления бесплатной доставки некорректна');
+        }
 
-        // const hasEmptyNames = formData.zones.some(z => !z.name?.trim());
-        // if (hasEmptyNames) {
-        //     setErrorMessages(['Все зоны должны иметь название']);
-        //     setShowErrorModal(true);
-        //     return;
-        // }
+        return errors;
+    };
 
-        // // Проверка зон
-        // const invalidZones = formData.zones.some(zone =>
-        //     zone.coordinates.length < 3 || !zone.completed
-        // );
-        // if (invalidZones) {
-        //     setErrorTitle('Ошибка сохранения');
-        //     setErrorMessages(['Завершите создание зоны']);
-        //     setShowErrorModal(true);
-        //     return;
-        // }
+    // Сохранение всех настроек в БД
+    const handleSaveSettings = async () => {
+        if (!isDirty) return;
 
-        // // Обновление исходных данных
-        // setInitialData(formData);
-        // setIsDirty(false);
+        // Валидация основных полей
+        const errors = validateSettings();
+        if (errors.length > 0) {
+            setErrorTitle('Ошибка');
+            setErrorMessages(errors);
+            setShowErrorModal(true);
+            return;
+        }
 
-        // TODO доп логика сохранения
+        try {
+            // Отправка данных на сервер
+            const response = await api.saveSettings({
+                zones: formData.zones,
+                defaultPrice: formData.defaultPrice,
+                isFreeDelivery: formData.isFreeDelivery,
+                freeDeliveryThreshold: formData.freeDeliveryThreshold,
+                deliveryInterval: formData.deliveryInterval
+            });
+
+            if (response.data.success) {
+                // Обновляем исходные данные
+                setInitialData(formData);
+                setIsDirty(false);
+
+                // Показать уведомление об успехе
+                setErrorTitle('Успешно');
+                setErrorMessages(['Настройки успешно сохранены']);
+                setShowErrorModal(true);
+            }
+        } catch (error) {
+            console.error('Ошибка сохранения:', error);
+            setErrorTitle('Ошибка сохранения');
+            setErrorMessages([error.response?.data?.error || 'Неизвестная ошибка сервера']);
+            setShowErrorModal(true);
+        }
     };
 
     /* 
@@ -655,6 +742,20 @@ const Delivery = () => {
      Эффекты для работы с данными
     ===========================
     */
+
+    // Загрузка данных в таблицу при монтировании текущей страницы
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    // Хук useEffect для обработки переходов на текущую страницу.
+    // Этот эффект срабатывает каждый раз, когда меняется ключ местоположения (location.key), 
+    // что происходит при переходах внутри навигационного меню, даже если пользователь остается на том же URL.
+    // Это особенно важно при удалении сотрудника, так как данные на странице будут корректно обновляться
+    useEffect(() => {
+        // Обновляем данные на странице
+        fetchData();
+    }, [location.key, fetchData]); // location.key меняется при каждом переходе (даже на тот же URL)
 
     // Проверка изменений в полях
     useEffect(() => {
@@ -668,20 +769,18 @@ const Delivery = () => {
     ===========================
     */
 
-    // Загрузка API карты
-    if (!ymaps) return <div>Загрузка карты...</div>;
-
     return (
         <div className="delivery-page">
             <div className="control-components">
                 <div className="page-name">Доставка</div>
             </div>
 
-            <div className="delivery-column-group">
+            {isLoading ? <Loader isWorking={isLoading} /> : <div className="delivery-column-group">
                 {/* Левая колонка с картой */}
                 <div className="delivery-map-section">
                     <div className="delivery-settings-header">Зоны доставки</div>
-                    <div ref={mapContainerRef} className="delivery-map-container" />
+                    {/* Загрузка API карты */}
+                    {!ymaps ? (<div>Загрузка карты...</div>) : (<div ref={mapContainerRef} className="delivery-map-container" />)}
                 </div>
 
                 {/* Правая колонка с настройками */}
@@ -698,9 +797,9 @@ const Delivery = () => {
                         {isDirty ? 'Сохранить изменения' : 'Все изменения сохранены'}
                     </button>
 
-                    <div className="delivery-settings-header-wrapper">
+                    <div className="delivery-settings-header-wrapper" style={{ marginBottom: ymaps ? '' : '0rem' }}>
                         {/* Группа кнопок управления */}
-                        <div className="delivery-control-buttons" style={{ justifyContent: isCreatingZone ? 'space-between' : '' }}>
+                        {ymaps && <div className="delivery-control-buttons" style={{ justifyContent: isCreatingZone ? 'space-between' : '' }}>
                             <button
                                 className={`delivery-icon-btn ${isCreatingZone ? 'creating' : ''} ${editingZoneIndex !== -1 ? 'blocking' : ''}`}
                                 onClick={toggleCreationMode}
@@ -721,18 +820,18 @@ const Delivery = () => {
                                 <img src={exportIcon} alt="Экспорт" />
                                 Экспорт
                             </button>
-                        </div>
+                        </div>}
                     </div>
 
                     {/* Секция со списком зон */}
-                    <div className="delivery-zones-section" style={{ display: draftZones.length < 1 ? 'none' : '' }}>
+                    {ymaps && <div className="delivery-zones-section" style={{ display: draftZones.length < 1 ? 'none' : '' }}>
                         {/* Список зон с аккордеоном */}
                         <div className="delivery-zones-accordion">
                             {draftZones.map((zone, index) => (
                                 <div key={index} className="delivery-zone-item">
                                     <div className="delivery-zone-header" onClick={() => toggleZone(index)}>
                                         <div className="delivery-zone-title">
-                                            {zone.name?.slice(0, 22)}{zone.name?.length > 22 && '...'}
+                                            {zone.name?.slice(0, 20)}{zone.name?.length > 20 && '...'}
                                         </div>
 
                                         <div className="delivery-zone-actions">
@@ -805,7 +904,7 @@ const Delivery = () => {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </div>}
 
                     {/* Секция настройки доставки */}
                     <div className="delivery-global-settings">
@@ -814,7 +913,7 @@ const Delivery = () => {
                             <label>Стандартная стоимость доставки</label>
                             <input
                                 type="number"
-                                value={formData.defaultPrice}
+                                value={formData.defaultPrice || ''}
                                 onChange={(e) => handleFieldChange('defaultPrice', Number(e.target.value))}
                             />
                         </div>
@@ -837,7 +936,7 @@ const Delivery = () => {
                                 <label>Сумма покупки от</label>
                                 <input
                                     type="number"
-                                    value={formData.freeDeliveryThreshold}
+                                    value={formData.freeDeliveryThreshold || ''}
                                     onChange={(e) => handleFieldChange('freeDeliveryThreshold', Number(e.target.value))}
                                 />
                             </div>
@@ -859,7 +958,7 @@ const Delivery = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>}
 
             {/* Модальное окно для отображения ошибок */}
             <ErrorModal
