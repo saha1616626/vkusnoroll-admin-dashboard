@@ -55,8 +55,9 @@ const Delivery = () => {
     const [initialData, setInitialData] = useState(dataFormat); // Исходные данные, которые были получены при загрузке страницы (Если таковые имеются)
 
     const [isLoading, setIsLoading] = useState(true); // Анимация загрузки данных
-    const timeOut = 500; // Задержка перед отключением анимации загрузки данных
     const location = useLocation();
+
+    const defaultPriceRef = useRef(''); // Актуальная стандартная стоимость доставки
 
     // Стили
 
@@ -103,6 +104,7 @@ const Delivery = () => {
 
                 setFormData(serverDataSettings);
                 setInitialData(serverDataSettings);
+                defaultPriceRef.current = serverDataSettings.defaultPrice; // Получаем актуальное значение
 
                 // Устанавливаем список зон
                 setDraftZones(sortedData.zones.map(zone => {
@@ -232,7 +234,7 @@ const Delivery = () => {
                         return {
                             name: feature.properties?.name || `Зона ${draftZones?.length + index + 1}` || `Зона ${index + 1}`,
                             coordinates: coordinates,
-                            price: feature.properties?.price || formData.defaultPrice,
+                            price: feature.properties?.price || formData.defaultPrice || 0,
                             completed: true,
                             points: coordinates.map(coord =>
                                 new ymaps.Placemark(coord, {}, POINT_STYLE)
@@ -355,11 +357,12 @@ const Delivery = () => {
                 setDraftZones(prev => {
                     const lastZone = prev[prev.length - 1]; // Получаем последнюю зону из массива
                     let newZones = [...prev]; // Создаём копию массива зон
+                    const currentPrice = defaultPriceRef.current; // Используем актуальное значение стоимости доставки
 
                     if (!lastZone || lastZone.completed) { // Если нет последней зоны (undefined) или последняя зона завершена, то создается новая зона
                         newZones.push({
                             coordinates: [coords], // Координаты
-                            price: formData.defaultPrice, // Стоимость доставки
+                            price: currentPrice, // Стоимость доставки
                             completed: false, // Зона не завершена
                             points: [new ymaps.Placemark(coords, {})], // Массив с новым маркером, который представляет первую точку новой зоны
                             name: `Зона ${newZones.length + 1}` // Название зоны исходя из количества зон в массиве (с учетом новой добавленной зоны)
@@ -493,21 +496,54 @@ const Delivery = () => {
                 });
 
                 // Режим добавления маркера при двойном клике
+                // point.events.add('dblclick', (e) => {
+                //     if (editingZoneIndex !== index) return; // Разрешаем только в режиме редактирования. В режиме редактирования будет приклеиваться последняя точка
+                //     e.preventDefault(); // Блокируем стандартное поведение (зум карты)
+
+                //     const coords = e.get('target').geometry.getCoordinates();
+
+                //     setDraftZones(prev =>
+                //         prev.map(zone =>
+                //             zone === draftZones[index]
+                //                 ? {
+                //                     ...zone,
+                //                     coordinates: [...zone.coordinates, coords],
+                //                     points: [...zone.points, new ymaps.Placemark(coords, {}, POINT_STYLE)]
+                //                 }
+                //                 : zone
+                //         )
+                //     );
+                // });
+
+                // Обработчик двойного клика для добавления точек в полигон
                 point.events.add('dblclick', (e) => {
-                    if (editingZoneIndex !== index) return; // Разрешаем только в режиме редактирования. В режиме редактирования будет приклеиваться последняя точка
+                    if (editingZoneIndex === -1) return; // Только в режиме редактирования
                     e.preventDefault(); // Блокируем стандартное поведение (зум карты)
 
-                    const coords = e.get('target').geometry.getCoordinates();
+                    const coords = e.get('coords');
+                    const zone = draftZones[editingZoneIndex];
+                    if (!zone || !zone.completed) return;
+
+                    // Находим ближайший сегмент к точке клика
+                    const closestIndex = findClosestSegmentIndex(zone.coordinates, coords);
+                    if (closestIndex === -1) return;
+
+                    // Вставляем новую точку после ближайшего сегмента
+                    const updatedCoords = [
+                        ...zone.coordinates.slice(0, closestIndex + 1),
+                        coords,
+                        ...zone.coordinates.slice(closestIndex + 1)
+                    ];
 
                     setDraftZones(prev =>
-                        prev.map(zone =>
-                            zone === draftZones[index]
+                        prev.map((z, i) =>
+                            i === editingZoneIndex
                                 ? {
-                                    ...zone,
-                                    coordinates: [...zone.coordinates, coords],
-                                    points: [...zone.points, new ymaps.Placemark(coords, {}, POINT_STYLE)]
+                                    ...z,
+                                    coordinates: updatedCoords,
+                                    points: updatedCoords.map(c => new ymaps.Placemark(c, {}, POINT_STYLE))
                                 }
-                                : zone
+                                : z
                         )
                     );
                 });
@@ -534,7 +570,41 @@ const Delivery = () => {
                 }
             });
         });
-    }, [draftZones, editingZoneIndex, POINT_STYLE, POLYGON_STYLE, isCreatingZone, ymaps]);
+        // Не нужно добавлять в зависимость "findClosestSegmentIndex", иначе в режиме редактирования при двойном клике 
+        // на карту точки будут добавляться в нужном месте, а начало и конец их координат будет соединяться с первой и 
+        // последней метками в полигоне, а не с ближайшей
+    }, [draftZones, editingZoneIndex, POINT_STYLE, POLYGON_STYLE, isCreatingZone, ymaps]); // eslint-disable-line react-hooks/exhaustive-deps 
+
+    const distanceToSegment = (point, start, end) => {
+        const dx = end[0] - start[0];
+        const dy = end[1] - start[1];
+        const t = ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / (dx * dx + dy * dy);
+        const clampedT = Math.max(0, Math.min(1, t));
+        const nearest = [
+            start[0] + clampedT * dx,
+            start[1] + clampedT * dy
+        ];
+        return Math.sqrt(Math.pow(point[0] - nearest[0], 2) + Math.pow(point[1] - nearest[1], 2));
+    };
+
+    // Поиска ближайшего сегмента
+    const findClosestSegmentIndex = (coordinates, point) => {
+        let minDistance = Infinity;
+        let closestIndex = -1;
+
+        for (let i = 0; i < coordinates.length; i++) {
+            const start = coordinates[i];
+            const end = coordinates[(i + 1) % coordinates.length];
+            const dist = distanceToSegment(point, start, end);
+
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestIndex = i;
+            }
+        }
+
+        return closestIndex;
+    };
 
     // Создание новой зоны
     const toggleCreationMode = () => {
@@ -721,8 +791,11 @@ const Delivery = () => {
 
             if (response.data.success) {
                 // Обновляем исходные данные
-                setInitialData(formData);
+                setInitialData({ ...formData }); // Клонируем объект
                 setIsDirty(false);
+
+                // Устанавливаем актуальное значение
+                defaultPriceRef.current = formData.defaultPrice;
 
                 // Показать уведомление об успехе
                 setErrorTitle('Успешно');
@@ -792,14 +865,13 @@ const Delivery = () => {
                         className={`delivery-save-btn ${isDirty ? 'active' : ''}`}
                         onClick={handleSaveSettings}
                         disabled={!isDirty}
-                        style={{ marginBottom: '1.5rem' }}
                     >
                         {isDirty ? 'Сохранить изменения' : 'Все изменения сохранены'}
                     </button>
 
                     <div className="delivery-settings-header-wrapper" style={{ marginBottom: ymaps ? '' : '0rem' }}>
                         {/* Группа кнопок управления */}
-                        {ymaps && <div className="delivery-control-buttons" style={{ justifyContent: isCreatingZone ? 'space-between' : '' }}>
+                        {ymaps && <div className="delivery-control-buttons">
                             <button
                                 className={`delivery-icon-btn ${isCreatingZone ? 'creating' : ''} ${editingZoneIndex !== -1 ? 'blocking' : ''}`}
                                 onClick={toggleCreationMode}

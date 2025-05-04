@@ -205,8 +205,8 @@
      max-width: 480px;
      padding: 32px;
      position: relative;
+      /* Анимация закрытия */
      animation: modalAppear 0.3s ease;
-     /* Анимация закрытия */
      transform: translateY(0);
      transition: transform 0.3s ease;
  }
