@@ -14,7 +14,7 @@
     border: 1px solid #ccc; /* Цвет рамки */
     border-radius: 5px; /* С округленными углами */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Тень для меню */
-    z-index: 1; /* Размещение поверх других элементов */
+    z-index: 10; /* Размещение поверх других элементов */
     margin-top: 45px;
     max-height: 200px;
     overflow-y: auto; /* Скролл */

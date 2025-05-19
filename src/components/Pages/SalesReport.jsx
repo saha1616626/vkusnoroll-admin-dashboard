@@ -105,7 +105,7 @@ const SalesReport = () => {
     useEffect(() => {
         const loadOrders = async () => {
             const orderStatuses = await fetchOrderStatuses();
-            // initFilters(orderStatuses);
+            initFilters(orderStatuses);
 
             const savedStateRaw = localStorage.getItem(`filterState_${pageId}`);
             const savedState = savedStateRaw ? JSON.parse(savedStateRaw) : null;
@@ -126,7 +126,9 @@ const SalesReport = () => {
             const defaultState = {
                 isOpen: false,
                 isActive: false,
-                formData: {}
+                formData: {
+                    sort: { type: 'orderDate', order: 'desc' }
+                }
             };
 
             setFilterState(savedState || defaultState);
@@ -223,6 +225,8 @@ const SalesReport = () => {
         }
     };
 
+    // Фильтры должны меняться в зависимости от режима
+
     // Конфигурация фильтра
     const initFilters = (orderStatuses) => {
         setFilters([
@@ -232,7 +236,7 @@ const SalesReport = () => {
                 label: 'Период оформления'
             },
             {
-                type: 'multi-select',
+                type: 'multi-select-extended',
                 name: 'orderStatus',
                 label: 'Статус заказа',
                 options: orderStatuses,
@@ -240,7 +244,7 @@ const SalesReport = () => {
             },
             { type: 'select', name: 'isPaymentStatus', label: 'Статус оплаты', options: ['Оплачен', 'Не оплачен'] },
             {
-                type: 'multi-select',
+                type: 'multi-select-extended',
                 name: 'paymentMethod',
                 label: 'Способ оплаты',
                 options: [
@@ -377,14 +381,16 @@ const SalesReport = () => {
 
             {/* Меню фильтра */}
             <div className="page-filter">
-                <FilterMenu
-                    isOpen={filterState.isOpen}
-                    filters={filters}
-                    formData={filterState.formData}
-                    onFormUpdate={handleFilterFormUpdate}
-                    onSearch={handleFilterSearch}
-                    onReset={handleFilterReset}
-                />
+                {!isLoading && (
+                    <FilterMenu
+                        isOpen={filterState.isOpen}
+                        filters={filters}
+                        formData={filterState.formData}
+                        onFormUpdate={handleFilterFormUpdate}
+                        onSearch={handleFilterSearch}
+                        onReset={handleFilterReset}
+                    />
+                )}
             </div>
 
             {/* Таблица */}

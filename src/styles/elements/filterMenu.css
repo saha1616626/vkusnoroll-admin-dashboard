@@ -2,22 +2,32 @@
 
 /* Весь блок фильтра */
 .filter-menu {
-    position: relative; /* Позволяет открыть меню относительно родительского элемента */
-    top: 100%; /* Расположите меню непосредственно под кнопкой */
-    left: 0; /* Начало меню от левой части первой кнопки */
-    width: 100%; /* Занять полную ширину родительского контейнера */
-    background-color: #e7e6e677; /* Подберите нужный цвет фона */
-    border: 1px solid #ccc; /* Рамка вокруг меню */
-    border-radius: 5px; /* Скругление углов */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Тень для меню */
-    z-index: 1; /* Чтобы меню было выше других элементов */
+    position: relative;
+    /* Позволяет открыть меню относительно родительского элемента */
+    top: 100%;
+    /* Расположите меню непосредственно под кнопкой */
+    left: 0;
+    /* Начало меню от левой части первой кнопки */
+    width: 100%;
+    /* Занять полную ширину родительского контейнера */
+    background-color: #e7e6e677;
+    /* Подберите нужный цвет фона */
+    border: 1px solid #ccc;
+    /* Рамка вокруг меню */
+    border-radius: 5px;
+    /* Скругление углов */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    /* Тень для меню */
+    z-index: 1;
+    /* Чтобы меню было выше других элементов */
     margin-top: 40px;
 }
 
 /* Блок фильтрации без кнопок (поиск и очистка) */
 .filter-items {
     display: flex;
-    flex-wrap: wrap; /* Позволяет элементам переноситься на следующую строку */
+    flex-wrap: wrap;
+    /* Позволяет элементам переноситься на следующую строку */
     margin: 20px 30px;
     gap: 15px;
     justify-content: last baseline;
@@ -32,28 +42,36 @@
 
 /* Настройка поля фильтра по умолчанию */
 .filter-input {
-    width: 180px; /* Поля ввода занимают 100% ширины родителя */
+    width: 180px;
+    /* Поля ввода занимают 100% ширины родителя */
     height: 35px;
-    padding: 0px 8px; /* Отступы внутри полей */
-    border: 1px solid #ccc; /* Рамка вокруг полей */
-    border-radius: 4px; /* Скругление уголков полей */
+    padding: 0px 8px;
+    /* Отступы внутри полей */
+    border: 1px solid #ccc;
+    /* Рамка вокруг полей */
+    border-radius: 4px;
+    /* Скругление уголков полей */
 }
 
 
 /* Настройка контейнера дат */
 .filter-input-date-container {
-    display:flex;
-    gap:5px;
+    display: flex;
+    gap: 5px;
     align-items: baseline;
 }
 
 /* Настройка полей даты */
 .filter-input-date {
-    width: 180px; /* Поля ввода занимают 100% ширины родителя */
+    width: 180px;
+    /* Поля ввода занимают 100% ширины родителя */
     height: 35px;
-    padding: 0px 8px; /* Отступы внутри полей */
-    border: 1px solid #ccc; /* Рамка вокруг полей */
-    border-radius: 4px; /* Скругление уголков полей */
+    padding: 0px 8px;
+    /* Отступы внутри полей */
+    border: 1px solid #ccc;
+    /* Рамка вокруг полей */
+    border-radius: 4px;
+    /* Скругление уголков полей */
 }
 
 /* Контейнер кнопок: поиск и очистка */
@@ -67,8 +85,10 @@
 .filter-button-action-search {
     background-color: #65CB8C;
 }
+
 .filter-button-action-search:hover {
-    background-color: #218838; /* Более темный зеленый при наведении */
+    background-color: #218838;
+    /* Более темный зеленый при наведении */
 }
 
 /* Кнопка очистки */
@@ -77,6 +97,7 @@
     background: none;
     color: black;
 }
+
 .filter-button-action-clearing:hover {
     color: gray;
     background: none;
@@ -85,4 +106,118 @@
 /* Настройка ширины для поля филтра с выбором значения */
 .filter-select-input {
     width: 197.6px;
+}
+
+/* Стили для сортировки */
+
+/* Контейнер */
+.sort-filter-container {
+    position: relative;
+    width: 197.6px;
+    z-index: 2;
+}
+
+/* Кнопка */
+.sort-main-button {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    height: 35px;
+    padding: 0px 8px;
+}
+
+.sort-main-button span {
+    width: 100%;
+    padding-right: 10px;
+    /* justify-content: space-between; */
+    text-wrap: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sort-main-button:hover {
+    border-color: #2c7be5;
+}
+
+/* Иконка */
+.sort-chevron {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s;
+}
+
+.sort-chevron.open {
+    transform: rotate(180deg);
+}
+
+/* Выпадающее меню */
+.sort-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    /* Рамка вокруг полей */
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+    padding: 8px;
+}
+
+/* Первый уровень опций */
+.sort-option {
+    padding: 6px 0;
+}
+
+/* Первый уровень заголовков */
+.sort-type-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.sort-type-label:hover {
+    background: #f5f5f5;
+}
+
+/* Радио кнопка */
+.sort-type-label input[type="radio"] {
+    accent-color: #2c7be5;
+}
+
+/* Второй уровень опций */
+.sort-sub-options {
+    margin: 4px 0 4px 20px;
+    border-left: 2px solid #eee;
+    padding-left: 12px;
+}
+
+/* Второй уровень заголовков */
+.sort-order-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    cursor: pointer;
+    color: #666;
+    border-radius: 4px;
+}
+
+.sort-order-label:hover {
+    background: #f5f5f5;
+}
+
+.sort-order-label input[type="radio"] {
+    accent-color: #2c7be5;
+    transform: scale(0.9);
 }
