@@ -11,6 +11,7 @@ import api from '../../utils/api'; // API сервера
 import CustomTable from "../Elements/CustomTable"; // Таблица
 import DropdownColumnSelection from "../Elements/DropdownColumnSelection"; // Выбор колонок для отображения таблицы
 import DropDownButtonPrintingReport from "../Elements/DropDownButtonPrintingReport"; // Кнопка с выпадающим меню функций печати отчета
+import PaginationBar from "./../Elements/PaginationBar"; // Панель разбиения контента на страницы
 
 // Импорт иконок
 
@@ -29,6 +30,12 @@ const SalesReport = () => {
     const timeOut = 500; // Задержка перед отключением анимации загрузки данных
     const [isLoading, setIsLoading] = useState(true); // Анимация загрузки данных
 
+    // Кнопка для переключения режима отображения (по товарам или по заказам)
+    const [reportMode, setReportMode] = useState(() => {
+        const savedMode = localStorage.getItem(`${pageId}-report-mode`);
+        return savedMode || 'orders'; // Режим "По заказам" по умолчанию
+    });
+
     // Фильтр
     const [isFiltersInitialized, setIsFiltersInitialized] = useState(false); // Отслеживание инициализации фильтров
     const [filters, setFilters] = useState([]); // Массив функций фильтра
@@ -42,22 +49,57 @@ const SalesReport = () => {
     // Таблица
 
     // Столбцы отчётности по товарам
-    const productReportingColumns = ['Наименование', 'Категория', 'Количество', 'Цена', 'Сумма']
+    const defaultProductReportingColumns = ['Наименование', 'Категория', 'Количество', 'Цена', 'Сумма'];
+    const allProductReportingColumns = [...defaultProductReportingColumns];
     // Столбцы отчётности по заказам
-    const orderReportingColumns = ['Номер заказа', 'Дата и время оформления', 'Сумма', 'Статус заказа', 'Статус оплаты', 'Способ оплаты']
+    const defaultOrderReportingColumns = ['Номер', 'Пользователь', 'Дата и время оформления', 'Сумма', 'Статус заказа', 'Статус оплаты', 'Способ оплаты'];
+    const allOrderReportingColumns = [...defaultOrderReportingColumns, 'Адрес доставки', 'Комментарий клиента', 'Комментарий менеджера', 'Имя клиента', 'Телефон клиента'];
 
-    const defaultColumns = ['Номер', 'Дата и время оформления', 'Сумма', 'Дата и время доставки', 'Статус заказа', 'Статус оплаты', 'Способ оплаты', 'Адрес доставки']; // Колонки для отображения по умолчанию
-    const columnOptions = [...defaultColumns, 'Комментарий клиента', 'Комментарий менеджера', 'Имя клиента', 'Телефон клиента']; // Массив всех возможных колонок для отображения в таблице
-    const [selectedColumns, setSelectedColumns] = useState(defaultColumns); // Отображаемые столбцы таблицы
+    // Отображаемые столбцы таблицы
+    const [selectedColumns, setSelectedColumns] = useState(() => {
+        const savedColumns = localStorage.getItem(`${pageId}-${reportMode}-columns`);
+        return savedColumns ? JSON.parse(savedColumns) : reportMode === 'orders'
+            ? defaultOrderReportingColumns
+            : defaultProductReportingColumns;
+    });
     const [rawData, setRawData] = useState([]); // Оригинальные данные с сервера
     const [filteredData, setFilteredData] = useState([]); // Отфильтрованные данные для отображения
     const [selectedOrdersIds, setSelectedOrdersIds] = useState([]);  // Массив выбранных строк в таблице
+
+    // Управление пагинацией
+    const [currentPage, setCurrentPage] = useState(0); // Текущая страница
+    const [totalNumberItems, setTotalNumberItems] = useState(0); // Общее количество записей
+    const itemsPerPage = 15; // Кол-во элементов в списке на отображение
 
     /* 
     ===========================
      Эффекты
     ===========================
     */
+
+    // Эффект для обработки изменений режима отчётности
+    useEffect(() => {
+        const loadColumns = () => {
+            setIsLoading(true); // Включаем анимацию загрузки данных
+            try {
+                // Загружаем сохраненные колонки при смене режима
+                const savedColumns = localStorage.getItem(`${pageId}-${reportMode}-columns`);
+                if (savedColumns) {
+                    setSelectedColumns(JSON.parse(savedColumns));
+                } else {
+                    setSelectedColumns(reportMode === 'orders'
+                        ? defaultOrderReportingColumns
+                        : defaultProductReportingColumns);
+                }
+
+                // Сбрасываем пагинацию при смене режима
+                setCurrentPage(0);
+            } finally {
+                setTimeout(() => setIsLoading(false), timeOut);
+            }
+        };
+        loadColumns();
+    }, [reportMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Инициализация фильтров
     useEffect(() => {
@@ -100,6 +142,18 @@ const SalesReport = () => {
      Обработчики событий
     ===========================
     */
+
+    // Переключение режима (по товарам или по заказам)
+    const handleModeChange = (mode) => {
+        setReportMode(mode);
+        localStorage.setItem(`${pageId}-report-mode`, mode);
+    }
+
+    // Обработчик выбора колонок
+    const handleColumnChange = (newColumns) => {
+        setSelectedColumns(newColumns);
+        localStorage.setItem(`${pageId}-${reportMode}-columns`, JSON.stringify(newColumns));
+    };
 
     // Обновление данных на странице (иконка). Без сброса списка пагинации
     const refreshData = async () => {
@@ -279,15 +333,27 @@ const SalesReport = () => {
                     </div>
                 </div>
 
+                {/* Кнопка переключения режима типа отчетности */}
+                <div className="sales-report-mode-switch">
+                    <button
+                        className={`sales-report-mode-button ${reportMode === 'orders' ? 'active' : ''}`}
+                        onClick={() => handleModeChange('orders')}
+                    >
+                        По заказам
+                    </button>
+                    <button
+                        className={`sales-report-mode-button ${reportMode === 'products' ? 'active' : ''}`}
+                        onClick={() => handleModeChange('products')}
+                    >
+                        По товарам
+                    </button>
+                </div>
+
                 <div className="grouping-groups-elements">
-
-                    {/* TODO кнопка переключения режима */}
-
                     <div className="grouping-elements">
-
                         {/* Кнопка с выпадающим меню функций печати отчета */}
-                        <DropDownButtonPrintingReport 
-                        
+                        <DropDownButtonPrintingReport
+
                         />
 
                         {/* Кнопка фильтра */}
@@ -298,11 +364,12 @@ const SalesReport = () => {
 
                         {/* Настройка колонок */}
                         <DropdownColumnSelection
-                            options={columnOptions}
+                            key={`columns-${reportMode}`} // Форсированный ререндер при смене режима
+                            options={reportMode === 'orders' ? allOrderReportingColumns : allProductReportingColumns}
                             title="Колонки"
-                            defaultSelected={defaultColumns}
-                            setSelectedColumns={setSelectedColumns} // Передаем функцию для обновления выбранных колонок
-                            pageId={pageId}
+                            defaultSelected={reportMode === 'orders' ? defaultOrderReportingColumns : defaultProductReportingColumns}
+                            setSelectedColumns={handleColumnChange} // Передаем функцию для обновления выбранных колонок
+                            pageId={`${pageId}-${reportMode}`} // Уникальный ID для каждого режима
                         />
                     </div>
                 </div>
@@ -327,9 +394,21 @@ const SalesReport = () => {
                     data={filteredData}
                     onSelectionChange={handleSelectionChange}
                     // onRowClick={handleRowClick}
-                    tableId={pageId}
+                    tableId={`${pageId}-${reportMode}`} // Уникальный ID для таблицы
                     centeredColumns={[]}  // Cписок центрируемых колонок
                 />}
+            </div>
+
+            {/* Панель для управления пагинацией */}
+            <div>
+                {!isLoading && (
+                    <PaginationBar
+                        totalItems={totalNumberItems}
+                        currentPage={currentPage}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                    />
+                )}
             </div>
 
         </div>

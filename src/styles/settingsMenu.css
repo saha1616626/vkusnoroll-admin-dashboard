@@ -3,7 +3,7 @@
 /* Контейнер меню */
 .settings-menu-container {
     width: 250px;
-    height: 100vh; /* Учитываем высоту шапки (замените 60px на актуальную) */
+    height: 150vh; /* Учитываем высоту шапки (замените 60px на актуальную) */
     background-color: #fff;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     padding: 20px;

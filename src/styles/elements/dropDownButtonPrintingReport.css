@@ -44,6 +44,7 @@
     cursor: pointer;
     transition: background-color 0.2s;
     white-space: nowrap;
+    border-radius: 5px;
 }
 
 .drop-down-button-printing-report-option:hover {
