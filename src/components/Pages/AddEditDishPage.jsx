@@ -222,6 +222,7 @@ const AddEditDishPage = ({ mode }) => {
             if (!formData.name.trim()) errors.push('Наименование блюда');
             if (!formData.price) errors.push('Цена');
             if (!formData.image) errors.push('Изображение');
+            if (!formData.categoryId) errors.push('Категорию');
 
             if (errors.length > 0) { // Если есть ошибки, отображаем модальное окно
                 setValidationErrors(errors);

@@ -1,0 +1,51 @@
+/* Стили кнопки с выпадающим меню для печати отчета по продажам */
+
+/* Основной контейнер */
+.drop-down-button-printing-report {
+    position: relative;
+    display: inline-block;
+    z-index: 10;
+}
+
+/* Кнопка */
+.drop-down-button-printing-report button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Иконка */
+.drop-down-button-printing-report button img {
+    width: 16px;
+    object-fit: cover;
+    filter: brightness(0) invert(1);
+    margin: 0;
+}
+
+/* Выпадающее меню */
+.drop-down-button-printing-report-menu {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1;
+    margin-top: 5px;
+    /* min-width: 160px; */
+    width: 100%;
+}
+
+/* Элементы меню */
+.drop-down-button-printing-report-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.drop-down-button-printing-report-option:hover {
+    background-color: #f5f5f5;
+}

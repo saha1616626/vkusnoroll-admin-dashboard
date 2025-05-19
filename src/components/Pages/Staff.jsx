@@ -451,7 +451,6 @@ const Staff = () => {
 
             {/* Меню фильтра */}
             <div className="page-filter">
-
                 <FilterMenu
                     isOpen={filterState.isOpen}
                     filters={filters}

@@ -329,7 +329,7 @@ const Dishes = () => {
         }
     }, []);
 
-    // Эффект для фильтраци
+    // Эффект для фильтрации
     useEffect(() => {
         const applyFiltersAndSearch = () => {
             let result = rawData

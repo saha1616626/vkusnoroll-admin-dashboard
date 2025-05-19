@@ -21,7 +21,7 @@ import ErrorModal from "../Elements/ErrorModal"; //Модальное окно �
 import NavigationConfirmModal from "../Elements/NavigationConfirmModal"; // Модальное окно подтверждения ухода со страницы при наличии несохраненных данных
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
 import FilterButton from "../Elements/FilterButton"; // Кнопка фильтра
-import FilterMenu from '../Elements/FilterMenu'; // Кнопка меню фильтра
+import FilterMenu from '../Elements/FilterMenu'; // Меню фильтра
 import CustomTable from "../Elements/CustomTable"; // Таблица
 
 const Schedule = () => {

@@ -398,7 +398,7 @@ const AddEditStaff = ({ mode }) => {
 
             setConfirmationMessage(
                 hasActiveChats
-                    ? `У сотрудника есть ${response.data.activeChats} ${getCorrectWordOne(response.data.activeChats)} ${getCorrectWordTwo(response.data.activeChats)}. После удаления они будут возвращены в центр сообщений как непринятые с сохранением истории переписки.`
+                    ? `У сотрудника есть ${response.data.activeChats} ${getCorrectWordOne(response.data.activeChats)} ${getCorrectWordTwo(response.data.activeChats)}. После удаления он(они) будут возвращен(ы) в центр сообщений как непринятый(е) с сохранением истории переписки.`
                     : null
             );
 
@@ -738,6 +738,7 @@ const AddEditStaff = ({ mode }) => {
                                         type="checkbox"
                                         name="isAccountTermination"
                                         checked={formData.isAccountTermination}
+                                        // TODO Проверка незавершенных чатов, если есть, то уведомить пользователя и после сохранения переместить активные чаты в состояние непринятых
                                         onChange={handleInputChange}
                                     />
                                     <span className="addEditStaff-checkbox-caption">Ограничить доступ к учетной записи</span>
@@ -758,6 +759,7 @@ const AddEditStaff = ({ mode }) => {
                                         type="checkbox"
                                         name="isMessageCenterAvailable"
                                         checked={formData.isMessageCenterAvailable}
+                                        // TODO Проверка незавершенных чатов, если есть, то уведомить пользователя и после сохранения переместить активные чаты в состояние непринятых
                                         onChange={handleInputChange}
                                     />
                                     <span className="addEditStaff-checkbox-caption">Доступ к центру сообщений</span>

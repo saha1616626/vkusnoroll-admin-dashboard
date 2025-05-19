@@ -31,9 +31,9 @@ const ConfirmationModal = ({
 
                 <div className="modal-body">
                     {/* Добавляем ручной перенос строки */}
-                    <p>{message.split('\n').map((line, index) => (
+                    {message.split('\n').map((line, index) => (
                         <p key={index}>{line}</p>
-                    ))}</p>
+                    ))}
                 </div>
 
                 <div className="modal-footer">
