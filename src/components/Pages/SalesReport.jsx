@@ -345,10 +345,12 @@ const SalesReport = () => {
             // Нормализация параметров для разных режимов
             if (reportMode === 'orders') {
                 serverFilters.orderStatus = filterState.formData.orderStatus;
-                serverFilters.isPaymentStatus = filterState.formData.isPaymentStatus === 'Оплачен';
+                serverFilters.isPaymentStatus = filterState.formData.isPaymentStatus;
                 serverFilters.paymentMethod = filterState.formData.paymentMethod;
             } else if (reportMode === 'products') {
                 serverFilters.categories = filterState.formData.categories;
+                serverFilters.isPaymentStatus = filterState.formData.isPaymentStatus;
+                serverFilters.isCompletionStatus = filterState.formData.isCompletionStatus;
             }
 
             // Общие параметры
@@ -515,7 +517,7 @@ const SalesReport = () => {
             {
                 type: 'date-range',
                 name: 'simpleDate',
-                label: 'Период продаж'
+                label: 'Период'
             },
             {
                 type: 'multi-select-extended',
@@ -524,6 +526,8 @@ const SalesReport = () => {
                 options: categories,
                 placeholder: 'Выберите категорию(и)'
             },
+            { type: 'select', name: 'isPaymentStatus', label: 'Статус оплаты', options: ['Оплачен', 'Не оплачен'] },
+            { type: 'select', name: 'isCompletionStatus', label: 'Статус выполенния', options: ['В работе', 'Завершен'] },
             {
                 type: 'sort',
                 name: 'sort',
@@ -568,10 +572,12 @@ const SalesReport = () => {
             // Нормализация параметров для разных режимов
             if (reportMode === 'orders') {
                 serverFilters.orderStatus = filterState.formData.orderStatus;
-                serverFilters.isPaymentStatus = filterState.formData.isPaymentStatus === 'Оплачен';
+                serverFilters.isPaymentStatus = filterState.formData.isPaymentStatus;
                 serverFilters.paymentMethod = filterState.formData.paymentMethod;
             } else if (reportMode === 'products') {
                 serverFilters.categories = filterState.formData.categories;
+                serverFilters.isPaymentStatus = filterState.formData.isPaymentStatus;
+                serverFilters.isCompletionStatus = filterState.formData.isCompletionStatus;
             }
 
             // Общие параметры
@@ -703,6 +709,7 @@ const SalesReport = () => {
                     onRowClick={handleRowClick}
                     tableId={`${pageId}-${reportMode}`} // Уникальный ID для таблицы
                     centeredColumns={[]}  // Cписок центрируемых колонок
+                    showFirstColumn={false}
                 />}
             </div>
 

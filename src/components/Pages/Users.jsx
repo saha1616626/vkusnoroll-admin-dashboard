@@ -432,6 +432,7 @@ const Users = () => {
                     onRowClick={handleRowClick}
                     tableId={pageId}
                     centeredColumns={['Заблокирован']}  // Cписок центрируемых колонок
+                    showFirstColumn={false}
                 />}
             </div>
 

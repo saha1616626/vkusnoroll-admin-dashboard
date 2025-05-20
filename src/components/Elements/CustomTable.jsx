@@ -11,7 +11,8 @@ const CustomTable = ({
     onSelectionChange,
     onRowClick,
     tableId,
-    centeredColumns = [] // Cписок центрируемых колонок
+    centeredColumns = [], // Cписок центрируемых колонок
+    showFirstColumn = true // Отображение первого столбца
 }) => {
     const [selectedRows, setSelectedRows] = useState(new Set()); // selectedRows - Текущее состояние выбранных строк. setSelectedRows - Позволяет изменять текущее состояние выбранных строк. Set - позволяем хранить уникальные значения (автоматически исключает дубликаты)
     const [columnWidths, setColumnWidths] = useState({}); // Ширина столбцов
@@ -21,7 +22,7 @@ const CustomTable = ({
     const tableRef = useRef(null); // Ссылка на таблицу
 
     // Дополнительная колонка для чекбоксов
-    const columns = ['select', ...originalColumns];
+    const columns = showFirstColumn ? ['select', ...originalColumns] : originalColumns;
 
     // Загрузка сохраненных ширин столбцов
     useEffect(() => {
@@ -108,32 +109,34 @@ const CustomTable = ({
             <table className="custom-table">
                 <thead>
                     <tr>
-                        {columns.map((column, index) => (
-                            <th
-                                key={column}
-                                style={{
-                                    width: column === 'select' ? '40px' : columnWidths[column],
-                                    position: 'relative'
-                                }}
-                            >
-                                {column === 'select' ? (
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedRows.size === data.length}
-                                        onChange={handleSelectAll}
-                                        style={{ width: '17px', height: '17px' }}
-                                    />
-                                ) : (
-                                    column
-                                )}
-                                {index !== 0 && (
-                                    <div
-                                        className="custom-table-column-resizer"
-                                        onMouseDown={(e) => startResize(column, e)}
-                                    />
-                                )}
-                            </th>
-                        ))}
+                        {columns.map((column, index) => {
+                            if (column === 'select' && !showFirstColumn) return null; // Не отображаем столбец с чекбоксами, если он выключен
+                            return (
+                                <th
+                                    key={column}
+                                    style={{
+                                        width: column === 'select' ? '40px' : columnWidths[column],
+                                        position: 'relative'
+                                    }}
+                                >
+                                    {column === 'select' ? (
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedRows.size === data.length}
+                                            onChange={handleSelectAll}
+                                            style={{ width: '17px', height: '17px' }}
+                                        />
+                                    ) : (
+                                        column
+                                    )}
+                                    {index !== (showFirstColumn ? 0 : -1) && (
+                                        <div
+                                            className="custom-table-column-resizer"
+                                            onMouseDown={(e) => startResize(column, e)}
+                                        />
+                                    )}
+                                </th>)
+                        })}
                     </tr>
                 </thead>
 
@@ -144,35 +147,38 @@ const CustomTable = ({
                             onClick={() => onRowClick?.(row)}
                             style={{ cursor: onRowClick ? 'pointer' : 'default' }}
                         >
-                            {columns.map((column) => (
-                                <td
-                                    key={column}
-                                    style={{
-                                        width: column === 'select' ? '40px' : columnWidths[column],
-                                        textAlign: centeredColumns.includes(column) ? 'center' : 'left'
-                                    }}
-                                    // Останавливаем всплытие события onRowClick для всей ячейки с чекбоксом
-                                    onClick={(e) => column === 'select' && e.stopPropagation()}
-                                >
-                                    {column === 'select' ? (
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedRows.has(rowIndex)}
-                                            onChange={(e) => {
-                                                e.stopPropagation(); // Останавливаем всплытие события onRowClick
-                                                handleRowSelect(rowIndex);
-                                            }}
-                                            style={{ width: '17px', height: '17px' }}
-                                        />
-                                    ) : (
-                                        <div className="custom-table-cell-content"
-                                            // Показывает полный текст при наведении
-                                            title={String(row[column])}>
-                                            {row[column]}
-                                        </div>
-                                    )}
-                                </td>
-                            ))}
+                            {columns.map((column) => {
+                                if (column === 'select' && !showFirstColumn) return null; // Не отображаем столбец с чекбоксами, если он выключен.
+                                return (
+                                    <td
+                                        key={column}
+                                        style={{
+                                            width: column === 'select' ? '40px' : columnWidths[column],
+                                            textAlign: centeredColumns.includes(column) ? 'center' : 'left'
+                                        }}
+                                        // Останавливаем всплытие события onRowClick для всей ячейки с чекбоксом
+                                        onClick={(e) => column === 'select' && e.stopPropagation()}
+                                    >
+                                        {column === 'select' ? (
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedRows.has(rowIndex)}
+                                                onChange={(e) => {
+                                                    e.stopPropagation(); // Останавливаем всплытие события onRowClick
+                                                    handleRowSelect(rowIndex);
+                                                }}
+                                                style={{ width: '17px', height: '17px' }}
+                                            />
+                                        ) : (
+                                            <div className="custom-table-cell-content"
+                                                // Показывает полный текст при наведении
+                                                title={String(row[column])}>
+                                                {row[column]}
+                                            </div>
+                                        )}
+                                    </td>
+                                )
+                            })}
                         </tr>
                     ))}
                 </tbody>
