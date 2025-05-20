@@ -176,7 +176,7 @@ const SalesReport = () => {
                 if (reportMode === 'orders') {
                     const response = await api.getOrdersReport(params);
                     if (response.data) {
-                        setRawData(response.data.data); // Оригинальные данные с сервера
+                        setRawData(response.data); // Оригинальные данные с сервера
                         const total = Number(response.data.pagination.total) || 0; // Гарантированное число заказов
                         setTotalNumberItems(total); // Общее количество заказов
                         setFilteredData(transformOrderData(response.data.data));
@@ -186,7 +186,7 @@ const SalesReport = () => {
                 if (reportMode === 'products') {
                     const response = await api.getDishSalesReport(params);
                     if (response.data) {
-                        setRawData(response.data.data); // Оригинальные данные с сервера
+                        setRawData(response.data); // Оригинальные данные с сервера
                         const total = Number(response.data.total) || 0; // Гарантированное число товаров
                         setTotalNumberItems(total); // Общее количество заказов
                         setFilteredData(transformDishData(response.data.data));
@@ -377,7 +377,7 @@ const SalesReport = () => {
 
     // Обработчик клика по строке в таблице
     const handleRowClick = (rowData) => {
-        const originalData = rawData.find(order => order.id === rowData.id); // Получаем исходные данные по id из выбранной строки
+        const originalData = rawData.data.find(order => order.id === rowData.id); // Получаем исходные данные по id из выбранной строки
         if (originalData && reportMode === 'orders') handleViewOrderClick(originalData); // Передаем данные выбранной строки и запускаем модальное окно
     };
 
@@ -698,7 +698,48 @@ const SalesReport = () => {
                 )}
             </div>
 
-            {/* TODO — панель с обобщенной информацией в зависимости от режима отчетности */}
+            {/* Панель с итоговой статистикой */}
+            {!isLoading && (
+                <div className="sales-report-stats">
+                    {reportMode === 'products' && (
+                        <>
+                            <div className="sales-report-stats-item">
+                                <span className="label">Всего продано:</span>
+                                <span className="value">{rawData.totalSold || 0} шт.</span>
+                            </div>
+                            <div className="sales-report-stats-item highlight">
+                                <span className="label">Общая выручка:</span>
+                                <span className="value">{(rawData.totalRevenue || 0).toLocaleString('ru-RU')} ₽</span>
+                            </div>
+                        </>
+                    )}
+
+                    {reportMode === 'orders' && rawData.statistics && (
+                        <>
+                            <div className="sales-report-stats-item">
+                                <span className="label">Заказов:</span>
+                                <span className="value">{rawData.pagination?.total || 0}</span>
+                            </div>
+                            <div className="sales-report-stats-item">
+                                <span className="label">Товары:</span>
+                                <span className="value">{rawData.statistics.totalGoodsCost} ₽</span>
+                            </div>
+                            <div className="sales-report-stats-item">
+                                <span className="label">Доставка:</span>
+                                <span className="value">{rawData.statistics.totalShippingCost} ₽</span>
+                            </div>
+                            <div className="sales-report-stats-item highlight">
+                                <span className="label">Итого:</span>
+                                <span className="value">{rawData.statistics.totalRevenue} ₽</span>
+                            </div>
+                            <div className="sales-report-stats-item">
+                                <span className="label">Средний чек:</span>
+                                <span className="value">{rawData.statistics.averageOrderValue} ₽</span>
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
 
             {/* Таблица */}
             <div className="table-page">

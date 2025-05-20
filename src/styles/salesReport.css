@@ -38,3 +38,49 @@
 .sales-report-mode-button:not(.active):hover {
     background-color: #e0e0e0;
 }
+
+/* Стили для блока с итоговой статистикой */
+.sales-report-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    padding: 1.2rem 2rem;
+    margin-top: 40px;
+    margin-bottom: -20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+/* Элемент статистики */
+.sales-report-stats-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.8rem 1.2rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    min-width: 140px;
+}
+
+/* Подсветка важных элементов */
+.sales-report-stats-item.highlight {
+    background: #fff9db;
+    border-color: #ffe066;
+}
+
+/* Стили текстовых элементов */
+.sales-report-stats-item .label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.sales-report-stats-item .value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2b2f32;
+}
