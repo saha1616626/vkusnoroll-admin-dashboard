@@ -109,6 +109,11 @@ const apiMethods = {
     getSettings: () => api.get('/deliverySettings'), // Получить все настройки доставки
     saveSettings: (data) => api.post('/deliverySettings', data), // Обновить все настройки доставки
 
+    // Заказы
+    getOrders: (params) => api.get('/orders/manager/all', { params }), // Получение всех заказов с пагинацией
+    getDishSalesReport: (params) => api.get('/orders/report/dish', { params }),  // Получить отчёт по продажам блюд с пагинацией, группировкой и фильтрами
+    getOrdersReport: (params) => api.get('/orders/report/order', { params }), // Получить отчёт по заказам с пагинацией и статистикой
+
 };
 
 // Экспортируем объект по умолчанию

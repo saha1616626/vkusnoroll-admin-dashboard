@@ -1,6 +1,7 @@
 // Отчет по продажам
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useLocation } from 'react-router-dom';
 
 // Импорт компонентов
 import RefreshButton from "../Elements/RefreshButton"; // Кнопка обновления данных на странице
@@ -28,6 +29,7 @@ const SalesReport = () => {
 
     const pageId = 'sales-report'; // Уникальный идентификатор страницы
     const timeOut = 500; // Задержка перед отключением анимации загрузки данных
+    const location = useLocation();
     const [isLoading, setIsLoading] = useState(true); // Анимация загрузки данных
 
     // Кнопка для переключения режима отображения (по товарам или по заказам)
@@ -52,7 +54,7 @@ const SalesReport = () => {
     const defaultProductReportingColumns = ['Наименование', 'Категория', 'Количество', 'Цена', 'Сумма'];
     const allProductReportingColumns = [...defaultProductReportingColumns];
     // Столбцы отчётности по заказам
-    const defaultOrderReportingColumns = ['Номер', 'Пользователь', 'Дата и время оформления', 'Сумма', 'Статус заказа', 'Статус оплаты', 'Способ оплаты'];
+    const defaultOrderReportingColumns = ['Номер', 'Дата и время оформления', 'Дата и время доставки', 'Товары', 'Доставка', 'Сумма', 'Статус заказа', 'Статус оплаты', 'Способ оплаты'];
     const allOrderReportingColumns = [...defaultOrderReportingColumns, 'Адрес доставки', 'Комментарий клиента', 'Комментарий менеджера', 'Имя клиента', 'Телефон клиента'];
 
     // Отображаемые столбцы таблицы
@@ -104,10 +106,20 @@ const SalesReport = () => {
     // Инициализация фильтров
     useEffect(() => {
         const loadOrders = async () => {
-            const orderStatuses = await fetchOrderStatuses();
-            initFilters(orderStatuses);
+            // Очищаем предыдущие фильтры
+            setFilters([]);
+            setFilterState({ isOpen: false, isActive: false, formData: {} });
 
-            const savedStateRaw = localStorage.getItem(`filterState_${pageId}`);
+            if (reportMode === 'orders') {
+                const orderStatuses = await fetchOrderStatuses();
+                initOrderFilters(orderStatuses);
+            } else if (reportMode === 'products') {
+                const categories = await fetchCategories();
+                initDishFilters(categories);
+            }
+
+            // Загрузка сохраненного состояния фильтра для текущего режима
+            const savedStateRaw = localStorage.getItem(`filterState_${pageId}_${reportMode}`);
             const savedState = savedStateRaw ? JSON.parse(savedStateRaw) : null;
 
             if (savedState?.formData?.sort) {
@@ -122,22 +134,188 @@ const SalesReport = () => {
                 }
             }
 
+            // Установка дефолтной сортировки для режима
+            const defaultSort = reportMode === 'orders'
+                ? { type: 'orderDate', order: 'desc' }
+                : { type: 'amount', order: 'asc' };
+
             // Если нет сохраненного состояния - устанавливаем дефолтную сортировку
             const defaultState = {
                 isOpen: false,
                 isActive: false,
                 formData: {
-                    sort: { type: 'orderDate', order: 'desc' }
+                    sort: { sort: defaultSort }
                 }
             };
 
             setFilterState(savedState || defaultState);
             setActiveFilters(savedState?.formData || defaultState.formData);
-
             setIsFiltersInitialized(true); // Фильтры инициализировались
         };
         loadOrders();
-    }, []);
+    }, [reportMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    /* 
+    ===========================
+     Управление данными
+    ===========================
+    */
+
+    // Функция загрузки данных из БД
+    const fetchData = useCallback(async () => {
+        setIsLoading(true); // Включаем анимацию загрузки данных
+        if (isFiltersInitialized) { // Проверка, что фильтры инициализировались
+            try {
+                // Параметры запроса
+                const params = {
+                    page: currentPage + 1,
+                    limit: itemsPerPage,
+                    ...activeFilters // Все активные фильтры
+                };
+
+                if (reportMode === 'orders') {
+                    const response = await api.getOrdersReport(params);
+                    if (response.data) {
+                        setRawData(response.data.data); // Оригинальные данные с сервера
+                        const total = Number(response.data.pagination.total) || 0; // Гарантированное число заказов
+                        setTotalNumberItems(total); // Общее количество заказов
+                        setFilteredData(transformOrderData(response.data.data));
+                    }
+                }
+
+                if (reportMode === 'products') {
+                    const response = await api.getDishSalesReport(params);
+                    if (response.data) {
+                        setRawData(response.data.data); // Оригинальные данные с сервера
+                        const total = Number(response.data.total) || 0; // Гарантированное число товаров
+                        setTotalNumberItems(total); // Общее количество заказов
+                        setFilteredData(transformDishData(response.data.data));
+                    }
+                }
+
+            } catch (error) {
+                console.error('Ошибка загрузки заказов:', error);
+                setTotalNumberItems(0); // Сбрасываем total при ошибке
+            } finally { // Выключаем анимацию загрузки данных
+                setTimeout(() => setIsLoading(false), timeOut);
+            }
+        }
+    }, [currentPage, activeFilters, isFiltersInitialized, reportMode]); // Вызываем обновление списка при переключении страниц списка
+
+    // Загрузка данных в таблицу при монтировании текущей страницы
+    useEffect(() => {
+        // Обновляем данные на странице
+        fetchData();
+    }, [location.key, fetchData]);
+
+    // Трансформация данных о заказах для представления в таблице
+    const transformOrderData = (data) => data.map(order => {
+
+        // Форматирование даты и времени оформления (обрезаем миллисекунды)
+        const formatDateTime = (datetime) => {
+            if (!datetime) return '—';
+
+            const date = new Date(datetime);
+
+            const datePart = date.toLocaleDateString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+
+            const timePart = date.toLocaleTimeString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            return `${datePart} ${timePart}`;
+        };
+
+        // Форматирование диапазона доставки
+        const formatDeliveryRange = (start, end) => {
+            if (!start || !end) return '—';
+
+            const startDateObj = new Date(start);
+            const endDateObj = new Date(end);
+
+            // Форматируем дату
+            const formatDate = (date) =>
+                date.toLocaleDateString('ru-RU', {
+                    timeZone: 'Europe/Moscow',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                });
+
+            // Форматируем время
+            const formatTime = (date) =>
+                date.toLocaleTimeString('ru-RU', {
+                    timeZone: 'Europe/Moscow',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                });
+
+            const startDateStr = formatDate(startDateObj);
+            const startTimeStr = formatTime(startDateObj);
+            const endDateStr = formatDate(endDateObj);
+            const endTimeStr = formatTime(endDateObj);
+
+            if (startDateStr === endDateStr) {
+                return `${startDateStr} ${startTimeStr} - ${endTimeStr}`;
+            } else {
+                return `${startDateStr} ${startTimeStr} - ${endDateStr} ${endTimeStr}`;
+            }
+        };
+
+        // Формирование адреса доставки
+        const formatAddress = (addr) => {
+            if (!addr) return '—';
+            const parts = [
+                addr.city,
+                addr.street,
+                `д. ${addr.house}`,
+                addr.apartment ? `кв. ${addr.apartment}` : null
+            ].filter(Boolean);
+            return parts.join(', ');
+        };
+
+        return {
+            id: order.id,
+            'Номер': order.orderNumber || '—',
+            'Дата и время оформления': formatDateTime(order.orderPlacementTime),
+            'Товары': `${(Number(order.goodsCost))} ₽`,
+            'Доставка': `${(Number(order.shippingCost)).toFixed(2)} ₽`,
+            'Сумма': `${(Number(order.goodsCost) + Number(order.shippingCost)).toFixed(2)} ₽`,
+            'Дата и время доставки': formatDeliveryRange(
+                order.startDesiredDeliveryTime,
+                order.endDesiredDeliveryTime
+            ),
+            'Статус заказа': order.status?.name || 'Новый',
+            'Статус оплаты': order.isPaymentStatus ? 'Оплачен' : 'Не оплачен',
+            'Способ оплаты': order.paymentMethod || '—',
+            'Адрес доставки': formatAddress(order.deliveryAddress),
+            'Комментарий клиента': order.commentFromClient || '—',
+            'Комментарий менеджера': order.commentFromManager || '—',
+            'Имя клиента': order.nameClient || '—',
+            'Телефон клиента': order.numberPhoneClient || '—'
+        };
+    });
+
+    // Трансформация данных о блюдах для представления в таблице
+    const transformDishData = (data) => data.map(dish => {
+        return {
+            dishId: dish.dishId,
+            'Наименование': dish.dishName,
+            categoryId: dish.categoryId,
+            'Категория': dish.categoryName,
+            'Количество': dish.totalQuantity,
+            'Цена': `${(Number(dish.averagePrice))} ₽`,
+            'Сумма': `${(Number(dish.totalAmount))} ₽`
+        };
+    });
 
     /* 
     ===========================
@@ -159,7 +337,32 @@ const SalesReport = () => {
 
     // Обновление данных на странице (иконка). Без сброса списка пагинации
     const refreshData = async () => {
+        setIsLoading(true); // Включаем анимацию загрузки данных
+        try {
+            // Формируем параметры в зависимости от режима
+            const serverFilters = { ...filterState.formData };
 
+            // Нормализация параметров для разных режимов
+            if (reportMode === 'orders') {
+                serverFilters.orderStatus = filterState.formData.orderStatus;
+                serverFilters.isPaymentStatus = filterState.formData.isPaymentStatus === 'Оплачен';
+                serverFilters.paymentMethod = filterState.formData.paymentMethod;
+            } else if (reportMode === 'products') {
+                serverFilters.categories = filterState.formData.categories;
+            }
+
+            // Общие параметры
+            serverFilters.date = filterState.formData.date;
+            serverFilters.sort = filterState.formData.sort;
+
+            // Сохраняем значения полей фильтра
+            setActiveFilters(serverFilters);
+            saveFilterState({ ...filterState, formData: serverFilters });
+        } catch (error) {
+            console.error('Filter search error:', error);
+        } finally {
+            setTimeout(() => setIsLoading(false), timeOut);
+        }
     };
 
     // Выбор строк(и) в таблице черерз чекбокс
@@ -170,6 +373,14 @@ const SalesReport = () => {
         setSelectedOrdersIds(selectedIds);
     };
 
+    // Обработчик клика по строке в таблице
+    const handleRowClick = (rowData) => {
+        const originalData = rawData.find(order => order.id === rowData.id); // Получаем исходные данные по id из выбранной строки
+        if (originalData && reportMode === 'orders') handleViewOrderClick(originalData); // Передаем данные выбранной строки и запускаем модальное окно
+    };
+
+    const handleViewOrderClick = (order) => { }; // Запуск модального окна для просмотра информации о заказе
+
     /* 
     ===========================
      Управление фильтром
@@ -178,7 +389,7 @@ const SalesReport = () => {
 
     // Сохранение состояния фильтров
     const saveFilterState = (state) => {
-        localStorage.setItem(`filterState_${pageId}`, JSON.stringify({
+        localStorage.setItem(`filterState_${pageId}_${reportMode}`, JSON.stringify({
             ...state,
             formData: {
                 ...state.formData,
@@ -225,10 +436,28 @@ const SalesReport = () => {
         }
     };
 
+    // Получение списка категорий товаров
+    const fetchCategories = async () => {
+        try {
+            const response = await api.getCategories();
+
+            // Проверяем наличие данных
+            if (!response.data || !Array.isArray(response.data)) { throw new Error('Invalid categories data'); }
+
+            return response.data.map(category => ({
+                id: category.id,
+                name: category.name
+            }));
+        } catch (error) {
+            console.error('Error:', error.response ? error.response.data : error.message);
+            return [];
+        }
+    };
+
     // Фильтры должны меняться в зависимости от режима
 
-    // Конфигурация фильтра
-    const initFilters = (orderStatuses) => {
+    // Конфигурация фильтра для заказов
+    const initOrderFilters = (orderStatuses) => {
         setFilters([
             {
                 type: 'date-range',
@@ -280,6 +509,47 @@ const SalesReport = () => {
         ]);
     };
 
+    // Конфигурация фильтра для блюд
+    const initDishFilters = (categories) => {
+        setFilters([
+            {
+                type: 'date-range',
+                name: 'simpleDate',
+                label: 'Период продаж'
+            },
+            {
+                type: 'multi-select-extended',
+                name: 'categories',
+                label: 'Категория',
+                options: categories,
+                placeholder: 'Выберите категорию(и)'
+            },
+            {
+                type: 'sort',
+                name: 'sort',
+                label: 'Сортировка',
+                options: [
+                    {
+                        type: 'amount',
+                        label: 'По сумме',
+                        subOptions: [
+                            { value: 'desc', label: 'Больше' },
+                            { value: 'asc', label: 'Меньше' }
+                        ]
+                    },
+                    {
+                        type: 'quantity',
+                        label: 'По количеству',
+                        subOptions: [
+                            { value: 'desc', label: 'Больше' },
+                            { value: 'asc', label: 'Меньше' }
+                        ]
+                    }
+                ]
+            }
+        ]);
+    };
+
     // Обновление данных формы фильтров (Введенные значения в поля)
     const handleFilterFormUpdate = (name, value) => {
         setFilterState(prev => ({
@@ -292,9 +562,23 @@ const SalesReport = () => {
     const handleFilterSearch = () => {
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
-            // Нормализуем данные перед отправкой
-            const serverFilters = {
-            };
+            // Формируем параметры в зависимости от режима
+            const serverFilters = { ...filterState.formData };
+
+            // Нормализация параметров для разных режимов
+            if (reportMode === 'orders') {
+                serverFilters.orderStatus = filterState.formData.orderStatus;
+                serverFilters.isPaymentStatus = filterState.formData.isPaymentStatus === 'Оплачен';
+                serverFilters.paymentMethod = filterState.formData.paymentMethod;
+            } else if (reportMode === 'products') {
+                serverFilters.categories = filterState.formData.categories;
+            }
+
+            // Общие параметры
+            serverFilters.date = filterState.formData.date;
+            serverFilters.sort = filterState.formData.sort;
+
+            setCurrentPage(0); // Сброс номера страницы списка пагинации
 
             // Сохраняем значения полей фильтра
             setActiveFilters(serverFilters);
@@ -310,7 +594,22 @@ const SalesReport = () => {
     const handleFilterReset = () => {
         setIsLoading(true);
         try {
+            setCurrentPage(0); // Сброс номера страницы списка пагинации
 
+            // Устанавливаем дефолты в зависимости от режима
+            const defaultSort = reportMode === 'orders'
+                ? { type: 'orderDate', order: 'desc' }
+                : { type: 'amount', order: 'asc' };
+
+            const newFilterState = {
+                isOpen: true,
+                isActive: true,
+                formData: { sort: defaultSort }
+            };
+
+            setFilterState(newFilterState);
+            setActiveFilters({ sort: defaultSort });
+            saveFilterState(newFilterState);
         } catch (error) {
             console.error('Filter reset error:', error);
         } finally {
@@ -393,13 +692,15 @@ const SalesReport = () => {
                 )}
             </div>
 
+            {/* TODO — панель с обобщенной информацией в зависимости от режима отчетности */}
+
             {/* Таблица */}
             <div className="table-page">
                 {isLoading ? <Loader isWorking={isLoading} /> : <CustomTable // Отображение анимации загрузки при загрузке данных
                     columns={selectedColumns}
                     data={filteredData}
                     onSelectionChange={handleSelectionChange}
-                    // onRowClick={handleRowClick}
+                    onRowClick={handleRowClick}
                     tableId={`${pageId}-${reportMode}`} // Уникальный ID для таблицы
                     centeredColumns={[]}  // Cписок центрируемых колонок
                 />}

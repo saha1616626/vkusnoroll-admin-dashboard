@@ -98,9 +98,18 @@ const FilterMenu = ({
     const sortRef = useRef(null); // Ссылка на контейнер меню
 
     const getSortLabel = (filter, value) => {
+        // Проверка на наличие необходимых данных
+        if (!value || !value.type || !value.order) return filter.label;
+
         const mainOption = filter.options.find(opt => opt.type === value.type);
+        // Если основная опция не найдена, возвращаем заголовок фильтра
+        if (!mainOption || !mainOption.subOptions) return filter.label;
+
         const subOption = mainOption.subOptions.find(opt => opt.value === value.order);
-        return `${mainOption.label} (${subOption.label})`;
+        // Если подопция не найдена, возвращаем только основную метку
+        return subOption
+            ? `${mainOption.label} (${subOption.label})`
+            : mainOption.label;
     };
 
     // Обработчик клика вне меню
