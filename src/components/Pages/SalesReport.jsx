@@ -67,7 +67,7 @@ const SalesReport = () => {
     const [rawData, setRawData] = useState([]); // Оригинальные данные с сервера
     const [filteredData, setFilteredData] = useState([]); // Отфильтрованные данные для отображения
     const [selectedOrdersIds, setSelectedOrdersIds] = useState([]);  // Массив выбранных строк в таблице
-
+    
     // Управление пагинацией
     const [currentPage, setCurrentPage] = useState(0); // Текущая страница
     const [totalNumberItems, setTotalNumberItems] = useState(0); // Общее количество записей
@@ -662,7 +662,9 @@ const SalesReport = () => {
                     <div className="grouping-elements">
                         {/* Кнопка с выпадающим меню функций печати отчета */}
                         <DropDownButtonPrintingReport
-
+                            reportMode={reportMode}
+                            activeFilters={activeFilters}
+                            selectedColumns={selectedColumns}
                         />
 
                         {/* Кнопка фильтра */}

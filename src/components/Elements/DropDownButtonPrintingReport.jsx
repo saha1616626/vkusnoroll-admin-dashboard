@@ -2,34 +2,69 @@
 
 import React, { useState, useRef, useEffect } from "react";
 
+// Импорт компонентов
+import api from '../../utils/api'; // API сервера
+
 // Импорт стилей
 import "./../../styles/elements/dropDownButtonPrintingReport.css";
 
 // Импорт иконок
 import fileIcon from './../../assets/icons/file.png';
 
-const DropDownButtonPrintingReport = () => {
+const DropDownButtonPrintingReport = ({ reportMode, activeFilters, selectedColumns }) => {
+
+    /* 
+    ===============================
+     Состояния, константы и ссылки
+    ===============================
+    */
+
     const [isOpen, setIsOpen] = useState(false); // Состояние для управления закрытия/открытия списка
     const dropdownRef = useRef(null); // Ссылка на элемент выпадающего списка кнопки "Изменить". Для получения доступа к DOM-элементу и проверки, был ли клик вне него
+
+    /* 
+    ===========================
+     Обработчики событий
+    ===========================
+    */
 
     // Кнопка "изменить" с выпадающим списком функций
     const toggleDropdown = (option) => {
         setIsOpen(prev => !prev); // Переключение состояния
     };
 
-    // Выбранная функция в раскрывающемся списке кнопки
+    // Обработчик генерации отчета по выбранной функции в раскрывающемся списке кнопки
+    const handleExport = async (format) => {
+        try {
+            const params = {
+                ...activeFilters,
+                columns: selectedColumns,
+                format
+            };
 
-    // Формирование отчета в формате PDF
-    const handlePrintingReportPDFClick = () => {
+            const response = await api.generateReport(reportMode, params);
 
-        setIsOpen(false); // Закрыть выпадающий список после выбора
-    }
+            // Диалог сохранения файла
+            const filename = `report_${new Date().toISOString()}.${format}`;
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
 
-    // Формирование отчета в формате Excel
-    const handlePrintingReportExcelClick = () => {
+            setIsOpen(false); // Закрыть выпадающий список после выбора
+        } catch (error) {
+            console.error('Export error:', error);
+        }
+    };
 
-        setIsOpen(false); // Закрыть выпадающий список после выбора
-    }
+    /* 
+    ===========================
+     Эффекты
+    ===========================
+    */
 
     // Хук для обработки кликов вне компонента
     useEffect(() => {
@@ -49,6 +84,12 @@ const DropDownButtonPrintingReport = () => {
 
     }, []);
 
+    /* 
+    ===========================
+     Рендер
+    ===========================
+    */
+
     return (
         <div className="drop-down-button-printing-report" ref={dropdownRef}>
             <button className="button-control" onClick={toggleDropdown}>
@@ -57,10 +98,10 @@ const DropDownButtonPrintingReport = () => {
             </button>
             {isOpen && (
                 <div className="drop-down-button-printing-report-menu">
-                    <div className="drop-down-button-printing-report-option" onClick={handlePrintingReportPDFClick}>
+                    <div className="drop-down-button-printing-report-option" onClick={() => handleExport('pdf')}>
                         PDF
                     </div>
-                    <div className="drop-down-button-printing-report-option" onClick={handlePrintingReportExcelClick}>
+                    <div className="drop-down-button-printing-report-option" onClick={() => handleExport('xlsx')}>
                         Excel
                     </div>
                 </div>
