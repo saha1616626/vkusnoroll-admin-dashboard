@@ -75,6 +75,7 @@ const apiMethods = {
     checkActiveChats: (id) => api.get(`/accounts/employees/${id}/active-chats`), // Наличие открытых чатов
     deleteEmployee: (id) => api.delete(`/accounts/employees/${id}`),
     getClients: () => api.get('/accounts/clients'), // Клиенты
+    getClientsPaginationFilters: (params) => api.get('/accounts/clients/filters', { params }), // Получение списка пользователей с пагинацией и фильтрами
     updateClient: (id, data) => api.put(`/accounts/clients/${id}`, data),
     deleteClient: (id) => api.delete(`/accounts/clients/${id}`),
 

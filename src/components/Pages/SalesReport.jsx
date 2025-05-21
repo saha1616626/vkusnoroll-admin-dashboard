@@ -14,8 +14,6 @@ import DropdownColumnSelection from "../Elements/DropdownColumnSelection"; // В
 import DropDownButtonPrintingReport from "../Elements/DropDownButtonPrintingReport"; // Кнопка с выпадающим меню функций печати отчета
 import PaginationBar from "./../Elements/PaginationBar"; // Панель разбиения контента на страницы
 
-// Импорт иконок
-
 // Импорт стилей
 import "./../../styles/salesReport.css";
 

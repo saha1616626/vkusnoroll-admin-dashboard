@@ -15,15 +15,15 @@ import SearchInput from "./../Elements/SearchInput"; // Поле поиска
 import DropdownColumnSelection from "../Elements/DropdownColumnSelection"; // Выбор колонок для отображения таблицы
 import CustomTable from "../Elements/CustomTable"; // Таблица
 import Loader from '../Elements/Loader'; // Анимация загрузки данных
-
+import PaginationBar from '../Elements/PaginationBar';  // Панель разбиения контента на страницы
 import api from '../../utils/api'; // API сервера
 
 const Users = () => {
 
     /* 
-    ===========================
-        Константы и рефы
-    ===========================
+    ===============================
+     Состояния, константы и ссылки
+    ===============================
     */
 
     const pageId = 'users-page'; // Уникальный идентификатор страницы
@@ -32,6 +32,11 @@ const Users = () => {
 
     const defaultColumns = ['Имя', 'Email', 'Номер телефона']; // Колонки для отображения по умолчанию
     const columnOptions = [...defaultColumns, 'Зарегистрирован', 'Заблокирован']; // Массив всех возможных колонок для отображения
+
+    // Управление пагинацией
+    const [currentPage, setCurrentPage] = useState(0); // Текущая страница
+    const [totalNumberItems, setTotalNumberItems] = useState(0); // Общее количество записей
+    const itemsPerPage = 15; // Кол-во элементов в списке на отображение
 
     /* 
     ===========================
@@ -48,6 +53,7 @@ const Users = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     // Фильтрация
+    const [isFiltersInitialized, setIsFiltersInitialized] = useState(false); // Отслеживание инициализации фильтров
     const [filters, setFilters] = useState([]); // Функции фильтра
     const [filterState, setFilterState] = useState({ // Управление состоянием фильтра (неактивный фильтр по умолчанию)
         isOpen: false, // Меню закрыто
@@ -122,21 +128,32 @@ const Users = () => {
     // Универсальная функция загрузки данных из БД
     const fetchData = useCallback(async () => {
         setIsLoading(true); // Включаем анимацию загрузки данных
-        try {
-            const response = await api.getClients();
-            const client = response.data; // Получаем данные
+        if (isFiltersInitialized) { // Проверка, что фильтры инициализировались
+            try {
+                // Параметры запроса
+                const params = {
+                    page: currentPage + 1,
+                    limit: itemsPerPage,
+                    ...activeFilters // Все активные фильтры
+                };
 
-            // Проверяем наличие данных
-            if (!client || !Array.isArray(client)) { throw new Error('Invalid client data') };
+                const response = await api.getClientsPaginationFilters(params);
 
-            setRawData(client.sort((a, b) => b.id - a.id)); // Сохраняем необработанные данные и упорядочиваем их по убыванию идентификатора
-            setTableData(transformClientsData(client));
-        } catch (error) { // Обработка ошибок axios
-            console.error('Error:', error.response ? error.response.data : error.message);
-        } finally {
-            setTimeout(() => setIsLoading(false), timeOut);
+                // Проверяем наличие данных
+                if (response.data) {
+                    const client = response.data.data; // Получаем данные
+                    const total = Number(response.data.total) || 0; // Гарантированное число записей
+                    setTotalNumberItems(total); // Общее количество записей
+                    setRawData(client.sort((a, b) => b.id - a.id)); // Сохраняем необработанные данные и упорядочиваем их по убыванию идентификатора
+                    setTableData(transformClientsData(client));
+                }
+            } catch (error) { // Обработка ошибок axios
+                console.error('Error:', error.response ? error.response.data : error.message);
+            } finally {
+                setTimeout(() => setIsLoading(false), timeOut);
+            }
         }
-    }, []);
+    }, [currentPage, activeFilters, isFiltersInitialized]);
 
     /* 
     ===========================
@@ -146,14 +163,36 @@ const Users = () => {
 
     // Обновление страницы
     const refreshData = async (term) => {
-        await fetchData(); // Синхронизация данных из БД. Обновление представления
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
-            // Сохраняем значения полей фильтра после нажатия "Enter"
-            setActiveFilters(filterState.formData);
-            saveFilterState({ ...filterState, formData: filterState.formData });
-            const searchQuery = searchInputRef.current.search();  // Получаем текущее введенное значение из поля поиска
-            setSearchQuery(searchQuery);
+            // Формируем параметры фильтра
+            const serverFilters = { ...filterState.formData };
+
+            serverFilters.numberPhone = filterState.formData.numberPhone;
+            serverFilters.name = filterState.formData.name;
+            serverFilters.isAccountTermination = filterState.formData.isAccountTermination;
+            serverFilters.search = searchInputRef.current.search(); // Устанавливаем значение поиска
+
+            // Создаем копию serverFilters БЕЗ поля search для filterState
+            const { search, ...formDataWithoutSearch } = serverFilters;
+
+            // Сохраняем новые фильтры в filterState (без search)
+            const newFilterState = {
+                ...filterState,
+                formData: formDataWithoutSearch
+            };
+
+            // Сохраняем в localStorage
+            saveFilterState(newFilterState);
+
+            // Обновляем состояние filterState (без search)
+            setFilterState(prev => ({
+                ...prev,
+                formData: formDataWithoutSearch
+            }));
+
+            // Сохраняем значения полей фильтра
+            setActiveFilters(serverFilters);
         } catch (error) {
             console.error('Refresh error:', error);
         } finally {
@@ -172,7 +211,7 @@ const Users = () => {
         localStorage.setItem(`filterState_${pageId}`, JSON.stringify(state));
     };
 
-    // Инициализация фильтров
+    // Конфигурация фильтра
     const initFilters = (roles) => {
         setFilters([
             { type: 'text', name: 'numberPhone', label: 'Телефон', placeholder: '' },
@@ -180,29 +219,6 @@ const Users = () => {
             { type: 'select', name: 'isAccountTermination', label: 'Доступ', options: ['Заблокирован', 'Не заблокирован'] }
         ]);
     };
-
-    // Фильтрация данных по выставленным параметрам фильтра
-    const applyFilters = useCallback((data, filters) => {
-        let result = data;
-
-        // Фильтрация по номеру телефона
-        if (filters.numberPhone && filters.numberPhone.trim()) {
-            result = result.filter(client => client.numberPhone === filters.numberPhone.trim());
-        }
-
-        // Фильтрация по имени
-        if (filters.name && filters.name.trim()) {
-            result = result.filter(client => client.name === filters.name.trim());
-        }
-
-        // Фильтрация по доступу к учетной записи
-        if (filters.isAccountTermination) {
-            const isTermination = filters.isAccountTermination === "Заблокирован" ? true : false;
-            result = result.filter(client => client.isAccountTermination === isTermination);
-        }
-
-        return result;
-    }, []);
 
     /* 
     ===========================
@@ -235,11 +251,19 @@ const Users = () => {
     const handleFilterSearch = () => {
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
+            // Нормализуем данные перед отправкой
+            const serverFilters = {
+                numberPhone: filterState.formData.numberPhone,
+                name: filterState.formData.name,
+                isAccountTermination: filterState.formData.isAccountTermination,
+            };
+
+            setCurrentPage(0); // Сброс номера страницы списка пагинации
+            searchInputRef.current?.clear(); // Очистка поля поиска
+
             // Сохраняем значения полей фильтра
-            setActiveFilters(filterState.formData);
-            saveFilterState({ ...filterState, formData: filterState.formData });
-            setSearchQuery(''); // Обнолвение значения поля поиска
-            searchInputRef.current?.clear(); // Очистка поля поиска и обновление таблицы
+            setActiveFilters(serverFilters);
+            saveFilterState({ ...filterState, formData: serverFilters });
         } catch (error) {
             console.error('Filter search error:', error);
         } finally {
@@ -251,6 +275,9 @@ const Users = () => {
     const handleFilterReset = () => {
         setIsLoading(true);
         try {
+            searchInputRef.current?.clear(); // Очистка поля поиска
+            setCurrentPage(0); // Сброс номера страницы списка пагинации
+
             setFilterState(prev => ({
                 ...prev,
                 formData: {}
@@ -261,8 +288,6 @@ const Users = () => {
                 isActive: true,
                 formData: {}
             });
-            setSearchQuery('');
-            searchInputRef.current?.clear();
         } catch (error) {
             console.error('Filter reset error:', error);
         } finally {
@@ -286,52 +311,35 @@ const Users = () => {
 
     // Загрузка данных в таблицу при монтировании текущей страницы
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    // Хук useEffect для обработки переходов на текущую страницу.
-    // Этот эффект срабатывает каждый раз, когда меняется ключ местоположения (location.key), 
-    // что происходит при переходах внутри навигационного меню, даже если пользователь остается на том же URL.
-    // Это особенно важно при удалении сотрудника, так как данные на странице будут корректно обновляться
-    useEffect(() => {
-        // Сброс поиска
-        setSearchQuery(null);
-        searchInputRef.current?.clear();
         // Обновляем данные на странице
         fetchData();
-    }, [location.key, fetchData]); // location.key меняется при каждом переходе (даже на тот же URL)
+    }, [location.key, fetchData]);
 
     // Инициализация фильтров
     useEffect(() => {
-        const loadCategories = async () => {
+        const loadFilters = async () => {
+            // Очищаем предыдущие фильтры
+            setFilters([]);
+            setFilterState({ isOpen: false, isActive: false, formData: {} });
             initFilters();
-            const savedState = localStorage.getItem(`filterState_${pageId}`);
-            if (savedState) {
-                const parsedState = JSON.parse(savedState);
-                setFilterState(parsedState);
-                setActiveFilters(parsedState.formData); // Восстанавливаем активные фильтры
-            }
+
+            const savedStateRaw = localStorage.getItem(`filterState_${pageId}`);
+            const savedState = savedStateRaw ? JSON.parse(savedStateRaw) : null;
+
+            // Если нет сохраненного состояния фильтра, то сбрасываем
+            const defaultState = {
+                isOpen: false,
+                isActive: false,
+                formData: {}
+            };
+
+            setFilterState(savedState || defaultState);
+            setActiveFilters(savedState?.formData || defaultState.formData);
+
+            setIsFiltersInitialized(true); // Фильтры инициализировались
         };
-        loadCategories();
+        loadFilters();
     }, []);
-
-    // Применяем фильтр и поле поиска
-    useEffect(() => {
-        const applyFiltersAndSearch = () => {
-            let result = rawData
-                .filter(client =>
-                    searchQuery
-                        ? client.email.toLowerCase().includes(searchQuery.toLowerCase()) // Проверяем, содержится ли searchQuery в объединенной строке
-                        : true
-                );
-
-            if (Object.keys(activeFilters).length > 0) { // Применяем фильтры, только если они есть
-                result = applyFilters(result, activeFilters);
-            }
-            return transformClientsData(result);
-        };
-        setTableData(applyFiltersAndSearch());
-    }, [rawData, searchQuery, activeFilters, applyFilters]);
 
     /* 
     ===========================
@@ -339,17 +347,42 @@ const Users = () => {
     ===========================
     */
 
-    // Поиск
+    // Поле поиска
     const handleSearch = (term) => {
         setIsLoading(true); // Включаем анимацию загрузки данных
         try {
-            // Сохраняем значения полей фильтра после нажатия "Enter"
-            setActiveFilters(filterState.formData);
-            saveFilterState({ ...filterState, formData: filterState.formData });
+            // Формируем параметры фильтра
+            const serverFilters = { ...filterState.formData };
 
-            setSearchQuery(term.trim());
+            serverFilters.numberPhone = filterState.formData.numberPhone;
+            serverFilters.name = filterState.formData.name;
+            serverFilters.isAccountTermination = filterState.formData.isAccountTermination;
+            serverFilters.search = searchInputRef.current.search(); // Устанавливаем значение поиска
+
+            // Создаем копию serverFilters БЕЗ поля search для filterState
+            const { search, ...formDataWithoutSearch } = serverFilters;
+
+            // Сохраняем новые фильтры в filterState (без search)
+            const newFilterState = {
+                ...filterState,
+                formData: formDataWithoutSearch
+            };
+
+            // Сохраняем в localStorage
+            saveFilterState(newFilterState);
+
+            // Обновляем состояние filterState (без search)
+            setFilterState(prev => ({
+                ...prev,
+                formData: formDataWithoutSearch
+            }));
+
+            // Сохраняем значения полей фильтра
+            setActiveFilters(serverFilters);
+        } catch (error) {
+            console.error('Refresh error:', error);
         } finally {
-            setTimeout(() => setIsLoading(false), timeOut);
+            setTimeout(() => setIsLoading(false), timeOut); // Отключаем анимацию загрузки данных
         }
     };
 
@@ -434,6 +467,18 @@ const Users = () => {
                     centeredColumns={['Заблокирован']}  // Cписок центрируемых колонок
                     showFirstColumn={false}
                 />}
+            </div>
+
+            {/* Панель для управления пагинацией */}
+            <div>
+                {!isLoading && (
+                    <PaginationBar
+                        totalItems={totalNumberItems}
+                        currentPage={currentPage}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                    />
+                )}
             </div>
 
         </div>
