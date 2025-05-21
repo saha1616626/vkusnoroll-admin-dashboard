@@ -312,8 +312,8 @@ const SalesReport = () => {
             categoryId: dish.categoryId,
             'Категория': dish.categoryName,
             'Количество': dish.totalQuantity,
-            'Цена': `${(Number(dish.averagePrice))} ₽`,
-            'Сумма': `${(Number(dish.totalAmount))} ₽`
+            'Цена': `${(Number(dish.averagePrice)).toFixed(2)} ₽`,
+            'Сумма': `${(Number(dish.totalAmount)).toFixed(2)} ₽`
         };
     });
 
@@ -711,7 +711,7 @@ const SalesReport = () => {
                             </div>
                             <div className="sales-report-stats-item highlight">
                                 <span className="label">Общая выручка:</span>
-                                <span className="value">{(rawData.totalRevenue || 0).toLocaleString('ru-RU')} ₽</span>
+                                <span className="value">{parseFloat(rawData.totalRevenue?.toFixed(2)).toLocaleString('ru-RU').replace(',', '.')} ₽</span>
                             </div>
                         </>
                     )}
@@ -720,23 +720,23 @@ const SalesReport = () => {
                         <>
                             <div className="sales-report-stats-item">
                                 <span className="label">Заказов:</span>
-                                <span className="value">{rawData.pagination?.total || 0}</span>
+                                <span className="value">{rawData.pagination?.total || 0} шт.</span>
                             </div>
                             <div className="sales-report-stats-item">
                                 <span className="label">Товары:</span>
-                                <span className="value">{rawData.statistics.totalGoodsCost} ₽</span>
+                                <span className="value">{parseFloat(rawData.statistics.totalGoodsCost?.toFixed(2)).toLocaleString('ru-RU').replace(',', '.')} ₽</span>
                             </div>
                             <div className="sales-report-stats-item">
                                 <span className="label">Доставка:</span>
-                                <span className="value">{rawData.statistics.totalShippingCost} ₽</span>
+                                <span className="value">{parseFloat(rawData.statistics.totalShippingCost?.toFixed(2)).toLocaleString('ru-RU').replace(',', '.')}  ₽</span>
                             </div>
                             <div className="sales-report-stats-item highlight">
                                 <span className="label">Итого:</span>
-                                <span className="value">{rawData.statistics.totalRevenue} ₽</span>
+                                <span className="value">{parseFloat(rawData.statistics.totalRevenue?.toFixed(2)).toLocaleString('ru-RU').replace(',', '.')} ₽</span>
                             </div>
                             <div className="sales-report-stats-item">
                                 <span className="label">Средний чек:</span>
-                                <span className="value">{rawData.statistics.averageOrderValue} ₽</span>
+                                <span className="value">{parseFloat(rawData.statistics.averageOrderValue?.toFixed(2)).toLocaleString('ru-RU').replace(',', '.')} ₽</span>
                             </div>
                         </>
                     )}
