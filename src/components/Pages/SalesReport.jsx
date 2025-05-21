@@ -286,7 +286,7 @@ const SalesReport = () => {
             id: order.id,
             'Номер': order.orderNumber || '—',
             'Дата и время оформления': formatDateTime(order.orderPlacementTime),
-            'Товары': `${(Number(order.goodsCost))} ₽`,
+            'Товары': `${(Number(order.goodsCost)).toFixed(2)} ₽`,
             'Доставка': `${(Number(order.shippingCost)).toFixed(2)} ₽`,
             'Сумма': `${(Number(order.goodsCost) + Number(order.shippingCost)).toFixed(2)} ₽`,
             'Дата и время доставки': formatDeliveryRange(

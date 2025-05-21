@@ -33,6 +33,28 @@ const DropDownButtonPrintingReport = ({ reportMode, activeFilters, selectedColum
         setIsOpen(prev => !prev); // Переключение состояния
     };
 
+    // Форматирование даты и времени генерации отчета
+    const formatDateTime = (datetime) => {
+        if (!datetime) return '—';
+
+        const date = new Date(datetime);
+
+        const datePart = date.toLocaleDateString('ru-RU', {
+            timeZone: 'Europe/Moscow',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        });
+
+        const hours = date.toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', hour: '2-digit' });
+        const minutes = date.toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', minute: '2-digit' });
+
+        // Формируем строку времени
+        const timePart = `${hours}-${minutes}`;
+
+        return `${datePart} ${timePart}`;
+    };
+
     // Обработчик генерации отчета по выбранной функции в раскрывающемся списке кнопки
     const handleExport = async (format) => {
         try {
@@ -44,8 +66,11 @@ const DropDownButtonPrintingReport = ({ reportMode, activeFilters, selectedColum
 
             const response = await api.generateReport(reportMode, params);
 
+            // Тип отчета
+            const reportType = reportMode === 'orders' ? 'по заказам' : 'по товарам';
+
             // Диалог сохранения файла
-            const filename = `report_${new Date().toISOString()}.${format}`;
+            const filename = `Отчет ${reportType} ${formatDateTime(new Date().toISOString())}.${format}`;
             const url = window.URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] }));
             const link = document.createElement('a');
             link.href = url;
