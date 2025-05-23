@@ -1,5 +1,10 @@
 /* Стили модального окна результата удаления */
 
+/* Блокировка скролла */
+body.no-scroll {
+  overflow: hidden;
+}
+
 .deletion-modal-overlay {
     position: fixed;
     top: 0;

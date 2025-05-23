@@ -19,6 +19,14 @@ const ErrorModal = ({
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [onClose]);
 
+    // Убираем скролл с перекрытой страницы
+    useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('no-scroll');
+            return () => document.body.classList.remove('no-scroll');
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (

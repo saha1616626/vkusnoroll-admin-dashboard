@@ -1,5 +1,10 @@
 /* Стили модального окна для вывода ошибок */
 
+/* Блокировка скролла */
+body.no-scroll {
+  overflow: hidden;
+}
+
 /* Модальное окно */
 .error-modal-ErrorModal {
     background: white;

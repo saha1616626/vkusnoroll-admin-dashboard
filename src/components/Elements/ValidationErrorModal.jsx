@@ -12,6 +12,14 @@ const ValidationErrorModal = ({ errors, onClose, isOpen }) => {
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [onClose]);
 
+    // Убираем скролл с перекрытой страницы
+    useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('no-scroll');
+            return () => document.body.classList.remove('no-scroll');
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null; // Не рендерить, если isOpen=false
 
     return (
@@ -21,7 +29,7 @@ const ValidationErrorModal = ({ errors, onClose, isOpen }) => {
                     <h3>Ошибки заполнения</h3>
                     <button className="validation-close-button" onClick={onClose}>&times;</button>
                 </div>
-                
+
                 <div className="validation-modal-content">
                     <p>Пожалуйста, заполните обязательные поля:</p>
                     <ul>

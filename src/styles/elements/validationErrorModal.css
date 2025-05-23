@@ -1,5 +1,10 @@
 /* Стили модального окна вывода ошибки при сохранении данных */
 
+/* Блокировка скролла */
+body.no-scroll {
+  overflow: hidden;
+}
+
 /* Пространство за модальным окном */
 .validation-modal-overlay {
     position: fixed;

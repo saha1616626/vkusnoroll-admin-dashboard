@@ -1,5 +1,9 @@
 /* Модальное окно подтверждения действия */
 
+body.no-scroll {
+  overflow: hidden;
+}
+
 /* Пространство за модальным окном */
 .modal-overlay {
   position: fixed;

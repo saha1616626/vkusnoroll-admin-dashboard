@@ -28,7 +28,11 @@ api.interceptors.response.use(
             // Токен, роль, id и имя удаляется из локального хранилища
             ['authAdminToken', 'userRole', 'userId', 'userName']
                 .forEach(key => localStorage.removeItem(key));
-            window.location.href = '/login'; // Переход на страницу входа
+
+            // Редирект только если не на целевой странице
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login'; // Переход на страницу авторизации
+            }
         }
         return Promise.reject(error); // Возвращает ошибку для дальнейшей обработки в компонентах
     }
