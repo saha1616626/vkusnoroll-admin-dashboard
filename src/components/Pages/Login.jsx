@@ -14,12 +14,27 @@ import eyeIcon from './../../assets/icons/eye.png'
 import hiddenEyeIcon from './../../assets/icons/hiddenEye.png'
 
 const Login = ({ updateAuth }) => {
+
+    /* 
+    ===============================
+     Состояния, константы и ссылки
+    ===============================
+    */
+
     const [login, setLogin] = useState(''); // Ввод логина
     const [password, setPassword] = useState(''); // Ввод пароля
-    const [error, setError] = useState(''); // Ошибки
+    const [message, setMessage] = useState({
+        text: '',
+        type: 'error' // 'error' | 'success' 
+    }); // Сообщения
     const navigate = useNavigate(); // Навигация
-
     const [showPassword, setShowPassword] = useState(true); // Отображение пароля
+
+    /* 
+    ===========================
+     Эффекты
+    ===========================
+    */
 
     // Авто перенаправление пользвоателя в меню, если он перешел на страницу авторизации
     useEffect(() => {
@@ -28,6 +43,28 @@ const Login = ({ updateAuth }) => {
             navigate('/menu');
         }
     }, [navigate]);
+
+    // Скрыть сообщение через несколько секунд
+    useEffect(() => {
+        if (message.text) {
+            const timer = setTimeout(() => {
+                setMessage(prev => ({ ...prev, fading: true }));
+
+                // Удаляем сообщение после завершения анимации
+                setTimeout(() => {
+                    setMessage({ text: '', type: 'error', fading: false });
+                }, 300); // Должно совпадать с временем анимации
+            }, 3000); // Общее время показа сообщения
+
+            return () => clearTimeout(timer);
+        }
+    }, [message.text]);
+
+    /* 
+    ===========================
+     Обработчики событий
+    ===========================
+    */
 
     // Обработка авторизации
     const handleSubmit = async (e) => {
@@ -47,9 +84,18 @@ const Login = ({ updateAuth }) => {
                 navigate('/menu');
             }
         } catch (err) {
-            setError('Неверные учетные данные'); // Вывод ошибки
+           setMessage({ // Вывод ошибки
+                text: err.response.data.error,
+                type: 'error'
+            });
         }
     };
+
+    /* 
+    ===========================
+     Рендер
+    ===========================
+    */
 
     return (
         <div className="login-container">
@@ -57,7 +103,17 @@ const Login = ({ updateAuth }) => {
             <div className="login-form-container">
                 <form onSubmit={handleSubmit} className="login-form">
                     <h2>Вход</h2>
-                    {error && <div className="login-error-message">{error}</div>}
+
+                    {message.text && (
+                        <div className={`
+                            login-page-form-message 
+                            ${message.type} 
+                            ${message.fading ? 'fade-out' : ''}
+                        `}>
+                            {message.text}
+                        </div>
+                    )}
+
                     <div className="login-input-group">
                         <label htmlFor="login">Логин</label>
                         <input
