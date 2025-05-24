@@ -4,7 +4,8 @@ import {
   Routes,
   Route,
   Navigate,
-  useNavigate // Используем useNavigate внутри Router
+  useNavigate, // Используем useNavigate внутри Router
+  useLocation 
 } from 'react-router-dom';
 import { isTokenValid } from './utils/auth';
 
@@ -29,6 +30,7 @@ import AddEditUser from './components/Pages/AddEditUser'; // Управлени�
 import OrderStatuses from './components/Pages/OrderStatuses'; // Список статусов заказов
 import Schedule from './components/Pages/Schedule'; // График доставки
 import Delivery from './components/Pages/Delivery'; // Доставка
+import PasswordRecoveryPage from './components/Pages/auth/PasswordRecoveryPage'; // Страница восстановления пароля
 
 import './styles/app.css';
 
@@ -46,6 +48,7 @@ function App() {
 
   const AppContent = () => { // <Router> должен использоваться только внутри <Router> (для использования навигации), поэтому пришлось обернуть в AppContent
     const navigate = useNavigate(); // Навигация
+    const location = useLocation(); // Получаем текущий путь
 
     // Проверка срока действия токена при инициализации
     useEffect(() => {
@@ -56,7 +59,10 @@ function App() {
           ['authAdminToken', 'userRole', 'userId', 'userName']
             .forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
-          navigate('/login');
+          // Не перенаправляем, если находимся на странице восстановления пароля
+          if (location.pathname !== '/forgot-password') {
+            navigate('/login');
+          }
         }
       };
 
@@ -71,6 +77,8 @@ function App() {
           isAuthenticated ? <Navigate to="/menu" /> : <Login updateAuth={updateAuthStatus} />
         } />
 
+        {/* Страница восстановления пароля */}
+        <Route path='/forgot-password' element={isAuthenticated ? <Navigate to="/menu" replace /> : <PasswordRecoveryPage />} />
         <Route element={<PrivateRoute isAuthenticated={isAuthenticated} />}>
           {/* Все защищенные маршруты */}
           <Route path="/" element={<HeaderLayout />}>

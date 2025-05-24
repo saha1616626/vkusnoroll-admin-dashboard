@@ -83,6 +83,13 @@ const apiMethods = {
     updateClient: (id, data) => api.put(`/accounts/clients/${id}`, data),
     deleteClient: (id) => api.delete(`/accounts/clients/${id}`),
 
+    sendCodeAdministratorRecoveryPassword: (email) =>
+        api.post(`/accounts/administrator/send-code-recovery`, { email: email.toString() }), // Отправка кода подтверждения для восстановления пароля к учетной записи
+    checkingCodeResettingPassword: (id, code) =>
+        api.post(`/accounts/user/${id}/verify-code`, { code: code.toString() }), // Проверка кода подтверждения, отправленного на email при восстановлении пароля
+    changingPassword: (id, password) =>
+        api.put(`/accounts/user/${id}/changing-password`, { password: password }), // Смена пароля
+
     // Статусы заказов
     getOrderStatuses: () => api.get('/orderStatuses'),
     getOrderStatusById: (id) => api.get(`/orderStatuses/${id}`), // Пользователь
