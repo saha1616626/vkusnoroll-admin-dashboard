@@ -754,7 +754,8 @@ const AddEditStaff = ({ mode }) => {
                                     <span className="addEditStaff-checkbox-caption">Управление заказами</span>
                                 </label>
 
-                                <label className="addEditStaff-checkbox-label">
+                                {/* TODO — центр сообщений скрыт в рамках дипломной работы */}
+                                <label className="addEditStaff-checkbox-label" style={{display: 'none'}}>
                                     <input
                                         type="checkbox"
                                         name="isMessageCenterAvailable"
