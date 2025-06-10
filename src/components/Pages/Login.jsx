@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
-import { isTokenValid } from './../../utils/auth'; // Проверка токена
 
 // Импорт стилей 
 import "./../../styles/pages.css"; // Общие стили
@@ -36,14 +35,6 @@ const Login = ({ updateAuth }) => {
     ===========================
     */
 
-    // Авто перенаправление пользвоателя в меню, если он перешел на страницу авторизации
-    useEffect(() => {
-        const token = localStorage.getItem('authAdminToken');
-        if (isTokenValid(token)) {
-            navigate('/menu');
-        }
-    }, [navigate]);
-
     // Скрыть сообщение через несколько секунд
     useEffect(() => {
         if (message.text) {
@@ -71,18 +62,12 @@ const Login = ({ updateAuth }) => {
         e.preventDefault(); // Отменяет действие события по умолчанию
         try {
             const response = await api.login({ login, password });
-
-            if (response.data.token && response.data.role && response.data.userName) {
-                // Сохраняем токен из куки (сервер уже установил его)
-                const token = response.data.token;
-                localStorage.setItem('authAdminToken', token);
                 localStorage.setItem('userRole', response.data.role); // Сохраняем роль, которую вернул сервер
                 localStorage.setItem('userId', response.data.userId);
                 localStorage.setItem('userName', response.data.userName); //  Сохраняем имя, которое вернул сервер
 
                 updateAuth(true); // Вызываем функцию обновления
                 navigate('/menu');
-            }
         } catch (err) {
            setMessage({ // Вывод ошибки
                 text: err.response.data.error,

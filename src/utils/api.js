@@ -4,37 +4,27 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: 'http://localhost:5000/api',
-    headers: {
-        'Content-Type': 'application/json'
-    }
+    headers: { 'Content-Type': 'application/json' },
+    withCredentials: true
 });
 
 // Интерсепторы Axios
 
-// Автоматическая отправка токена авторизации в заголовки каждого исходящего HTTP-запроса
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('authAdminToken'); // Извлекается токен аутентификации из локального хранилища браузера
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`; // Если токен существует, он добавляется в заголовок Authorization с типом Bearer
-    }
-    return config;
-});
-
 // Обработка ответов и автоматическая переаутентификация
 api.interceptors.response.use(
-    response => response, // Если запрос успешный (т.е. сервер вернул ответ с кодом состояния 2xx), то просто возвращаем ответ
+    response => response,
     error => {
-        if (error.response?.status === 401) { // Токен недействителен или отсутствует
-            // Токен, роль, id и имя удаляется из локального хранилища
-            ['authAdminToken', 'userRole', 'userId', 'userName']
-                .forEach(key => localStorage.removeItem(key));
+        if (error.response?.status === 401) {
+            // Удаляются только пользовательские данные
+            ['userRole', 'userId', 'userName'].forEach(key =>
+                localStorage.removeItem(key)
+            );
 
-            // Редирект только если не на целевой странице
-            if (window.location.pathname !== '/login') {
-                window.location.href = '/login'; // Переход на страницу авторизации
+            if (window.location.pathname !== '/login') {  // Редирект только если не на целевой странице
+                window.location.href = '/login';
             }
         }
-        return Promise.reject(error); // Возвращает ошибку для дальнейшей обработки в компонентах
+        return Promise.reject(error);
     }
 );
 
@@ -66,6 +56,7 @@ const apiMethods = {
     // Авторизация и выход
     login: (credentials) => api.post('/auth/admin/login', credentials), // Вход
     logout: () => api.post('/auth/admin/logout'), // Выход
+    checkAuth: () => api.get('/auth/check'), // Проверка аутентификации 
 
     // Роли
     getRoles: () => api.get('/roles'),

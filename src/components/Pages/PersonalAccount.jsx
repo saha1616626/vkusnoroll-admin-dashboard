@@ -39,7 +39,7 @@ const PersonalAccount = ({ updateAuth }) => {
                 const userId = localStorage.getItem('userId'); // Получение id пользователя из локального хранилища
                 const response = await api.getAccountById(userId);
                 setUserData(response.data);
-                if(response?.data?.name) localStorage.setItem('userName', response?.data?.name); // Обновляем имя в шапке
+                if (response?.data?.name) localStorage.setItem('userName', response?.data?.name); // Обновляем имя в шапке
             } catch (error) {
                 console.error('Ошибка загрузки данных:', error);
             } finally {
@@ -72,10 +72,11 @@ const PersonalAccount = ({ updateAuth }) => {
 
     // Выход из аккаунта
     const handleLogout = () => {
-        // Токен, роль, id и имя удаляется из локального хранилища
-        ['authAdminToken', 'userRole', 'userId', 'userName']
-            .forEach(key => localStorage.removeItem(key));
-        updateAuth(false); // Передаем состояние о выходе
+        api.logout();
+        ['userRole', 'userId', 'userName'].forEach(key =>
+            localStorage.removeItem(key)
+        );
+        updateAuth(false);
         navigate('/login');
     };
 

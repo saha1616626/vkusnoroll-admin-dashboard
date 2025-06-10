@@ -5,10 +5,10 @@ import {
   Route,
   Navigate,
   useNavigate, // Используем useNavigate внутри Router
-  useLocation 
+  useLocation
 } from 'react-router-dom';
-import { isTokenValid } from './utils/auth';
 
+import api from './utils/api';  // API сервера
 import Login from './components/Pages/Login'; // Страница авторизации
 import PrivateRoute from './components/Elements/PrivateRoute'; // Контент, доступный после авторизации
 
@@ -35,11 +35,7 @@ import PasswordRecoveryPage from './components/Pages/auth/PasswordRecoveryPage';
 import './styles/app.css';
 
 function App() {
-  // Проверяем состояние токена, если он неактивный, то перенаправляем пользователя на страницу авторизации.
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const token = localStorage.getItem('authAdminToken'); // Актуальный статус авторизации пользователя
-    return isTokenValid(token);
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Состояние авторизации
 
   // Обновление статуса авторизации
   const updateAuthStatus = useCallback((status) => {
@@ -50,26 +46,23 @@ function App() {
     const navigate = useNavigate(); // Навигация
     const location = useLocation(); // Получаем текущий путь
 
-    // Проверка срока действия токена при инициализации
+    // Проверка срока действия токена из cookies
     useEffect(() => {
-      const checkTokenValidity = () => {
-        const token = localStorage.getItem('authAdminToken');
-        if (!isTokenValid(token)) {
-          // Токен, роль, id и имя удаляются из локального хранилища
-          ['authAdminToken', 'userRole', 'userId', 'userName']
-            .forEach(key => localStorage.removeItem(key));
+      const checkAuth = async () => {
+        try {
+          await api.checkAuth(); // Добавьте этот метод в API
+          setIsAuthenticated(true);
+        } catch (error) {
           setIsAuthenticated(false);
-          // Не перенаправляем, если находимся на странице восстановления пароля
-          if (location.pathname !== '/forgot-password') {
+          if (location.pathname !== '/login' &&
+            location.pathname !== '/forgot-password') {
             navigate('/login');
           }
         }
       };
 
-      checkTokenValidity();
-      const interval = setInterval(checkTokenValidity, 60000); // Проверка каждую минуту статуса токена
-      return () => clearInterval(interval);
-    }, [navigate]);
+      checkAuth();
+    }, [navigate, location.pathname]);
 
     return (
       <Routes>
