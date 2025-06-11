@@ -4,7 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
-  useNavigate, // Используем useNavigate внутри Router
+  useNavigate,
   useLocation
 } from 'react-router-dom';
 
@@ -42,7 +42,7 @@ function App() {
     setIsAuthenticated(status);
   }, []);
 
-  const AppContent = () => { // <Router> должен использоваться только внутри <Router> (для использования навигации), поэтому пришлось обернуть в AppContent
+  const AppContent = () => {
     const navigate = useNavigate(); // Навигация
     const location = useLocation(); // Получаем текущий путь
 
@@ -50,7 +50,7 @@ function App() {
     useEffect(() => {
       const checkAuth = async () => {
         try {
-          await api.checkAuth(); // Добавьте этот метод в API
+          await api.checkAuth();
           setIsAuthenticated(true);
         } catch (error) {
           setIsAuthenticated(false);
